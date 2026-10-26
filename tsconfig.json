@@ -7,13 +7,21 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-backend/types/**/*.ts",
+    ".next-backend/dev/types/**/*.ts",
+    ".next-frontend/types/**/*.ts",
+    ".next-frontend/dev/types/**/*.ts"
   ],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     /* Bundler mode */
     "moduleResolution": "Bundler",
     "plugins": [
@@ -33,8 +41,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@generated/*": ["./generated/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@generated/*": [
+        "./generated/*"
+      ]
     },
     "allowJs": true,
     "incremental": true,
@@ -42,5 +54,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

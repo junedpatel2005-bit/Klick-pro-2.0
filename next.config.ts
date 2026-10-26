@@ -10,7 +10,7 @@ const contentSecurityPolicy = [
   // Sentry ingest is required for browser error reporting: without it the CSP
   // silently drops every client-side event. Narrow these wildcards to the exact
   // host from NEXT_PUBLIC_SENTRY_DSN once it is known.
-  "connect-src 'self' https://api.razorpay.com https://maps.googleapis.com https://places.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
+  "connect-src 'self' http://localhost:5000 ws://localhost:5000 https://api.razorpay.com https://maps.googleapis.com https://places.googleapis.com https://*.googleapis.com https://*.gstatic.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io",
   "frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://www.google.com https://maps.google.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -24,6 +24,7 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || (process.env.PORT === "5000" ? ".next-backend" : ".next-frontend"),
   serverExternalPackages: ["@react-pdf/renderer", "pg", "bcryptjs"],
   images: { remotePatterns: [{ protocol: "https", hostname: "i.pravatar.cc" }] },
   experimental: {
@@ -60,9 +61,18 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    const isFrontend = process.env.IS_FRONTEND === "true" || process.env.PORT === "3000";
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+
+    if (isFrontend) {
+      return [
+        { source: "/api/v1/:path*", destination: `${backendUrl}/api/v1/:path*` },
+        { source: "/api/realtime/:path*", destination: `${backendUrl}/api/realtime/:path*` },
+        { source: "/api/:path*", destination: `${backendUrl}/api/:path*` },
+      ];
+    }
+
     return [
-      // Canonical, mobile-ready API namespace. Existing route handlers remain the single
-      // implementation while web clients are migrated from legacy /api/* URLs.
       { source: "/api/v1/:path*", destination: "/api/:path*" },
     ];
   },

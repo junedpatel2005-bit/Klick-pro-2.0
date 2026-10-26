@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 node_modules_old/
 .next
+.next-backend
+.next-frontend
 dist
 dist-ssr
 .output

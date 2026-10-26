@@ -1,0 +1,10 @@
+{
+  "name": "klick-pro-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "cross-env NODE_ENV=production node server.mjs"
+  }
+}
