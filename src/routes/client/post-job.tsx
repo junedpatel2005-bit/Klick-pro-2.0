@@ -1217,10 +1217,11 @@ export default function PostJob() {
                             onChange={(e) => handleWorkPaceChange(Number(e.target.value))}
                             className="h-6 rounded border border-border bg-background px-1.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                           >
+                            <option value={12}>12 hrs/day (Extended)</option>
+                            <option value={10}>10 hrs/day (Intensive)</option>
                             <option value={8}>8 hrs/day (Full-time)</option>
                             <option value={6}>6 hrs/day (Standard)</option>
                             <option value={4}>4 hrs/day (Part-time)</option>
-                            <option value={24}>24 hrs/day (Continuous)</option>
                           </select>
                         </div>
                       </div>

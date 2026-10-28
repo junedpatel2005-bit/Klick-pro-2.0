@@ -7,6 +7,7 @@ import next from "next";
 import pg from "pg";
 import { Server } from "socket.io";
 import { SOCKET_SESSION_QUERY } from "./src/lib/socket-session-sql.mjs";
+import { getBackendDashboardHtml } from "./backend/dashboard.mjs";
 
 const { Pool } = pg;
 
@@ -34,6 +35,7 @@ const dev = process.env.NODE_ENV !== "production";
 const hostname = process.env.HOSTNAME ?? "localhost";
 const port = Number(process.env.PORT ?? 3000);
 const useWebpack = process.env.NEXT_WEBPACK === "1" || process.env.NEXT_WEBPACK === "true";
+const isBackendMode = process.env.IS_BACKEND === "true" || port === 5000;
 
 const app = next({
   dev,
@@ -52,8 +54,66 @@ function cookieValue(cookieHeader, name) {
 }
 
 await app.prepare();
-const httpServer = createServer((request, response) => {
+const httpServer = createServer(async (request, response) => {
   const parsedUrl = parse(request.url, true);
+  const pathname = parsedUrl.pathname || "/";
+
+  // Dedicated Backend Handling when running on Port 5000 (Backend Mode)
+  if (isBackendMode) {
+    if (pathname === "/api/backend-status") {
+      let dbConnected = false;
+      let latencyMs = null;
+      if (dbPool) {
+        try {
+          const start = Date.now();
+          await dbPool.query("SELECT 1");
+          latencyMs = Date.now() - start;
+          dbConnected = true;
+        } catch {}
+      }
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(
+        JSON.stringify(
+          {
+            status: "online",
+            service: "Klick-Pro Backend API & Realtime Gateway",
+            port,
+            database: { connected: dbConnected, latencyMs },
+            realtime: "active",
+            uptimeSeconds: Math.floor(process.uptime()),
+            timestamp: new Date().toISOString(),
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+
+    if (pathname === "/" || pathname === "/backend") {
+      try {
+        const html = await getBackendDashboardHtml(request, { port, dbPool });
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(html);
+        return;
+      } catch (dashErr) {
+        console.error("[Backend Dashboard Error]", dashErr);
+      }
+    }
+
+    const isApiOrAsset =
+      pathname.startsWith("/api/") ||
+      pathname.startsWith("/_next/") ||
+      pathname === "/favicon.ico" ||
+      pathname === "/robots.txt";
+    const isAdminRoute = pathname.startsWith("/admin");
+    if (!isApiOrAsset && !isAdminRoute && (request.method === "GET" || request.method === "HEAD")) {
+      response.writeHead(307, { Location: `http://localhost:3000${request.url}` });
+      response.end();
+      return;
+    }
+  }
+
   handler(request, response, parsedUrl);
 });
 const io = new Server(httpServer, {
@@ -125,4 +185,3 @@ httpServer.listen(port, hostname, () => {
     }
   }, MILESTONE_CRON_INTERVAL_MS);
 });
-

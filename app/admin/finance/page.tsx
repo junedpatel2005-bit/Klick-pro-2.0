@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatReadableLabel, capitalizeWords } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/use-realtime-refresh";
@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Briefcase,
   Building2,
+  Calendar,
   CheckCircle2,
   Clock,
   Coins,
@@ -233,6 +234,59 @@ export default function AdminFinancePage() {
   const [activeTab, setActiveTab] = useState<TabView>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  type DateFilterType = "ALL" | "TODAY" | "7D" | "30D" | "90D" | "THIS_MONTH" | "CUSTOM";
+  const [dateFilter, setDateFilter] = useState<DateFilterType>("ALL");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+
+  const isDateInRange = useCallback((isoDate?: string | null): boolean => {
+    if (dateFilter === "ALL" || !isoDate) return dateFilter === "ALL";
+    const itemDate = new Date(isoDate);
+    if (isNaN(itemDate.getTime())) return false;
+
+    const now = new Date();
+    if (dateFilter === "TODAY") {
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return itemDate >= startOfToday;
+    }
+    if (dateFilter === "7D") {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return itemDate >= sevenDaysAgo;
+    }
+    if (dateFilter === "30D") {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return itemDate >= thirtyDaysAgo;
+    }
+    if (dateFilter === "90D") {
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      return itemDate >= ninetyDaysAgo;
+    }
+    if (dateFilter === "THIS_MONTH") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return itemDate >= startOfMonth;
+    }
+    if (dateFilter === "CUSTOM") {
+      if (customStartDate && customEndDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      }
+      if (customStartDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        return itemDate >= start;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate <= end;
+      }
+      return true;
+    }
+    return true;
+  }, [dateFilter, customStartDate, customEndDate]);
   const [selectedPayment, setSelectedPayment] = useState<EnrichedPayment | null>(null);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [selectedTopUp, setSelectedTopUp] = useState<UnifiedItem | null>(null);
@@ -314,7 +368,8 @@ export default function AdminFinancePage() {
       };
     }
 
-    const completedOrFunded = data.payments.filter(
+    const datePayments = data.payments.filter((p) => isDateInRange(p.createdAt));
+    const completedOrFunded = datePayments.filter(
       (p) => p.status === "COMPLETED" || p.status === "FUNDED",
     );
 
@@ -325,8 +380,7 @@ export default function AdminFinancePage() {
       return sum + comm;
     }, 0);
 
-    const proDisbursements = data.payments
-      .filter((p) => p.status === "COMPLETED")
+    const proDisbursements = datePayments.filter((p) => p.status === "COMPLETED")
       .reduce((sum, p) => {
         const payout =
           p.professionalPayoutAmount ??
@@ -334,8 +388,7 @@ export default function AdminFinancePage() {
         return sum + payout;
       }, 0);
 
-    const inEscrow = data.payments
-      .filter((p) => p.status === "FUNDED" || p.status === "AWAITING_ADMIN_APPROVAL")
+    const inEscrow = datePayments.filter((p) => p.status === "FUNDED" || p.status === "AWAITING_ADMIN_APPROVAL")
       .reduce((sum, p) => sum + p.amount, 0);
 
     const adminBalance = data.platformWallet?.balance ?? 0;
@@ -347,7 +400,7 @@ export default function AdminFinancePage() {
       inEscrow,
       adminBalance,
     };
-  }, [data]);
+  }, [data, isDateInRange]);
 
   // --- Unified Activity List (Combines all transactions so all are visible) ---
 
@@ -560,6 +613,10 @@ export default function AdminFinancePage() {
       list = list.filter((i) => i.status === statusFilter);
     }
 
+    if (dateFilter !== "ALL") {
+      list = list.filter((i) => isDateInRange(i.date));
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((i) => {
@@ -579,14 +636,14 @@ export default function AdminFinancePage() {
     }
 
     return list;
-  }, [allActivities, activeTab, statusFilter, searchQuery]);
+  }, [allActivities, activeTab, statusFilter, searchQuery, dateFilter, isDateInRange]);
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, statusFilter, searchQuery]);
+  }, [activeTab, statusFilter, searchQuery, isDateInRange]);
 
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -1034,16 +1091,35 @@ export default function AdminFinancePage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400 font-medium">
               Showing <span className="font-bold text-slate-700">{filteredItems.length}</span>{" "}
               records
             </span>
 
+            {/* Date Preset Filter */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-2xs">
+              <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as DateFilterType)}
+                className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-hidden cursor-pointer"
+              >
+                <option value="ALL">All Time</option>
+                <option value="TODAY">Today</option>
+                <option value="7D">Last 7 Days</option>
+                <option value="30D">Last 30 Days</option>
+                <option value="90D">Last 90 Days</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="CUSTOM">Custom Date Range...</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               <option value="COMPLETED">Completed</option>
@@ -1054,6 +1130,45 @@ export default function AdminFinancePage() {
             </select>
           </div>
         </div>
+
+        {/* Custom Date Range Pickers */}
+        {dateFilter === "CUSTOM" && (
+          <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-slate-100 text-xs">
+            <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Date Range:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            {(customStartDate || customEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomStartDate("");
+                  setCustomEndDate("");
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 transition-colors"
+              >
+                <X className="h-3 w-3" /> Clear Dates
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Unified Transactions Table */}

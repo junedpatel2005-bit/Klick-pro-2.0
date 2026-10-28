@@ -2,14 +2,14 @@ import { spawn } from "node:child_process";
 
 console.log("\n=======================================================");
 console.log("  Launching Klick-pro 2-Tier Architecture");
-console.log("  Backend  -> http://localhost:5000 (API & Realtime)");
-console.log("  Frontend -> http://localhost:3000 (UI Views)");
+console.log("  Backend  -> http://localhost:5000 (API & Server Dashboard)");
+console.log("  Frontend -> http://localhost:3000 (User Website UI)");
 console.log("=======================================================\n");
 
 const backend = spawn("node", ["backend/server.mjs"], {
   stdio: ["inherit", "pipe", "pipe"],
   shell: true,
-  env: { ...process.env, PORT: "5000" },
+  env: { ...process.env, PORT: "5000", IS_BACKEND: "true" },
 });
 
 backend.stdout.on("data", (data) => {

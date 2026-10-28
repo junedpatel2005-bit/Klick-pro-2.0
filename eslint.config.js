@@ -8,6 +8,8 @@ const config = tseslint.config(
   {
     ignores: [
       ".next/**",
+      ".next-backend/**",
+      ".next-frontend/**",
       ".git/**",
       "**/node_modules/**",
       ".project-work-files/**",
@@ -22,6 +24,8 @@ const config = tseslint.config(
       ".commandcode/**",
       ".lovable/**",
       "scripts/**",
+      "backend/**",
+      "frontend/**",
       ".eslintcache",
     ],
   },
@@ -36,4 +40,3 @@ const config = tseslint.config(
 );
 
 export default config;
-

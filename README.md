@@ -4,6 +4,70 @@
 
 ---
 
+## 2-Tier Architecture Overview
+
+Klick Pro operates as a decoupled 2-tier architecture separating the user-facing frontend from the backend API and real-time microservices:
+
+```
+                      +------------------------------------------+
+                      |         Browser / Client Device          |
+                      +-------------------+----------------------+
+                                          |
+                   +----------------------+----------------------+
+                   |                                             |
+                   v                                             v
+       [ Port 3000: Frontend ]                       [ Port 5000: Backend ]
+       http://localhost:3000                         http://localhost:5000
++-----------------------------------+         +-----------------------------------+
+|  - User Website & Landing Pages   |         |  - Backend Control & API Console  |
+|  - Client & Professional Portals  |         |  - REST Endpoints (/api/*)        |
+|  - Admin Dashboard UI             |         |  - Socket.IO Server (WebSockets)  |
+|  - React 19 & Tailwind CSS v4     |         |  - PostgreSQL Database via Prisma |
+|  - Proxies /api/* to Port 5000    |         |  - 15-Min Escrow Cron Workers     |
++-----------------------------------+         +-----------------------------------+
+```
+
+### What You See on Each Port:
+- **Port 3000 (`http://localhost:3000`) - Frontend**:
+  The complete user-facing marketplace application, including the home page, search, professional profiles, job postings, client portal, pro portal, and admin views.
+- **Port 5000 (`http://localhost:5000`) - Backend**:
+  The dedicated **Backend API & Realtime Gateway Dashboard**, displaying live PostgreSQL database connectivity and latency, Socket.IO server health, Node.js process metrics, active API modules, and direct links to the frontend and admin portal.
+
+---
+
+## Folder Structure
+
+The repository is organized into dedicated directories for the frontend, backend, and core app:
+
+### `backend/` — API, Database & Real-Time Engine
+```
+backend/
+├── api/                   # All REST API route handlers (/api/auth, /api/client, /api/admin, etc.)
+├── prisma/                # Prisma schema, migrations, and database seed scripts
+├── data/                  # CMS JSON data and system configuration
+├── lib/                   # Database pool, auth, JWT, Razorpay, encryption, and utilities
+├── services/              # Backend domain business services
+├── dashboard.mjs          # Native HTML/CSS Backend Server & API Control Dashboard (Port 5000)
+├── server.mjs             # Backend server runner (enforces Port 5000 & IS_BACKEND=true)
+├── package.json           # Backend runner scripts
+├── openapi.yaml           # OpenAPI 3.0 API documentation specification
+└── Klick-Pro API...json   # Postman collection for API testing
+```
+
+### `frontend/` — User Interface & Client Application
+```
+frontend/
+├── app/                   # All Next.js page views (marketing, client, pro, admin, auth, projects)
+├── components/            # Reusable UI component library (Radix primitives, cards, dialogs, forms)
+├── hooks/                 # Client React hooks (real-time subscriptions, queries, form state)
+├── public/                # Static assets, branding logos, icons, and illustrations
+├── styles/                # Tailwind CSS styling and global stylesheets
+├── server.mjs             # Frontend server runner (enforces Port 3000 & IS_FRONTEND=true)
+└── package.json           # Frontend runner scripts
+```
+
+---
+
 ## Tech Stack & Architecture
 
 - **Frontend & App Framework**: [Next.js 16](https://nextjs.org/) (App Router & Server Actions) with [React 19](https://react.dev/)
@@ -31,7 +95,7 @@
 
 ```bash
 git clone <repository-url>
-cd Klick-pro-main
+cd Klick-pro
 ```
 
 ### 2. Install dependencies
@@ -40,21 +104,17 @@ cd Klick-pro-main
 npm ci
 ```
 
-### 3. Create the environment file
+### 3. Configure `.env`
 
-On Windows (PowerShell / Command Prompt):
+Copy `.env.example` to `.env`:
 
 ```bash
+# Windows (PowerShell)
 copy .env.example .env
-```
 
-On macOS / Linux:
-
-```bash
+# macOS / Linux
 cp .env.example .env
 ```
-
-### 4. Configure `.env`
 
 Edit `.env` and set the core configuration values:
 
@@ -70,62 +130,68 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="your-browser-maps-key"
 GOOGLE_MAPS_SERVER_KEY="your-server-geocoding-key"
 ```
 
-> Keep `.env` secure and private. Never commit database passwords, API keys, or auth secrets.
-
-### 5. Local PostgreSQL Database Setup
-
-PostgreSQL can be installed locally (EnterpriseDB on Windows, Homebrew on macOS, or APT on Ubuntu).
-
-Create the PostgreSQL user and databases:
+### 4. Database Setup & Migrations
 
 ```bash
-# Create the database user (requires CREATEDB privilege for Prisma shadow database)
-createuser --pwprompt --createdb klickpro
-
-# Create development, shadow, and test databases
-createdb --owner=klickpro klickpro_dev
-createdb --owner=klickpro klickpro_shadow
-createdb --owner=klickpro klickpro_test
-```
-
-### 6. Generate Prisma Client and Run Migrations
-
-```bash
+# Generate Prisma Client & apply all database migrations
 npx prisma generate
 npx prisma migrate deploy
-```
 
-### 7. (Optional) Seed Demo & Category Data
-
-```bash
-# Seed initial demo clients, professionals, and jobs
+# (Optional) Seed demo users, categories, and marketplace jobs
 npm run db:seed
-
-# Seed category and subcategory hierarchy
 npm run db:seed-categories
 ```
 
-### 8. Start Development Server
+---
 
+## Running the Application
+
+### 1. Run Both Frontend & Backend (Recommended)
+
+Starts the 2-tier architecture concurrently:
 ```bash
 npm run dev
+# or
+npm run dev:all
 ```
+- **Frontend UI**: [`http://localhost:3000`](http://localhost:3000)
+- **Backend API & Server Dashboard**: [`http://localhost:5000`](http://localhost:5000)
 
-The application will be accessible at: **`http://localhost:3000`**
+### 2. Run Only the Backend (Port 5000)
+
+```bash
+npm run dev:backend
+# or
+cd backend && npm run dev
+```
+Serves the Backend Control Dashboard on port 5000, active REST APIs, and Socket.IO at `/api/realtime`.
+
+### 3. Run Only the Frontend (Port 3000)
+
+```bash
+npm run dev:frontend
+# or
+cd frontend && npm run dev
+```
+Serves the UI on port 3000 and proxies API calls to `http://localhost:5000`.
+
+### 4. Run Unified Single-Port Mode (Port 3000)
+
+```bash
+npm run dev:single
+```
+Runs both UI and API unified on a single port (`http://localhost:3000`) without proxying.
 
 ---
 
-## Project Scanning & Quality Verification Commands
-
-To perform a complete scan and audit of the project, run the following commands:
+## Project Scanning & Quality Verification
 
 | Scan Type                    | Command                             | Description                                                                                                                                       |
 | :--------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Full Type Check**          | `npm run typecheck`                 | Scans all `.ts` and `.tsx` files across the entire project using TypeScript (`tsc --noEmit`) to verify zero type mismatches or broken references. |
-| **ESLint Static Code Scan**  | `npm run lint`                      | Scans all source files for syntax issues, React 19 hook violations, import errors, and code quality rules (`eslint . --cache`).                   |
+| **Full Type Check**          | `npm run typecheck`                 | Scans all TypeScript files across the codebase (`tsc --noEmit`) to verify zero type mismatches or broken references.                              |
+| **ESLint Static Scan**       | `npm run lint`                      | Scans all source files for syntax issues, React 19 hook violations, and code quality rules (`eslint . --cache`).                                   |
 | **Single-Command Full Scan** | `npm run typecheck && npm run lint` | **Recommended:** Runs both TypeScript compilation check and ESLint scan sequentially in one command.                                              |
 | **Production Build Scan**    | `npm run build`                     | Applies pending database migrations and executes `next build` to verify page rendering, server bundle generation, and static optimization.        |
-| **Dependency Security Scan** | `npm audit`                         | Scans installed `node_modules` against the npm security advisory database for known vulnerabilities.                                              |
 | **Code Formatting Check**    | `npx prettier --check .`            | Verifies whether all files comply with Prettier formatting rules without modifying them. (Use `npm run format` to auto-fix).                      |
 | **Razorpay Sandbox Check**   | `npm run check:razorpay`            | Validates your Razorpay API credentials and sandbox connectivity.                                                                                 |
 | **Payment Resilience Check** | `npm run test:resilience`           | Executes resilience and error-handling tests for Razorpay payment workflows.                                                                      |
@@ -133,8 +199,6 @@ To perform a complete scan and audit of the project, run the following commands:
 ---
 
 ## Database & Migration Rules
-
-This project enforces strict database management policies:
 
 1. **Every Database Change Must Have a Migration File**:
    - Never use `prisma db push` alone in production or shared development.
@@ -146,36 +210,29 @@ This project enforces strict database management policies:
      npx prisma generate
      ```
 2. **Safe & Idempotent DDL**:
-   - Use `ALTER TABLE "<TableName>" ADD COLUMN IF NOT EXISTS ...`
-   - Use `CREATE TABLE IF NOT EXISTS ...`
-   - Use `CREATE INDEX IF NOT EXISTS ...`
-
----
-
-## Integrations & Services
-
-- **Authentication**: Email/Password with JWT sessions (`jose`), Google OAuth callback at `/api/v1/auth/google`.
-- **OTP Verification**: Twilio Verify API for production SMS. In local development, `PHONE_OTP_PROVIDER="development"` uses the default OTP configured in `.env`.
-- **Payments (Razorpay)**: Supports direct payments, escrow hold, transfer via Razorpay Route, and automated payouts via RazorpayX.
-- **Identity Verification**: AuthBridge and SpringVerify integrations for Aadhaar, PAN, and police background checks.
-- **File Storage**: Local file storage (`FILE_STORAGE_PROVIDER="local"`) for local testing, or S3-compatible cloud storage (AWS S3, Cloudflare R2, MinIO) for production.
-- **Admin Portal**: Admin management dashboard with user approval, KYC document review, transaction monitoring, and dispute resolution.
+   - Always use `ALTER TABLE "<TableName>" ADD COLUMN IF NOT EXISTS ...`
+   - Always use `CREATE TABLE IF NOT EXISTS ...`
+   - Always use `CREATE INDEX IF NOT EXISTS ...`
 
 ---
 
 ## Available NPM Scripts
 
 ```bash
-# Development
-npm run dev                  # Start Next.js + Socket.IO development server
-npm run dev:webpack          # Start development server using Webpack instead of Turbopack
+# Development & Architecture
+npm run dev                  # Start both Frontend (3000) and Backend (5000)
+npm run dev:all              # Alias for npm run dev
+npm run dev:frontend         # Start only Frontend on port 3000
+npm run dev:backend          # Start only Backend on port 5000
+npm run dev:single           # Start unified single-port app on port 3000
+npm run dev:webpack          # Start development server using Webpack
 
 # Production
 npm run build                # Deploy migrations and compile production build
 npm start                    # Start production server
 
-# Quality & Scanning
-npm run typecheck            # TypeScript compiler scan
+# Quality & Verification
+npm run typecheck            # TypeScript compiler check
 npm run lint                 # ESLint code quality scan
 npm run format               # Format codebase with Prettier
 

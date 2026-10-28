@@ -1,0 +1,298 @@
+import { db } from "@/lib/db";
+import type { Prisma } from "@generated/prisma/client";
+
+export type PlatformSettingItem = {
+  key: string;
+  value: string;
+  description: string;
+  category: "FINANCE" | "DISPUTES" | "GENERAL" | "SECURITY";
+};
+
+export const DEFAULT_PLATFORM_SETTINGS: Record<
+  string,
+  { value: string; description: string; category: "FINANCE" | "DISPUTES" | "GENERAL" | "SECURITY" }
+> = {
+  commission_enabled: {
+    value: "false",
+    description:
+      "When ON, platform commission is deducted from milestone releases and payments. When OFF, zero commission is cut.",
+    category: "FINANCE",
+  },
+  commission_rate: {
+    value: "10",
+    description:
+      "Professional-side fee percentage on milestone payouts when commission is turned ON.",
+    category: "FINANCE",
+  },
+  max_dispute_rounds: {
+    value: "5",
+    description:
+      "Maximum number of dispute appeal rounds allowed per project contract (e.g. 5 rounds)",
+    category: "DISPUTES",
+  },
+  dispute_limit: {
+    value: "5",
+    description:
+      "Maximum number of disputes a client or pro can raise per project (e.g. 5 disputes)",
+    category: "DISPUTES",
+  },
+  min_withdrawal_amount: {
+    value: "500",
+    description: "Minimum withdrawal amount in INR for professionals to cash out to bank",
+    category: "FINANCE",
+  },
+  auto_resolve_days: {
+    value: "7",
+    description: "Days of inactivity before an unresolved dispute can be auto-escalated or settled",
+    category: "DISPUTES",
+  },
+  autopay_enabled: {
+    value: "true",
+    description:
+      "When ON, client milestone approvals automatically release net earnings to professional wallet after deducting admin commission. When OFF, payments remain held in admin review.",
+    category: "FINANCE",
+  },
+  allow_negative_balance: {
+    value: "true",
+    description:
+      "When ON, milestone auto-payments are allowed even if the client wallet has insufficient funds, deducting the full milestone amount and setting the client wallet balance into negative (e.g. -₹200) until repaid. When OFF, payments require full wallet balance.",
+    category: "FINANCE",
+  },
+  auto_withdrawal_enabled: {
+    value: "false",
+    description:
+      "When ON, user withdrawal requests (bank / UPI) are settled and paid automatically without requiring manual admin approval. When OFF, withdrawal requests remain pending for admin review and manual payout approval.",
+    category: "FINANCE",
+  },
+  treasury_admin_user_id: {
+    value: "",
+    description:
+      "Dedicated Admin User ID for holding platform commission and escrow treasury. If empty, falls back to the lowest-ID administrator.",
+    category: "FINANCE",
+  },
+};
+
+export async function getPlatformSetting(key: string, fallback?: string): Promise<string> {
+  try {
+    const record = await db.platformSetting.findUnique({ where: { key } });
+    if (record) return record.value;
+  } catch (error) {
+    console.error("platform-settings.get.failed", { key, error });
+  }
+  return fallback ?? DEFAULT_PLATFORM_SETTINGS[key]?.value ?? "";
+}
+
+export async function isCommissionEnabled(): Promise<boolean> {
+  try {
+    const raw = await getPlatformSetting("commission_enabled", "false");
+    return raw === "true" || raw === "1" || raw === "on";
+  } catch {
+    return false;
+  }
+}
+
+export async function getPlatformCommissionRate(): Promise<number> {
+  try {
+    const enabled = await isCommissionEnabled();
+    if (!enabled) return 0;
+    const raw = await getPlatformSetting("commission_rate", "10");
+    const parsed = parseFloat(raw);
+    if (isNaN(parsed) || parsed < 0) return 0.1;
+    return parsed > 1 ? parsed / 100 : parsed;
+  } catch {
+    return 0;
+  }
+}
+
+export async function getMinWithdrawalAmount(): Promise<number> {
+  try {
+    const raw = await getPlatformSetting("min_withdrawal_amount", "500");
+    const parsed = parseInt(raw, 10);
+    return isNaN(parsed) || parsed <= 0 ? 500 : parsed;
+  } catch {
+    return 500;
+  }
+}
+
+export async function isAutoWithdrawalEnabled(): Promise<boolean> {
+  try {
+    const raw = await getPlatformSetting("auto_withdrawal_enabled", "false");
+    return raw === "true" || raw === "1" || raw === "on";
+  } catch {
+    return false;
+  }
+}
+
+export async function autoSettlePendingWithdrawals(): Promise<number> {
+  try {
+    const { emitRealtimeNotification, emitAdminOverviewUpdate } = await import("@/lib/realtime");
+    const pending = await db.projectWithdrawal.findMany({
+      where: { status: "PENDING" },
+    });
+    if (!pending.length) return 0;
+
+    for (const pw of pending) {
+      const autoUtr = `KP${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
+      const wallet = await db.wallet.findUnique({ where: { userId: pw.professionalId } });
+      if (!wallet) continue;
+
+      await db.$transaction(async (tx) => {
+        await tx.wallet.updateMany({
+          where: { id: wallet.id, pendingBalance: { gte: pw.amount } },
+          data: {
+            balance: { decrement: pw.amount },
+            pendingBalance: { decrement: pw.amount },
+          },
+        });
+
+        await tx.projectWithdrawal.update({
+          where: { id: pw.id },
+          data: {
+            status: "COMPLETED",
+            processedAt: new Date(),
+            utr: autoUtr,
+          },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            amount: -pw.amount,
+            type: "WITHDRAWAL",
+            status: "COMPLETED",
+            description: `Withdrawal of ₹${pw.amount.toLocaleString("en-IN")} transferred via Auto-Pay`,
+            idempotencyKey: `auto-payout-${pw.id}`,
+            metadataJson: JSON.stringify({ withdrawalId: pw.id, utr: autoUtr, autoPay: true }),
+          },
+        });
+
+        await tx.userNotification.create({
+          data: {
+            userId: pw.professionalId,
+            type: "PAYOUT_COMPLETED",
+            title: "Withdrawal Successful",
+            description: `Your withdrawal of ₹${pw.amount.toLocaleString(
+              "en-IN",
+            )} has been processed and paid automatically. UTR: ${autoUtr}. Money is in your account!`,
+            href: "/earnings",
+          },
+        });
+      });
+
+      emitRealtimeNotification([pw.professionalId], {
+        type: "PAYOUT_COMPLETED",
+        title: "Withdrawal Successful",
+        description: `Your withdrawal of ₹${pw.amount.toLocaleString(
+          "en-IN",
+        )} has been processed and paid automatically. UTR: ${autoUtr}. Money is in your account!`,
+        href: "/earnings",
+      });
+    }
+
+    emitAdminOverviewUpdate();
+    return pending.length;
+  } catch (error) {
+    console.error("platform-settings.autoSettle.failed", error);
+    return 0;
+  }
+}
+
+export async function isAutopayEnabled(): Promise<boolean> {
+  // Instant Auto-Pay is permanently enabled on the platform
+  return true;
+}
+
+export async function isNegativeBalanceAllowed(): Promise<boolean> {
+  // Minus Money Rule (negative balance on auto-pay) is permanently enabled on the platform
+  return true;
+}
+
+export async function getPlatformSettings(): Promise<PlatformSettingItem[]> {
+  try {
+    const records = await db.platformSetting.findMany({
+      orderBy: [{ category: "asc" }, { key: "asc" }],
+    });
+
+    const existingKeys = new Set(records.map((r) => r.key));
+    const items: PlatformSettingItem[] = records.map((r) => ({
+      key: r.key,
+      value: r.value,
+      description: r.description ?? "",
+      category: (r.category as PlatformSettingItem["category"]) || "GENERAL",
+    }));
+
+    // Ensure defaults exist in list even if not yet queried
+    for (const [key, meta] of Object.entries(DEFAULT_PLATFORM_SETTINGS)) {
+      if (!existingKeys.has(key)) {
+        items.push({
+          key,
+          value: meta.value,
+          description: meta.description,
+          category: meta.category,
+        });
+      }
+    }
+
+    return items;
+  } catch (error) {
+    console.error("platform-settings.getAll.failed", error);
+    return Object.entries(DEFAULT_PLATFORM_SETTINGS).map(([key, meta]) => ({
+      key,
+      value: meta.value,
+      description: meta.description,
+      category: meta.category,
+    }));
+  }
+}
+
+export async function setPlatformSetting(
+  key: string,
+  value: string,
+  description?: string,
+  category?: string,
+): Promise<void> {
+  const meta = DEFAULT_PLATFORM_SETTINGS[key];
+  await db.platformSetting.upsert({
+    where: { key },
+    create: {
+      key,
+      value,
+      description: description ?? meta?.description ?? "",
+      category: category ?? meta?.category ?? "GENERAL",
+    },
+    update: {
+      value,
+      ...(description ? { description } : {}),
+      ...(category ? { category } : {}),
+      updatedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * Resolves the administrator ID designated to hold platform commission and escrow balances.
+ * Looks up the configurable treasury_admin_user_id setting first, falling back to the lowest-ID active admin.
+ */
+export async function getSettlementAdminId(tx: Prisma.TransactionClient): Promise<number> {
+  try {
+    const configured = await getPlatformSetting("treasury_admin_user_id");
+    if (configured && /^\d+$/.test(configured.trim())) {
+      const specificId = parseInt(configured.trim(), 10);
+      const user = await tx.user.findFirst({
+        where: { id: specificId, role: "ADMIN", isActive: true },
+        select: { id: true },
+      });
+      if (user) return user.id;
+    }
+  } catch (err) {
+    console.warn("treasury_admin_lookup_fallback", err);
+  }
+
+  const admin = await tx.user.findFirst({
+    where: { role: "ADMIN", isActive: true },
+    orderBy: { id: "asc" },
+    select: { id: true },
+  });
+  if (!admin) throw new Error("No active admin account is configured for settlement.");
+  return admin.id;
+}
