@@ -22,7 +22,16 @@ import {
 import { JobDossierDocument, MultiJobDossierDocument } from "@/lib/reports/pdf/JobDossierDocument";
 import { InvoiceDocument } from "@/lib/reports/pdf/InvoiceDocument";
 import { UserDossierDocument } from "@/lib/reports/pdf/UserDossierDocument";
-import { fetchUserDossierData, generateUserDossierCsv } from "@/lib/reports/pdf/user-dossier-builder";
+import {
+  fetchUserDossierData,
+  generateUserDossierCsv,
+  fetchClientActivityDossierData,
+  generateClientActivityDossierCsv,
+  generateClientEngagementDossierCsv,
+  generateDisputeCaseDossierCsv,
+  generateSystemReliabilityDossierCsv,
+} from "@/lib/reports/pdf/user-dossier-builder";
+import { SingleClientActivityDossierDocument } from "@/lib/reports/pdf/SingleClientActivityDossierDocument";
 import {
   fetchJobDossierData,
   fetchBatchJobDossierData,
@@ -1080,6 +1089,28 @@ export async function POST(
         const singleUserId = numericIds[0];
         const isSingle = selectedOnly && numericIds.length === 1 && typeof singleUserId === "number";
 
+        if (isSingle) {
+          const activityDossier = await fetchClientActivityDossierData(singleUserId);
+          if (activityDossier) {
+            if (format === "csv") {
+              const csvContent = generateClientActivityDossierCsv(activityDossier);
+              return new NextResponse("\uFEFF" + csvContent, {
+                status: 200,
+                headers: {
+                  "Content-Type": "text/csv; charset=utf-8",
+                  "Content-Disposition": `attachment; filename="klick-pro-client-activity-${singleUserId}-dossier.csv"`,
+                },
+              });
+            }
+            const buffer = await renderReportPdf(
+              createElement(SingleClientActivityDossierDocument, {
+                data: activityDossier,
+              }) as unknown as Parameters<typeof renderReportPdf>[0],
+            );
+            return pdfResponse(buffer, `klick-pro-client-activity-${singleUserId}-dossier.pdf`);
+          }
+        }
+
         const clients = await db.user.findMany({
           where: isSingle ? { id: singleUserId } : (selectedOnly ? { id: { in: numericIds } } : { role: "CLIENT" }),
           select: {
@@ -1384,6 +1415,17 @@ export async function POST(
         });
 
         if (format === "csv") {
+          if (isSingle && engagementClients.length > 0 && typeof singleUserId === "number") {
+            const csvContent = generateClientEngagementDossierCsv(engagementClients[0]!);
+            return new NextResponse("\uFEFF" + csvContent, {
+              status: 200,
+              headers: {
+                "Content-Type": "text/csv; charset=utf-8",
+                "Content-Disposition": `attachment; filename="klick-pro-client-engagement-${singleUserId}-dossier.csv"`,
+              },
+            });
+          }
+
           const sanitize = (val: unknown) => {
             if (val === null || val === undefined) return '""';
             const str = String(val).replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").trim();
@@ -1567,6 +1609,17 @@ export async function POST(
         });
 
         if (format === "csv") {
+          if (isSingle && cases.length > 0 && typeof singleDisputeId === "number") {
+            const csvContent = generateDisputeCaseDossierCsv(cases[0]!);
+            return new NextResponse("\uFEFF" + csvContent, {
+              status: 200,
+              headers: {
+                "Content-Type": "text/csv; charset=utf-8",
+                "Content-Disposition": `attachment; filename="klick-pro-dispute-${singleDisputeId}-dossier.csv"`,
+              },
+            });
+          }
+
           const sanitize = (val: unknown) => {
             if (val === null || val === undefined) return '""';
             const str = String(val).replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").trim();
@@ -1776,39 +1829,8 @@ export async function POST(
         }
 
         if (format === "csv") {
-          const sanitize = (val: unknown) => {
-            if (val === null || val === undefined) return '""';
-            const str = String(val).replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").trim();
-            return `"${str.replace(/"/g, '""')}"`;
-          };
-          const headers = [
-            "Incident ID",
-            "Event Timestamp",
-            "Event Classification",
-            "Target Action / Operation",
-            "Incident Description & Telemetry",
-            "Severity Classification",
-            "Origin Request / IP Reference",
-            "System Log Status",
-          ];
-          const csvLines = [
-            headers.map(sanitize).join(","),
-            ...incidents.map((inc) =>
-              [
-                inc.id,
-                inc.timestamp,
-                inc.eventType,
-                inc.target,
-                inc.details,
-                inc.severity,
-                inc.ipAddress,
-                inc.status,
-              ]
-                .map(sanitize)
-                .join(","),
-            ),
-          ];
-          return new NextResponse("\uFEFF" + csvLines.join("\r\n"), {
+          const csvContent = generateSystemReliabilityDossierCsv(incidents);
+          return new NextResponse("\uFEFF" + csvContent, {
             status: 200,
             headers: {
               "Content-Type": "text/csv; charset=utf-8",
@@ -1834,6 +1856,29 @@ export async function POST(
           pageSize: reportRequest.pageSize,
         }) as unknown as Parameters<typeof renderReportPdf>[0];
       } else if (resource === "client-growth") {
+        const singleUserId = numericIds[0];
+        if (selectedOnly && numericIds.length === 1 && typeof singleUserId === "number") {
+          const userDossier = await fetchUserDossierData(singleUserId);
+          if (userDossier) {
+            if (format === "csv") {
+              const csvContent = generateUserDossierCsv(userDossier);
+              return new NextResponse("\uFEFF" + csvContent, {
+                status: 200,
+                headers: {
+                  "Content-Type": "text/csv; charset=utf-8",
+                  "Content-Disposition": `attachment; filename="klick-pro-client-${singleUserId}-complete-dossier.csv"`,
+                },
+              });
+            }
+            const buffer = await renderReportPdf(
+              createElement(UserDossierDocument, { data: userDossier }) as unknown as Parameters<
+                typeof renderReportPdf
+              >[0],
+            );
+            return pdfResponse(buffer, `klick-pro-client-${singleUserId}-dossier.pdf`);
+          }
+        }
+
         const hasValidNumericIds = selectedOnly && numericIds.length > 0;
         const allClients = await db.user.findMany({
           where: hasValidNumericIds ? { id: { in: numericIds }, role: "CLIENT" } : { role: "CLIENT" },

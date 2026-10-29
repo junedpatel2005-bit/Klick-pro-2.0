@@ -1378,3 +1378,6 @@ export function PostingGrowthDetailedDocument({
     </Document>
   );
 }
+
+
+export { SingleClientActivityDossierDocument } from "./SingleClientActivityDossierDocument";

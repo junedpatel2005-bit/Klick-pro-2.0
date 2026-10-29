@@ -317,16 +317,26 @@ export async function GET(request: NextRequest) {
           ? Math.round(rows.reduce((sum, r) => sum + r.estimatedTimeSpentMinutes, 0) / rows.length)
           : 0;
 
+      const dateFilteredRows = isTimeFiltered
+        ? rows.filter((r) => {
+            const rowTime = r.lastActiveAt ? new Date(r.lastActiveAt).getTime() : new Date(r.createdAt).getTime();
+            return rowTime >= start.getTime() && rowTime <= end.getTime();
+          })
+        : rows;
+
       const filteredRows = search
-        ? rows.filter(
+        ? dateFilteredRows.filter(
             (r) =>
               r.name.toLowerCase().includes(search) ||
               r.email.toLowerCase().includes(search) ||
               r.company.toLowerCase().includes(search) ||
+              r.phone.toLowerCase().includes(search) ||
+              r.location.toLowerCase().includes(search) ||
+              r.category.toLowerCase().includes(search) ||
               r.status.toLowerCase().includes(search) ||
               r.workingStatus.toLowerCase().includes(search),
           )
-        : rows;
+        : dateFilteredRows;
 
       return NextResponse.json({
         report: "client-activity",
@@ -1128,6 +1138,26 @@ export async function GET(request: NextRequest) {
         runningTotal = Math.max(1, runningTotal - netWeek);
       }
 
+      const dateFilteredClients = isTimeFiltered
+        ? detailedNewClients.filter((c) => {
+            const t = new Date(c.createdAt).getTime();
+            return t >= start.getTime() && t <= end.getTime();
+          })
+        : detailedNewClients;
+
+      const filteredNewClients = search
+        ? dateFilteredClients.filter(
+            (c) =>
+              c.name.toLowerCase().includes(search) ||
+              c.company.toLowerCase().includes(search) ||
+              c.email.toLowerCase().includes(search) ||
+              c.phone.toLowerCase().includes(search) ||
+              c.location.toLowerCase().includes(search) ||
+              c.category.toLowerCase().includes(search) ||
+              c.status.toLowerCase().includes(search),
+          )
+        : dateFilteredClients;
+
       return NextResponse.json({
         report: "client-growth",
         summary: {
@@ -1137,7 +1167,7 @@ export async function GET(request: NextRequest) {
           growthPercent: `${Number(netGrowthPercent) >= 0 ? "+" : ""}${netGrowthPercent}%`,
         },
         rows: weeklyCohorts,
-        newClientsDetails: detailedNewClients,
+        newClientsDetails: filteredNewClients,
       });
     }
 
