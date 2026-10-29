@@ -925,3 +925,65 @@ export function inferLocationFromAddress(address: string | null | undefined): {
   );
   return { state: stateEntry.name, district: district ?? null };
 }
+
+
+/**
+ * Returns ONLY the Indian State for any location/address string,
+ * strictly filtering out country names ("India", "Bharat") or raw country fallbacks.
+ */
+export function extractStateOnly(
+  address: string | null | undefined,
+  fallbackState?: string | null,
+): string {
+  if (fallbackState && fallbackState.trim()) {
+    const trimmedFallback = fallbackState.trim();
+    if (!/^india$/i.test(trimmedFallback) && !/^bharat$/i.test(trimmedFallback)) {
+      const match = locationGroups.find(
+        (g) => g.name.toLowerCase() === trimmedFallback.toLowerCase(),
+      );
+      if (match) return match.name;
+      return trimmedFallback;
+    }
+  }
+
+  if (!address || !address.trim()) {
+    return "Maharashtra";
+  }
+
+  const raw = address.trim();
+  const lower = raw.toLowerCase();
+
+  // Try direct match from location groups
+  for (const group of locationGroups) {
+    if (lower.includes(group.name.toLowerCase())) {
+      return group.name;
+    }
+  }
+
+  // Try infer from address
+  const inferred = inferLocationFromAddress(raw);
+  if (inferred.state && !/^india$/i.test(inferred.state)) {
+    return inferred.state;
+  }
+
+  // Check if any district matches and map to its parent state
+  for (const group of locationGroups) {
+    for (const dist of group.districts) {
+      if (lower.includes(dist.toLowerCase())) {
+        return group.name;
+      }
+    }
+  }
+
+  // Clean out "India" from parts
+  const cleanParts = raw
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p && !/^india$/i.test(p) && !/^bharat$/i.test(p));
+
+  if (cleanParts.length > 0) {
+    return cleanParts[cleanParts.length - 1]!;
+  }
+
+  return "Maharashtra";
+}

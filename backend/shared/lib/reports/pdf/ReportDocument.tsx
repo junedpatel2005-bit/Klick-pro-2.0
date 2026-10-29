@@ -224,7 +224,7 @@ export function ReportHeader({
             </View>
             <View>
               <Text style={styles.brandName}>KLICK-PRO</Text>
-              <Text style={styles.brandSub}>Financial Ledger & Audit Division</Text>
+              <Text style={styles.brandSub}>Enterprise Operations & Audit Division</Text>
             </View>
           </View>
           <Text style={styles.title}>{title}</Text>

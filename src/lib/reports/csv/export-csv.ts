@@ -38,6 +38,9 @@ export function sanitizeCell(value: unknown): string {
   }
   let stringValue = String(value);
 
+  // Strip or replace all internal newlines with a clean inline space so CSV rows NEVER wrap in Notepad / text editors
+  stringValue = stringValue.replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").trim();
+
   // CSV formula injection protection: if cell starts with =, +, -, or @ (and not a clean negative number)
   if (/^[=+@\t\r]/.test(stringValue) || (/^-/.test(stringValue) && !/^-\d+(\.\d+)?$/.test(stringValue.trim()))) {
     stringValue = `'${stringValue}`;
@@ -51,37 +54,42 @@ export function sanitizeCell(value: unknown): string {
 export function generateCsvContent(options: CsvExportOptions): string {
   const lines: string[] = [];
 
-  const websiteTitle = options.title
-    ? `Klick-Pro · ${options.title}`
-    : "Klick-Pro Enterprise Platform · Official Statement";
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
-  });
-  const timeStr = now.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Kolkata",
-  });
-  const dateLine = `Generated Date: ${dateStr}, ${timeStr} IST`;
+  // When includeMetadataBanner is explicitly set to true, output metadata header lines.
+  // Otherwise, default to a pure, perfect table starting directly with Row 1 = Column Headers.
+  // This ensures that Microsoft Excel immediately detects headers and filters, and Notepad shows an aligned table.
+  if (options.includeMetadataBanner === true) {
+    const websiteTitle = options.title
+      ? `Klick-Pro · ${options.title}`
+      : "Klick-Pro Enterprise Platform · Official Statement";
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Kolkata",
+    });
+    const timeStr = now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    });
+    const dateLine = `Generated Date: ${dateStr}, ${timeStr} IST`;
 
-  // Line 1: Header / Document Title
-  lines.push(sanitizeCell(websiteTitle));
-  // Line 2: Generation Timestamp
-  lines.push(sanitizeCell(dateLine));
-  // Line 3: Blank separator row
-  lines.push('""');
-
-  // Metadata entries (if any)
-  if (options.metadata && options.metadata.length > 0) {
-    for (const entry of options.metadata) {
-      lines.push(`${sanitizeCell(entry.label)},${sanitizeCell(entry.value)}`);
-    }
+    // Line 1: Header / Document Title
+    lines.push(sanitizeCell(websiteTitle));
+    // Line 2: Generation Timestamp
+    lines.push(sanitizeCell(dateLine));
+    // Line 3: Blank separator row
     lines.push('""');
+
+    // Metadata entries (if any)
+    if (options.metadata && options.metadata.length > 0) {
+      for (const entry of options.metadata) {
+        lines.push(`${sanitizeCell(entry.label)},${sanitizeCell(entry.value)}`);
+      }
+      lines.push('""');
+    }
   }
 
   // Multi-section structured tables (e.g. Project Specs, Parties, Milestones, Ledger)
@@ -100,7 +108,7 @@ export function generateCsvContent(options: CsvExportOptions): string {
     }
   }
 
-  // Fallback / standard single-table rows
+  // Pure single-table rows: Row 1 = Headers, followed by data rows
   if (options.headers && options.headers.length > 0) {
     lines.push(options.headers.map(sanitizeCell).join(","));
     if (options.rows) {

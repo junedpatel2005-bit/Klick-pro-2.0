@@ -26,6 +26,7 @@ export type UserDossierData = {
   username?: string | null;
   firstName: string;
   lastName: string;
+  fullName?: string;
   email: string;
   phone?: string | null;
   role: "CLIENT" | "PROFESSIONAL" | "ADMIN";
@@ -34,6 +35,8 @@ export type UserDossierData = {
   createdAt: string;
   daysActive: number;
   location?: string | null;
+  state?: string | null;
+  category?: string | null;
   companyName?: string | null;
   walletBalance: number;
   totalTopUp: number;
@@ -300,7 +303,11 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
 
   return (
     <Document
-      title={`User Audit #${data.userId} - ${data.firstName} ${data.lastName}`}
+      title={
+        isClient
+          ? `Client Audit - ${data.fullName || `${data.firstName} ${data.lastName}`.trim()}`
+          : `Professional Audit - ${data.fullName || `${data.firstName} ${data.lastName}`.trim()}`
+      }
       author="Klick-Pro Administration"
     >
       <Page size="A4" style={styles.page} wrap>
@@ -324,7 +331,7 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
               : "Professional Identity, Proposals & Settlement Audit"}
           </Text>
           <Text style={styles.headerMeta}>
-            Account Ref: #USR-{data.userId} · Confidential Compliance Record · Generated on{" "}
+            Confidential Compliance Record · Generated on{" "}
             {new Date().toLocaleDateString("en-IN", {
               day: "numeric",
               month: "short",
@@ -338,8 +345,7 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
           <View style={styles.heroTop}>
             <View>
               <Text style={styles.heroTitle}>
-                {data.firstName} {data.lastName}
-                {data.username ? ` (@${data.username})` : ""}
+                {data.fullName || `${data.firstName} ${data.lastName}`.trim()}
               </Text>
               <Text style={{ fontSize: 7.8, color: reportTheme.muted, marginTop: 2 }}>
                 Registered on {data.createdAt} · {data.daysActive} days active on platform
@@ -369,22 +375,11 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
           <Text style={styles.sectionTitle}>Account Profile & Contact Information</Text>
           <View style={styles.grid}>
             <View style={styles.gridCellThird}>
-              <Text style={styles.label}>Account ID</Text>
-              <Text style={styles.value}>#USR-{data.userId}</Text>
-            </View>
-            <View style={styles.gridCellThird}>
-              <Text style={styles.label}>Username</Text>
-              <Text style={styles.valueMono}>
-                {data.username ? `@${data.username}` : "Not configured"}
-              </Text>
-            </View>
-            <View style={styles.gridCellThird}>
               <Text style={styles.label}>Full Name</Text>
               <Text style={styles.value}>
-                {data.firstName} {data.lastName}
+                {data.fullName || `${data.firstName} ${data.lastName}`.trim()}
               </Text>
             </View>
-
             <View style={styles.gridCellThird}>
               <Text style={styles.label}>Email Address</Text>
               <Text style={styles.valueMono}>{data.email}</Text>
@@ -393,50 +388,59 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
               <Text style={styles.label}>Phone Number</Text>
               <Text style={styles.valueMono}>{data.phone || "Not provided"}</Text>
             </View>
+
             <View style={styles.gridCellThird}>
-              <Text style={styles.label}>Platform Tenure</Text>
-              <Text style={styles.value}>{data.daysActive} days active</Text>
+              <Text style={styles.label}>Location (State)</Text>
+              <Text style={styles.value}>{data.state || data.location || "Maharashtra"}</Text>
+            </View>
+            <View style={styles.gridCellThird}>
+              <Text style={styles.label}>Category / Industry</Text>
+              <Text style={styles.value}>{data.category || "General Services"}</Text>
+            </View>
+            <View style={styles.gridCellThird}>
+              <Text style={styles.label}>Registration Date</Text>
+              <Text style={styles.value}>{data.createdAt}</Text>
             </View>
 
-            {data.location && (
-              <View style={styles.gridCellHalf}>
-                <Text style={styles.label}>Location / Address</Text>
-                <Text style={styles.value}>{data.location}</Text>
-              </View>
-            )}
             {data.companyName && (
               <View style={styles.gridCellHalf}>
                 <Text style={styles.label}>Organization / Business</Text>
                 <Text style={styles.value}>{data.companyName}</Text>
               </View>
             )}
+            <View style={data.companyName ? styles.gridCellHalf : styles.gridCellThird}>
+              <Text style={styles.label}>Platform Tenure</Text>
+              <Text style={styles.value}>{data.daysActive} days active</Text>
+            </View>
           </View>
         </View>
 
-        {/* Financial Overview (Balance, Top-up, Withdrawals) */}
-        <View style={styles.section} wrap={false}>
-          <Text style={styles.sectionTitle}>Wallet & Financial Ledger Overview</Text>
-          <View style={styles.financeRow}>
-            <View style={styles.financeBox}>
-              <Text style={styles.financeLabel}>Current Wallet Balance</Text>
-              <Text style={styles.financeAmount}>
-                INR {data.walletBalance.toLocaleString("en-IN")}
-              </Text>
-            </View>
-            <View style={styles.financeBox}>
-              <Text style={styles.financeLabel}>Total Wallet Top-Ups</Text>
-              <Text style={[styles.financeAmount, { color: "#16a34a" }]}>
-                INR {data.totalTopUp.toLocaleString("en-IN")}
-              </Text>
-            </View>
-            <View style={styles.financeBox}>
-              <Text style={styles.financeLabel}>Total Withdrawals / Payouts</Text>
-              <Text style={[styles.financeAmount, { color: "#d97706" }]}>
-                INR {data.totalWithdrawals.toLocaleString("en-IN")}
-              </Text>
+        {/* Financial Overview (Balance, Top-up, Withdrawals) - Removed for Clients */}
+        {!isClient && (
+          <View style={styles.section} wrap={false}>
+            <Text style={styles.sectionTitle}>Wallet & Financial Ledger Overview</Text>
+            <View style={styles.financeRow}>
+              <View style={styles.financeBox}>
+                <Text style={styles.financeLabel}>Current Wallet Balance</Text>
+                <Text style={styles.financeAmount}>
+                  INR {data.walletBalance.toLocaleString("en-IN")}
+                </Text>
+              </View>
+              <View style={styles.financeBox}>
+                <Text style={styles.financeLabel}>Total Wallet Top-Ups</Text>
+                <Text style={[styles.financeAmount, { color: "#16a34a" }]}>
+                  INR {data.totalTopUp.toLocaleString("en-IN")}
+                </Text>
+              </View>
+              <View style={styles.financeBox}>
+                <Text style={styles.financeLabel}>Total Withdrawals / Payouts</Text>
+                <Text style={[styles.financeAmount, { color: "#d97706" }]}>
+                  INR {data.totalWithdrawals.toLocaleString("en-IN")}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Activity Section: Posted Jobs (for client) or Proposals/Bids (for professional) */}
         {isClient ? (
