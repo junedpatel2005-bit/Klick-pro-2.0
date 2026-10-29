@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   Building2,
@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 import type {
   PublicClientProfile,
@@ -64,6 +65,22 @@ export default function ClientProfilePage() {
   const [client, setClient] = useState<PublicClientProfile | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [avatarError, setAvatarError] = useState(false);
+
+  const PAGE_SIZE = 12;
+  const [jobsPage, setJobsPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
+
+  const paginatedJobs = useMemo(() => {
+    if (!client?.openJobs) return [];
+    const start = (jobsPage - 1) * PAGE_SIZE;
+    return client.openJobs.slice(start, start + PAGE_SIZE);
+  }, [client?.openJobs, jobsPage]);
+
+  const paginatedReviews = useMemo(() => {
+    if (!client?.reviewsList) return [];
+    const start = (reviewsPage - 1) * PAGE_SIZE;
+    return client.reviewsList.slice(start, start + PAGE_SIZE);
+  }, [client?.reviewsList, reviewsPage]);
 
   useEffect(() => {
     const rawId = Array.isArray(clientId) ? clientId[0] : clientId;
@@ -445,8 +462,9 @@ export default function ClientProfilePage() {
                 </Button>
               </div>
             ) : (
-              <div className="mt-6 space-y-3.5">
-                {client.openJobs.map((job: PublicClientJobItem) => (
+              <>
+                <div className="mt-6 space-y-3.5">
+                  {paginatedJobs.map((job: PublicClientJobItem) => (
                   <div
                     key={job.id}
                     className="group relative flex flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-md sm:flex-row sm:items-center"
@@ -506,7 +524,18 @@ export default function ClientProfilePage() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {client.openJobs.length > 0 && (
+                <PaginationControl
+                  currentPage={jobsPage}
+                  totalItems={client.openJobs.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setJobsPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
 
           {/* Professional Reviews Section */}
@@ -540,8 +569,9 @@ export default function ClientProfilePage() {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
-                {client.reviewsList.map((review: PublicReviewItem) => (
+              <>
+                <div className="mt-6 space-y-4">
+                  {paginatedReviews.map((review: PublicReviewItem) => (
                   <div
                     key={review.id}
                     className="rounded-xl border border-border/80 bg-muted/20 p-4 transition-colors hover:border-border"
@@ -606,7 +636,18 @@ export default function ClientProfilePage() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {client.reviewsList.length > 0 && (
+                <PaginationControl
+                  currentPage={reviewsPage}
+                  totalItems={client.reviewsList.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setReviewsPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
 
           {/* Safety & Trust Footer */}

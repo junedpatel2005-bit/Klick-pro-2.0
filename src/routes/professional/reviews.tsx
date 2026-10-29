@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords } from "@/lib/utils";
 
 export type ReviewItem = {
@@ -216,6 +217,18 @@ export default function ProfessionalReviews() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [activeTab, receivedReviews, givenReviews, searchQuery, filterRating, sortBy]);
+
+  const PAGE_SIZE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, filterRating, sortBy]);
+
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return currentList.slice(start, start + PAGE_SIZE);
+  }, [currentList, currentPage]);
 
   // Respond to Review Handler
   const handleOpenResponseModal = (review: ReviewItem) => {
@@ -690,7 +703,7 @@ export default function ProfessionalReviews() {
           </div>
         ) : (
           <div className="grid gap-5">
-            {currentList.map((review) => {
+            {paginatedList.map((review) => {
               const displayName =
                 activeTab === "received"
                   ? review.reviewerName || review.clientName || "Client"
@@ -830,6 +843,16 @@ export default function ProfessionalReviews() {
               );
             })}
           </div>
+        )}
+
+        {currentList.length > 0 && (
+          <PaginationControl
+            currentPage={currentPage}
+            totalItems={currentList.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            className="mt-6 border-t border-border/60 pt-4"
+          />
         )}
       </div>
 

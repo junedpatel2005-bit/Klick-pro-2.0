@@ -181,7 +181,7 @@ export default function ClientReports() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 15;
+  const PAGE_SIZE = 12;
 
   const loadData = () => {
     setLoading(true);

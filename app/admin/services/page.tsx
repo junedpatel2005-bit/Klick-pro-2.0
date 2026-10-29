@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import {
   Dialog,
   DialogContent,
@@ -229,6 +230,28 @@ export default function AdminServicesPage() {
       (cat) => cat.name.toLowerCase().includes(q) || cat.slug.toLowerCase().includes(q),
     );
   }, [activeParent, categorySearch, childrenByParentId]);
+
+  const PAGE_SIZE = 12;
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [jobsPage, setJobsPage] = useState(1);
+
+  useEffect(() => {
+    setCategoryPage(1);
+  }, [activeParent, categorySearch]);
+
+  useEffect(() => {
+    setJobsPage(1);
+  }, [jobsService]);
+
+  const paginatedCategories = useMemo(() => {
+    const start = (categoryPage - 1) * PAGE_SIZE;
+    return activeCategories.slice(start, start + PAGE_SIZE);
+  }, [activeCategories, categoryPage]);
+
+  const paginatedJobs = useMemo(() => {
+    const start = (jobsPage - 1) * PAGE_SIZE;
+    return categoryJobs.slice(start, start + PAGE_SIZE);
+  }, [categoryJobs, jobsPage]);
 
   // Active Category (Level 2)
   const activeCategory = useMemo(() => {
@@ -601,7 +624,7 @@ export default function AdminServicesPage() {
                 </Button>
               </div>
             ) : (
-              activeCategories.map((cat) => {
+              paginatedCategories.map((cat) => {
                 const subCount = childrenByParentId.get(cat.id)?.length ?? 0;
                 const isSelected = activeCategory?.id === cat.id;
 
@@ -680,6 +703,14 @@ export default function AdminServicesPage() {
               })
             )}
           </div>
+          {activeCategories.length > 0 && (
+            <AdminPagination
+              currentPage={categoryPage}
+              totalItems={activeCategories.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setCategoryPage}
+            />
+          )}
         </div>
 
         {/* Right Column: Subcategories & Management (8 cols) */}
@@ -1085,7 +1116,7 @@ export default function AdminServicesPage() {
                 </p>
               </div>
             ) : (
-              categoryJobs.map((job) => (
+              paginatedJobs.map((job) => (
                 <a
                   key={job.id}
                   href={`/job/${job.id}`}
@@ -1118,6 +1149,15 @@ export default function AdminServicesPage() {
               ))
             )}
           </div>
+
+          {categoryJobs.length > 0 && (
+            <AdminPagination
+              currentPage={jobsPage}
+              totalItems={categoryJobs.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setJobsPage}
+            />
+          )}
 
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setJobsModalOpen(false)}>

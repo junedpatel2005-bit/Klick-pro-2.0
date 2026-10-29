@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import {
   ArrowLeft,
   Briefcase,
@@ -118,6 +119,12 @@ export default function AdminUserDetailPage() {
   const [user, setUser] = useState<UserDetail | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [projects, setProjects] = useState<UserProject[]>([]);
+  const PAGE_SIZE = 12;
+  const [projectPage, setProjectPage] = useState(1);
+  const paginatedProjects = useMemo(() => {
+    const start = (projectPage - 1) * PAGE_SIZE;
+    return projects.slice(start, start + PAGE_SIZE);
+  }, [projects, projectPage]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [toggling, setToggling] = useState(false);
@@ -688,56 +695,64 @@ export default function AdminUserDetailPage() {
             </header>
 
             {projects.length > 0 ? (
-              <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
-                {projects.map((proj) => (
-                  <article
-                    key={proj.id}
-                    className="p-4 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50/60 transition"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
-                          {proj.title}
-                        </p>
-                        {proj.category && (
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200">
-                            {proj.category}
-                          </span>
-                        )}
+              <>
+                <div className="divide-y divide-slate-100">
+                  {paginatedProjects.map((proj) => (
+                    <article
+                      key={proj.id}
+                      className="p-4 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50/60 transition"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900 text-sm truncate">
+                            {proj.title}
+                          </p>
+                          {proj.category && (
+                            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200">
+                              {proj.category}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
+                          <span>Progress: {proj.progress}%</span>
+                          {proj.totalMilestones > 0 && (
+                            <span>
+                              • {proj.completedMilestones}/{proj.totalMilestones} Milestones
+                            </span>
+                          )}
+                          <span>• Updated {new Date(proj.updatedAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
-                        <span>Progress: {proj.progress}%</span>
-                        {proj.totalMilestones > 0 && (
-                          <span>
-                            • {proj.completedMilestones}/{proj.totalMilestones} Milestones
-                          </span>
-                        )}
-                        <span>• Updated {new Date(proj.updatedAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
-                          proj.status === "COMPLETED"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : proj.status === "CLOSED" || proj.status === "CANCELLED"
-                              ? "bg-rose-50 text-rose-700 border-rose-200"
-                              : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                        }`}
-                      >
-                        {formatReadableLabel(proj.status)}
-                      </span>
-                      <Link
-                        href={`/project/${proj.id}/tracking`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
-                      >
-                        Tracking <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
+                            proj.status === "COMPLETED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : proj.status === "CLOSED" || proj.status === "CANCELLED"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                          }`}
+                        >
+                          {formatReadableLabel(proj.status)}
+                        </span>
+                        <Link
+                          href={`/project/${proj.id}/tracking`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs"
+                        >
+                          Tracking <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                <AdminPagination
+                  currentPage={projectPage}
+                  totalItems={projects.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setProjectPage}
+                />
+              </>
             ) : (
               <div className="p-8 text-center text-xs text-slate-500">
                 No active or past projects found for this user.

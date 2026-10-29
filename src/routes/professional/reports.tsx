@@ -225,7 +225,7 @@ export default function ProfessionalReports() {
   const [endDate, setEndDate] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "boxes">("table");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 15;
+  const PAGE_SIZE = 12;
 
   const loadData = () => {
     setLoading(true);

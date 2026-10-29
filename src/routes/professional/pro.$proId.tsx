@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { PublicProfessionalProfile } from "@/lib/types/marketplace";
 import { MAX_HIRE_REQUEST_BUDGET } from "@/lib/constants/hiring";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 type ClientJob = {
   id: number;
@@ -73,6 +74,14 @@ function ProProfileContent() {
     "idle",
   );
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
+
+  const PAGE_SIZE = 12;
+  const [reviewPage, setReviewPage] = useState(1);
+  const paginatedReviews = useMemo(() => {
+    if (!professional?.reviewsList) return [];
+    const start = (reviewPage - 1) * PAGE_SIZE;
+    return professional.reviewsList.slice(start, start + PAGE_SIZE);
+  }, [professional?.reviewsList, reviewPage]);
 
   useEffect(() => {
     if (!proId) return;
@@ -739,8 +748,9 @@ function ProProfileContent() {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
-                {professional.reviewsList.map((review) => (
+              <>
+                <div className="mt-6 space-y-4">
+                  {paginatedReviews.map((review) => (
                   <div
                     key={review.id}
                     className="rounded-xl border border-border/80 bg-muted/20 p-4 transition-colors hover:border-border"
@@ -801,7 +811,18 @@ function ProProfileContent() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {professional.reviewsList.length > 0 && (
+                <PaginationControl
+                  currentPage={reviewPage}
+                  totalItems={professional.reviewsList.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setReviewPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
         </div>
       </article>

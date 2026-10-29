@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords } from "@/lib/utils";
 
 export type ReviewItem = {
@@ -210,6 +211,13 @@ export default function ClientReviews() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [activeTab, receivedReviews, givenReviews, searchQuery, filterRating, sortBy]);
+
+  const PAGE_SIZE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return currentList.slice(start, start + PAGE_SIZE);
+  }, [currentList, currentPage]);
 
   // Submit Review for a Pending Project
   const handleOpenReviewModal = (pending: PendingReview) => {
@@ -425,6 +433,7 @@ export default function ClientReviews() {
               onClick={() => {
                 setActiveTab("received");
                 setFilterRating("ALL");
+                setCurrentPage(1);
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                 activeTab === "received"
@@ -449,6 +458,7 @@ export default function ClientReviews() {
               onClick={() => {
                 setActiveTab("given");
                 setFilterRating("ALL");
+                setCurrentPage(1);
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                 activeTab === "given"
@@ -473,6 +483,7 @@ export default function ClientReviews() {
               onClick={() => {
                 setActiveTab("pending");
                 setFilterRating("ALL");
+                setCurrentPage(1);
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                 activeTab === "pending"
@@ -501,7 +512,10 @@ export default function ClientReviews() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Search project or reviewer…"
                   className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
@@ -519,9 +533,10 @@ export default function ClientReviews() {
               {/* Star Rating Filter */}
               <select
                 value={filterRating}
-                onChange={(e) =>
-                  setFilterRating(e.target.value === "ALL" ? "ALL" : Number(e.target.value))
-                }
+                onChange={(e) => {
+                  setFilterRating(e.target.value === "ALL" ? "ALL" : Number(e.target.value));
+                  setCurrentPage(1);
+                }}
                 className="h-10 rounded-xl border border-input bg-background px-3 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="ALL">All Stars</option>
@@ -647,7 +662,7 @@ export default function ClientReviews() {
           </div>
         ) : (
           <div className="grid gap-5">
-            {currentList.map((review) => {
+            {paginatedList.map((review) => {
               const displayName =
                 activeTab === "received"
                   ? review.reviewerName || review.clientName || "Professional"
@@ -771,6 +786,16 @@ export default function ClientReviews() {
               );
             })}
           </div>
+        )}
+
+        {currentList.length > 0 && (
+          <PaginationControl
+            currentPage={currentPage}
+            totalItems={currentList.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            className="mt-6 border-t border-border/60 pt-4"
+          />
         )}
       </div>
 

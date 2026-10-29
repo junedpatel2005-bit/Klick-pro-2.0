@@ -39,6 +39,7 @@ import { getAllStates, getDistrictsByState } from "@/lib/india-locations";
 import { getCityCoordinates } from "@/lib/city-coordinates";
 import { capitalizeWords, capitalizeFirst, formatReadableLabel } from "@/lib/utils";
 import { ServiceTypeDropdown } from "@/components/ServiceTypeDropdown";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 const ProfessionalJobsMap = dynamic(() => import("@/components/ProfessionalJobsMap"), {
   ssr: false,
@@ -51,7 +52,7 @@ const JobsPreviewMap = dynamic(() => import("@/components/JobsPreviewMap"), {
 
 // Keep the complete server-provided feed available to the search and filter controls.
 // The API applies the professional's eligibility and service-area rules first.
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 12;
 const DEFAULT_NEAR_ME_RADIUS_KM = 25;
 const MIN_NEAR_ME_RADIUS_KM = 1;
 const MAX_NEAR_ME_RADIUS_KM = 100;
@@ -604,7 +605,7 @@ function ProfessionalJobsContent() {
     radiusKm,
   ]);
 
-  const visibleJobs = useMemo(() => {
+  const sortedJobs = useMemo(() => {
     const sorted = [...filteredJobs];
     if (nearMe) {
       sorted.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
@@ -613,8 +614,18 @@ function ProfessionalJobsContent() {
     } else if (sort === "Newest") {
       sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
-    return sorted.slice(0, PAGE_SIZE);
+    return sorted;
   }, [filteredJobs, sort, nearMe]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const visibleJobs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedJobs.slice(start, start + PAGE_SIZE);
+  }, [sortedJobs, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [view, category, query, state, district, nearMe, sort]);
 
   useEffect(() => {
     if (visibleJobs.length === 0) {
@@ -1563,6 +1574,16 @@ function ProfessionalJobsContent() {
                       ? "You haven't saved any jobs yet. Tap the heart on a job to save it here."
                       : "No jobs match your current filters."}
                   </div>
+                )}
+
+                {sortedJobs.length > 0 && (
+                  <PaginationControl
+                    currentPage={currentPage}
+                    totalItems={sortedJobs.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                    className="mt-6 border-t border-border/60 pt-4"
+                  />
                 )}
               </div>
             </section>

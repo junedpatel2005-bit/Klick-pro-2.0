@@ -21,9 +21,10 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { getAllStates, getDistrictsByState } from "@/lib/india-locations";
 import { getCityCoordinates } from "@/lib/city-coordinates";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords, cn } from "@/lib/utils";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 12;
 const segmentOptions: [string, string][] = [
   ["RESIDENTIAL", "Residential"],
   ["COMMERCIAL", "Commercial"],
@@ -1033,30 +1034,13 @@ function DiscoverContent() {
                   />
                 ))}
               </div>
-              <div className="mt-8 flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                <p>
-                  Showing {professionals.length} of {results?.total ?? professionals.length}{" "}
-                  professionals.
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!results?.hasMore}
-                    onClick={() => setPage((current) => current + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
+              <PaginationControl
+                currentPage={page}
+                totalItems={results?.total ?? professionals.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+                className="mt-8 border-t border-border/60 pt-4"
+              />
             </>
           )}
         </div>

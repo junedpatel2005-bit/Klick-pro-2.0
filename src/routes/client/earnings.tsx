@@ -47,6 +47,7 @@ import { formatReadableLabel, capitalizeWords, capitalizeFirst } from "@/lib/uti
 import { LinkedAccountsCard } from "@/components/LinkedAccountsCard";
 import { RecheckWithdrawalModal } from "@/components/RecheckWithdrawalModal";
 import { WithdrawalDetailModal } from "@/components/WithdrawalDetailModal";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { maskDestinationString } from "@/lib/account-formatting";
 import {
   lookupIfscCode,
@@ -282,6 +283,8 @@ export default function ClientEarnings() {
   const [selectedWithdrawalDetail, setSelectedWithdrawalDetail] = useState<Withdrawal | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
+  const PAGE_SIZE = 12;
+  const [historyPage, setHistoryPage] = useState(1);
 
   // Profile Linked Accounts
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
@@ -2045,6 +2048,7 @@ export default function ClientEarnings() {
                     onClick={() => {
                       setHistoryFilter(tab.key);
                       setVisibleCount(10);
+                      setHistoryPage(1);
                     }}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                       historyFilter === tab.key
@@ -2067,7 +2071,7 @@ export default function ClientEarnings() {
               </div>
               {historyFilter === "validity" ? (
                 wallet?.lockedMilestones?.length ? (
-                  wallet.lockedMilestones.slice(0, visibleCount).map((m) => {
+                  wallet.lockedMilestones.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE).map((m) => {
                     const releaseDate = m.releaseAt ? new Date(m.releaseAt) : null;
                     const now = new Date();
                     const diffMs = releaseDate ? releaseDate.getTime() - now.getTime() : 0;
@@ -2158,7 +2162,7 @@ export default function ClientEarnings() {
                   </div>
                 )
               ) :
-                filteredHistoryItems.slice(0, visibleCount).map((item) =>
+                filteredHistoryItems.slice((historyPage - 1) * PAGE_SIZE, historyPage * PAGE_SIZE).map((item) =>
                 item.kind === "payment" ? (
                   <div
                     key={item.key}
@@ -2384,37 +2388,17 @@ export default function ClientEarnings() {
                   </div>
                 ),
               )}
-              {historyFilter === "validity"
-                ? (wallet?.lockedMilestones?.length ?? 0) > visibleCount && (
-                    <div className="border-t border-border/60 bg-muted/10 p-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => setVisibleCount((prev) => prev + 10)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground shadow-xs transition-all hover:bg-accent hover:border-primary/40 hover:shadow-sm active:scale-[0.98]"
-                      >
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        <span>Show more milestones</span>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                          {(wallet?.lockedMilestones?.length ?? 0) - visibleCount} remaining
-                        </span>
-                      </button>
-                    </div>
-                  )
-                : filteredHistoryItems.length > visibleCount && (
-                    <div className="border-t border-border/60 bg-muted/10 p-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => setVisibleCount((prev) => prev + 10)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground shadow-xs transition-all hover:bg-accent hover:border-primary/40 hover:shadow-sm active:scale-[0.98]"
-                      >
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        <span>Show more transactions</span>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                          {filteredHistoryItems.length - visibleCount} remaining
-                        </span>
-                      </button>
-                    </div>
-                  )}
+              <PaginationControl
+                currentPage={historyPage}
+                totalItems={
+                  historyFilter === "validity"
+                    ? (wallet?.lockedMilestones?.length ?? 0)
+                    : filteredHistoryItems.length
+                }
+                pageSize={PAGE_SIZE}
+                onPageChange={setHistoryPage}
+                className="px-6 py-4 border-t border-border/60"
+              />
               {historyFilter !== "validity" && !filteredHistoryItems.length && (
                 <p className="p-8 text-sm text-muted-foreground">
                   {historyFilter === "all"

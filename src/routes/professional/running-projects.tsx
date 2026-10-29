@@ -19,6 +19,7 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { CardListSkeleton } from "@/components/LoadingSkeleton";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 
@@ -212,6 +213,40 @@ export default function RunningProjectsPage() {
           ),
       );
   }, [appliedJobs, search]);
+
+  const PAGE_SIZE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterTab, search]);
+
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visibleProjects.slice(start, start + PAGE_SIZE);
+  }, [visibleProjects, currentPage]);
+
+  const paginatedAppliedJobs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visibleAppliedJobs.slice(start, start + PAGE_SIZE);
+  }, [visibleAppliedJobs, currentPage]);
+
+  const paginatedCompletedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visibleCompletedProjects.slice(start, start + PAGE_SIZE);
+  }, [visibleCompletedProjects, currentPage]);
+
+  const paginatedClosedProjects = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visibleClosedProjects.slice(start, start + PAGE_SIZE);
+  }, [visibleClosedProjects, currentPage]);
+
+  const currentTotalItems = useMemo(() => {
+    if (filterTab === "applied") return visibleAppliedJobs.length;
+    if (filterTab === "completed") return visibleCompletedProjects.length;
+    if (filterTab === "closed") return visibleClosedProjects.length;
+    return visibleProjects.length;
+  }, [filterTab, visibleAppliedJobs, visibleCompletedProjects, visibleClosedProjects, visibleProjects]);
   const totalValue = projects.reduce(
     (sum, project) => sum + (project.timingType === "HOURLY" ? 0 : (project.budget ?? 0)),
     0,
@@ -411,7 +446,7 @@ export default function RunningProjectsPage() {
           ) : filterTab === "all_active" ||
             filterTab === "in_progress" ||
             filterTab === "needs_action" ? (
-            visibleProjects.map((project) => (
+            paginatedProjects.map((project) => (
               <article
                 key={project.id}
                 onClick={() => router.push(`/project/${project.id}/tracking`)}
@@ -589,7 +624,7 @@ export default function RunningProjectsPage() {
               </article>
             ))
           ) : filterTab === "applied" ? (
-            visibleAppliedJobs.map((proposal) => {
+            paginatedAppliedJobs.map((proposal) => {
               const isRejected = proposal.status === "REJECTED";
               const isRevision = proposal.status === "REVISION_REQUESTED";
 
@@ -669,7 +704,7 @@ export default function RunningProjectsPage() {
               );
             })
           ) : filterTab === "completed" ? (
-            visibleCompletedProjects.map((project) => (
+            paginatedCompletedProjects.map((project) => (
               <article
                 key={project.id}
                 onClick={() => router.push(`/project/${project.id}/tracking`)}
@@ -719,7 +754,7 @@ export default function RunningProjectsPage() {
               </article>
             ))
           ) : (
-            visibleClosedProjects.map((project) => (
+            paginatedClosedProjects.map((project) => (
               <article
                 key={project.id}
                 onClick={() => router.push(`/project/${project.id}/tracking`)}
@@ -823,6 +858,16 @@ export default function RunningProjectsPage() {
             </div>
           ) : null}
         </div>
+
+        {!loading && currentTotalItems > 0 && (
+          <PaginationControl
+            currentPage={currentPage}
+            totalItems={currentTotalItems}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            className="mt-6 border-t border-border/60 pt-4"
+          />
+        )}
       </section>
     </div>
   );

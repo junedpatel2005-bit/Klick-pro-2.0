@@ -20,6 +20,7 @@ import {
 import { CardListSkeleton } from "@/components/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords } from "@/lib/utils";
 
 type Job = {
@@ -210,6 +211,13 @@ export default function MyJobs() {
     });
   }, [jobs, status]);
 
+  const PAGE_SIZE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visible.slice(start, start + PAGE_SIZE);
+  }, [visible, currentPage]);
+
   function remove(id: number) {
     setDeletingJobId(id);
   }
@@ -353,7 +361,10 @@ export default function MyJobs() {
             {filters.map((filter) => (
               <button
                 key={filter.value}
-                onClick={() => setStatus(filter.value)}
+                onClick={() => {
+                  setStatus(filter.value);
+                  setCurrentPage(1);
+                }}
                 aria-label={filter.label}
                 className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-all sm:text-sm ${status === filter.value ? "bg-card text-primary shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
               >
@@ -373,7 +384,7 @@ export default function MyJobs() {
           {loading ? (
             <CardListSkeleton />
           ) : (
-            visible.map((job) => {
+            paginatedJobs.map((job) => {
               const currentStatus = jobStatus(job);
               const isDraft = currentStatus === "DRAFT";
               const href = isDraft
@@ -537,6 +548,16 @@ export default function MyJobs() {
             </div>
           ) : null}
         </div>
+
+        {!loading && visible.length > 0 && (
+          <PaginationControl
+            currentPage={currentPage}
+            totalItems={visible.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+            className="mt-6 border-t border-border/60 pt-4"
+          />
+        )}
       </section>
 
       <ConfirmDialog

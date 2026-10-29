@@ -37,6 +37,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { capitalizeFirst, capitalizeWords } from "@/lib/utils";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 export type Notification = {
   id: number;
@@ -508,6 +509,25 @@ export function NotificationInbox({ admin: _isAdmin = false }: { admin?: boolean
     });
   }, [otherItems, query, unreadOnly]);
 
+  const PAGE_SIZE = 12;
+  const [generalPage, setGeneralPage] = useState(1);
+  const [projectsPage, setProjectsPage] = useState(1);
+
+  useEffect(() => {
+    setGeneralPage(1);
+    setProjectsPage(1);
+  }, [query, unreadOnly, activeTab]);
+
+  const paginatedOtherItems = useMemo(() => {
+    const start = (generalPage - 1) * PAGE_SIZE;
+    return filteredOtherItems.slice(start, start + PAGE_SIZE);
+  }, [filteredOtherItems, generalPage]);
+
+  const paginatedProjectGroups = useMemo(() => {
+    const start = (projectsPage - 1) * PAGE_SIZE;
+    return projectGroups.slice(start, start + PAGE_SIZE);
+  }, [projectGroups, projectsPage]);
+
   const totalUnreadCount = useMemo(() => items.filter((i) => !i.readAt).length, [items]);
   const projectUnreadCount = useMemo(
     () => projectItems.filter((i) => !i.readAt).length,
@@ -779,7 +799,7 @@ export function NotificationInbox({ admin: _isAdmin = false }: { admin?: boolean
               </p>
             </div>
           ) : (
-            projectGroups.map((group) => {
+            paginatedProjectGroups.map((group) => {
               const unreadCount = group.notifications.filter((n) => !n.readAt).length;
               const statusBadge = getProjectStatusBadge(group.projectStatus);
               const isRunning = Boolean(group.projectId);
@@ -1005,6 +1025,16 @@ export function NotificationInbox({ admin: _isAdmin = false }: { admin?: boolean
               );
             })
           )}
+
+          {projectGroups.length > 0 && (
+            <PaginationControl
+              currentPage={projectsPage}
+              totalItems={projectGroups.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setProjectsPage}
+              className="mt-6 border-t border-slate-200/90 dark:border-slate-800 pt-4"
+            />
+          )}
         </div>
       )}
 
@@ -1020,8 +1050,9 @@ export function NotificationInbox({ admin: _isAdmin = false }: { admin?: boolean
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {filteredOtherItems.map((item) => {
+            <>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                {paginatedOtherItems.map((item) => {
                 const { Icon, color } = getCategoryIcon(item.type);
                 return (
                   <div
@@ -1107,7 +1138,18 @@ export function NotificationInbox({ admin: _isAdmin = false }: { admin?: boolean
                 );
               })}
             </div>
-          )}
+
+            {filteredOtherItems.length > 0 && (
+              <PaginationControl
+                currentPage={generalPage}
+                totalItems={filteredOtherItems.length}
+                pageSize={PAGE_SIZE}
+                onPageChange={setGeneralPage}
+                className="px-6 py-4 border-t border-slate-200/90 dark:border-slate-800"
+              />
+            )}
+          </>
+        )}
         </div>
       )}
 
