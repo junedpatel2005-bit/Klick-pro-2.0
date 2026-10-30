@@ -443,7 +443,7 @@ function SharedReportFooter() {
 }
 
 // ============================================================================
-// 1. CLIENT REGISTRATIONS DETAILED DOCUMENT
+// 1. CLIENT REGISTRATIONS DETAILED DOCUMENT (DEEP ENTERPRISE DOSSIER)
 // ============================================================================
 export type ClientRegistrationRow = {
   id: number | string;
@@ -457,6 +457,11 @@ export type ClientRegistrationRow = {
   kyc: string;
   jobsCount: number;
   createdAt: string | Date;
+  address?: string;
+  accountType?: string;
+  spendAmount?: string | number;
+  lastActive?: string | Date | null;
+  recentJobs?: Array<{ id: number | string; title: string; category?: string; budget?: string; status?: string }>;
 };
 
 export function ClientRegistrationsDetailedDocument({
@@ -474,8 +479,8 @@ export function ClientRegistrationsDetailedDocument({
     <Document title="Klick-Pro Client Registrations Audit Report">
       <Page size={pageSize} orientation="landscape" style={styles.page}>
         <SharedReportHeader
-          title="New Client Registrations Audit"
-          subtitle="Acquisition Demographics · Indian State Distribution · Verified Client Profiles"
+          title="New Client Registrations Audit Dossier"
+          subtitle="Enterprise Acquisition Dossier · Demographics · KYC Verification · Job Postings Ledger"
           filterSummary={filterSummary || `${rows.length} total client records`}
         />
 
@@ -490,36 +495,91 @@ export function ClientRegistrationsDetailedDocument({
           </View>
         )}
 
-        <View style={styles.table}>
-          <View style={styles.tableHeader} fixed>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Client Full Name</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.6 }]}>Company / Account</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.8 }]}>Email Address</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Phone Number</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.3 }]}>Location (State)</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.3 }]}>Category / Industry</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1 }]}>KYC Status</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 0.9, textAlign: "right" }]}>Jobs</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.6, textAlign: "right" }]}>Registration Date & Time</Text>
-          </View>
-          {rows.map((r, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
-              <Text style={[styles.tableCell, { flex: 2, fontWeight: "bold" }]}>{capitalizeWords(r.name)}</Text>
-              <Text style={[styles.tableCell, { flex: 1.6 }]}>{capitalizeWords(r.company)}</Text>
-              <Text style={[styles.tableCell, { flex: 1.8, fontSize: 6.8 }]}>{r.email}</Text>
-              <Text style={[styles.tableCell, { flex: 1.2 }]}>{r.phone || "—"}</Text>
-              <Text style={[styles.tableCell, { flex: 1.3 }]}>{capitalizeWords(r.state || r.location)}</Text>
-              <Text style={[styles.tableCell, { flex: 1.3 }]}>{capitalizeWords(r.industry)}</Text>
-              <Text style={[styles.tableCell, { flex: 1, color: r.kyc === "Verified" ? "#15803d" : "#475569" }]}>
-                {r.kyc}
-              </Text>
-              <Text style={[styles.tableCell, { flex: 0.9, textAlign: "right" }]}>{r.jobsCount}</Text>
-              <Text style={[styles.tableCell, { flex: 1.6, textAlign: "right", fontSize: 6.8 }]}>
-                {formatReportDate(r.createdAt)}
-              </Text>
+        {rows.map((r, i) => (
+          <View key={i} style={styles.card} wrap={false}>
+            {/* Card Header: Client Identity, Company, KYC & Date */}
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>
+                  {capitalizeWords(r.name)} {r.company ? `· ${capitalizeWords(r.company)}` : ""}
+                </Text>
+                <Text style={styles.cardSub}>
+                  ID: #{r.id} · {r.accountType || (r.company?.toLowerCase().includes("individual") ? "Individual Client" : "Corporate Enterprise")} · Registered: {formatReportDate(r.createdAt)}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
+                <Text
+                  style={[
+                    styles.badge,
+                    r.kyc === "Verified" ? styles.badgeGreen : styles.badgeAmber,
+                  ]}
+                >
+                  {r.kyc === "Verified" ? "Verified KYC" : "Pending Verification"}
+                </Text>
+                <Text style={[styles.badge, styles.badgeBlue]}>
+                  {r.jobsCount} {r.jobsCount === 1 ? "Job" : "Jobs"} Posted
+                </Text>
+              </View>
             </View>
-          ))}
-        </View>
+
+            {/* Card Body: Contact Grid + Jobs & Activity Ledger */}
+            <View style={styles.cardBody}>
+              <View style={styles.grid}>
+                <View style={styles.gridCellCol4}>
+                  <Text style={styles.label}>Email Address</Text>
+                  <Text style={styles.valueMono}>{r.email || "—"}</Text>
+                </View>
+                <View style={styles.gridCellCol4}>
+                  <Text style={styles.label}>Phone Number</Text>
+                  <Text style={styles.valueMono}>{r.phone || "—"}</Text>
+                </View>
+                <View style={styles.gridCellCol4}>
+                  <Text style={styles.label}>Location (State)</Text>
+                  <Text style={styles.value}>{capitalizeWords(r.state || r.location || "Maharashtra")}</Text>
+                </View>
+                <View style={styles.gridCellCol4}>
+                  <Text style={styles.label}>Industry Sector</Text>
+                  <Text style={styles.value}>{capitalizeWords(r.industry || "General Services")}</Text>
+                </View>
+
+                {/* Operational Job Ledger Sub-Section */}
+                <View style={styles.gridCellCol1}>
+                  <View style={[styles.subCard, { marginTop: 3 }]}>
+                    <Text style={styles.sectionTitle}>
+                      Job Postings Ledger & Recent Projects ({r.jobsCount} Total)
+                    </Text>
+                    {r.recentJobs && r.recentJobs.length > 0 ? (
+                      r.recentJobs.map((j, jIdx) => (
+                        <View key={jIdx} style={styles.itemRow}>
+                          <Text style={[styles.itemText, { flex: 2, fontWeight: "bold" }]}>
+                            • {capitalizeWords(j.title)}
+                          </Text>
+                          <Text style={[styles.itemTextMuted, { flex: 1.2 }]}>
+                            {capitalizeWords(j.category || "General")}
+                          </Text>
+                          <Text style={[styles.itemText, { flex: 1, fontWeight: "bold" }]}>
+                            {j.budget || "Negotiable"}
+                          </Text>
+                          <Text style={[styles.badge, styles.badgeSlate, { fontSize: 6 }]}>
+                            {j.status || "OPEN"}
+                          </Text>
+                        </View>
+                      ))
+                    ) : r.jobsCount > 0 ? (
+                      <Text style={styles.itemText}>
+                        {r.jobsCount} jobs created under client portfolio. Escrow tracking active.
+                      </Text>
+                    ) : (
+                      <Text style={styles.emptyNote}>
+                        No job postings created yet. Account profile registered and onboarding verified.
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        ))}
 
         <SharedReportFooter />
       </Page>
@@ -528,7 +588,7 @@ export function ClientRegistrationsDetailedDocument({
 }
 
 // ============================================================================
-// 2. CLIENT ACTIVITY DETAILED DOCUMENT
+// 2. CLIENT ACTIVITY DETAILED DOCUMENT (DEEP TELEMETRY CARD)
 // ============================================================================
 export type ClientActivityDetailedRow = {
   id: number | string;
@@ -545,6 +605,9 @@ export type ClientActivityDetailedRow = {
   timeSpent: string;
   lastActive: string;
   createdAt: string;
+  activeProjectsCount?: number;
+  totalProjectsCount?: number;
+  recentSessions?: Array<{ createdAt: string; duration?: string }>;
 };
 
 export function ClientActivityDetailedDocument({
@@ -578,51 +641,87 @@ export function ClientActivityDetailedDocument({
           </View>
         )}
 
-        <View style={styles.table}>
-          <View style={styles.tableHeader} fixed>
-            <Text style={[styles.tableHeaderCell, { flex: 1.8 }]}>Client Full Name</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Phone</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.5 }]}>Email Address</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Location (State)</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Category</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.4 }]}>Working Status</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.1 }]}>Time Spent</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 0.9, textAlign: "right" }]}>Logins</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1.5, textAlign: "right" }]}>Last Login Timestamp</Text>
-          </View>
-          {rows.map((r, i) => {
-            const isOnline = r.workingStatus?.toLowerCase().includes("working") || r.status === "ONLINE";
-            const isActive = r.workingStatus?.toLowerCase().includes("active") || r.status === "Active";
-            return (
-              <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]} wrap={false}>
-                <View style={{ flex: 1.8 }}>
-                  <Text style={[styles.tableCell, { fontWeight: "bold" }]}>{capitalizeWords(r.name)}</Text>
-                  <Text style={[styles.itemTextMuted, { fontSize: 6.2 }]}>{capitalizeWords(r.company)}</Text>
+        {rows.map((r, i) => {
+          const isOnline = r.workingStatus?.toLowerCase().includes("working") || r.status === "ONLINE";
+          const isActive = r.workingStatus?.toLowerCase().includes("active") || r.status === "Active";
+          return (
+            <View key={i} style={styles.card} wrap={false}>
+              {/* Card Header: Client Name, Company, Status & Tier */}
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.cardTitle}>
+                    {capitalizeWords(r.name)} {r.company ? `· ${capitalizeWords(r.company)}` : ""}
+                  </Text>
+                  <Text style={styles.cardSub}>
+                    ID: #{r.id} · Location: {capitalizeWords(r.location)} · Sector: {capitalizeWords(r.category)} · Registered: {r.createdAt}
+                  </Text>
                 </View>
-                <Text style={[styles.tableCell, { flex: 1.2 }]}>{r.phone || "—"}</Text>
-                <Text style={[styles.tableCell, { flex: 1.5, fontSize: 6.8 }]}>{r.email}</Text>
-                <Text style={[styles.tableCell, { flex: 1.2 }]}>{capitalizeWords(r.location)}</Text>
-                <Text style={[styles.tableCell, { flex: 1.2 }]}>{capitalizeWords(r.category)}</Text>
-                <View style={{ flex: 1.4, justifyContent: "center" }}>
+                <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
                   <Text
                     style={[
                       styles.badge,
                       isOnline ? styles.badgeGreen : isActive ? styles.badgeBlue : styles.badgeSlate,
-                      { alignSelf: "flex-start" },
                     ]}
                   >
                     {r.workingStatus || r.status}
                   </Text>
+                  <Text style={[styles.badge, styles.badgeBlue]}>
+                    {r.frequency}
+                  </Text>
                 </View>
-                <Text style={[styles.tableCell, { flex: 1.1, fontWeight: "bold" }]}>{r.timeSpent}</Text>
-                <Text style={[styles.tableCell, { flex: 0.9, textAlign: "right" }]}>{r.logins}</Text>
-                <Text style={[styles.tableCell, { flex: 1.5, textAlign: "right", fontSize: 6.8 }]}>
-                  {r.lastActive || "Never Logged In"}
-                </Text>
               </View>
-            );
-          })}
-        </View>
+
+              {/* Card Body: 4-Column Stat Grid + Session Audit */}
+              <View style={styles.cardBody}>
+                <View style={styles.grid}>
+                  <View style={styles.gridCellCol4}>
+                    <Text style={styles.label}>Weekly Login Frequency</Text>
+                    <Text style={[styles.value, { color: "#0369a1" }]}>{r.frequency}</Text>
+                  </View>
+                  <View style={styles.gridCellCol4}>
+                    <Text style={styles.label}>Total Lifetime Logins</Text>
+                    <Text style={styles.value}>{r.logins} sessions recorded</Text>
+                  </View>
+                  <View style={styles.gridCellCol4}>
+                    <Text style={styles.label}>Estimated Time Spent</Text>
+                    <Text style={[styles.value, { fontWeight: "bold" }]}>{r.timeSpent}</Text>
+                  </View>
+                  <View style={styles.gridCellCol4}>
+                    <Text style={styles.label}>Last Active Timestamp</Text>
+                    <Text style={styles.valueMono}>{r.lastActive}</Text>
+                  </View>
+
+                  {/* Deep Telemetry Sub-Card */}
+                  <View style={styles.gridCellCol1}>
+                    <View style={[styles.subCard, { marginTop: 3 }]}>
+                      <Text style={styles.sectionTitle}>
+                        Session Audit & Supervision Overview
+                      </Text>
+                      <View style={styles.grid}>
+                        <View style={styles.gridCellCol2}>
+                          <Text style={styles.itemText}>
+                            • Working State: <Text style={{ fontWeight: "bold" }}>{r.workingStatus || r.status}</Text>
+                          </Text>
+                          <Text style={[styles.itemTextMuted, { marginTop: 2 }]}>
+                            Contact: {r.email} {r.phone !== "—" ? `· ${r.phone}` : ""}
+                          </Text>
+                        </View>
+                        <View style={styles.gridCellCol2}>
+                          <Text style={styles.itemText}>
+                            • Supervised Postings: <Text style={{ fontWeight: "bold" }}>{r.activeProjectsCount ?? (r.status === "ONLINE" ? 1 : 0)} active projects</Text> · {r.totalProjectsCount ?? 0} total postings
+                          </Text>
+                          <Text style={[styles.itemTextMuted, { marginTop: 2 }]}>
+                            Session Verification: {isOnline ? "Active Web Session (Live)" : isActive ? "Recent Activity Verified" : "Idle Account"}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          );
+        })}
 
         <SharedReportFooter />
       </Page>
@@ -1077,41 +1176,44 @@ export function SystemReliabilityDetailedDocument({
               {cat.items.length === 0 ? (
                 <Text style={styles.emptyNote}>No telemetry incidents detected in this window.</Text>
               ) : (
-                <View style={styles.table}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderCell, { flex: 1.4 }]}>Timestamp</Text>
-                    <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Target Operation</Text>
-                    <Text style={[styles.tableHeaderCell, { flex: 3.5 }]}>Incident Telemetry Details</Text>
-                    <Text style={[styles.tableHeaderCell, { flex: 0.9 }]}>Severity</Text>
-                    <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Origin / IP</Text>
-                    <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: "right" }]}>Status</Text>
-                  </View>
+                <View>
                   {cat.items.map((it, itIdx) => (
-                    <View key={itIdx} style={[styles.tableRow, itIdx % 2 === 1 ? styles.tableRowAlt : {}]}>
-                      <Text style={[styles.tableCell, { flex: 1.4, fontSize: 6.8 }]}>{it.timestamp}</Text>
-                      <Text style={[styles.tableCell, { flex: 2, fontWeight: "bold" }]}>{it.target}</Text>
-                      <Text style={[styles.tableCell, { flex: 3.5 }]}>{it.details}</Text>
-                      <Text
-                        style={[
-                          styles.tableCell,
-                          {
-                            flex: 0.9,
-                            fontWeight: "bold",
-                            color:
+                    <View key={itIdx} style={[styles.subCard, { marginBottom: 4 }]} wrap={false}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                          <Text style={[styles.value, { fontSize: 8.5 }]}>{it.target}</Text>
+                          <Text style={[styles.itemTextMuted, { fontSize: 6.5 }]}>#{it.id}</Text>
+                        </View>
+                        <View style={{ flexDirection: "row", gap: 4 }}>
+                          <Text
+                            style={[
+                              styles.badge,
                               it.severity === "CRITICAL"
-                                ? "#b91c1c"
+                                ? styles.badgeRose
                                 : it.severity === "HIGH"
-                                  ? "#c2410c"
-                                  : "#475569",
-                          },
-                        ]}
-                      >
-                        {it.severity}
+                                  ? styles.badgeAmber
+                                  : styles.badgeSlate,
+                              { fontSize: 6 },
+                            ]}
+                          >
+                            {it.severity}
+                          </Text>
+                          <Text style={[styles.badge, styles.badgeBlue, { fontSize: 6 }]}>
+                            {it.status}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.itemText, { marginBottom: 3 }]}>
+                        {it.details}
                       </Text>
-                      <Text style={[styles.tableCell, { flex: 1.2, fontSize: 6.8 }]}>{it.ipAddress}</Text>
-                      <Text style={[styles.tableCell, { flex: 1, textAlign: "right", fontWeight: "bold" }]}>
-                        {it.status}
-                      </Text>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", borderTopWidth: 0.5, borderTopColor: "#e2e8f0", paddingTop: 2 }}>
+                        <Text style={[styles.itemTextMuted, { fontSize: 6 }]}>
+                          Origin / IP: {it.ipAddress}
+                        </Text>
+                        <Text style={[styles.itemTextMuted, { fontSize: 6 }]}>
+                          Timestamp: {it.timestamp}
+                        </Text>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -1216,36 +1318,52 @@ export function ClientGrowthDetailedDocument({
             </Text>
           </View>
           <View style={styles.cardBody}>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Client Full Name</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.6 }]}>Company Name</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.8 }]}>Email Address</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.2 }]}>Phone Number</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.3 }]}>Location (State)</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.3 }]}>Category</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1 }]}>KYC Status</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 0.9, textAlign: "right" }]}>Jobs</Text>
-                <Text style={[styles.tableHeaderCell, { flex: 1.6, textAlign: "right" }]}>Registration Date & Time</Text>
-              </View>
-              {newClientsRoster.map((r, i) => (
-                <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
-                  <Text style={[styles.tableCell, { flex: 2, fontWeight: "bold" }]}>{capitalizeWords(r.name)}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.6 }]}>{capitalizeWords(r.company)}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.8, fontSize: 6.8 }]}>{r.email}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.2 }]}>{r.phone || "—"}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.3 }]}>{capitalizeWords(r.state || r.location)}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.3 }]}>{capitalizeWords(r.industry)}</Text>
-                  <Text style={[styles.tableCell, { flex: 1, color: r.kyc === "Verified" ? "#15803d" : "#475569" }]}>
-                    {r.kyc}
-                  </Text>
-                  <Text style={[styles.tableCell, { flex: 0.9, textAlign: "right" }]}>{r.jobsCount}</Text>
-                  <Text style={[styles.tableCell, { flex: 1.6, textAlign: "right", fontSize: 6.8 }]}>
-                    {formatReportDate(r.createdAt)}
-                  </Text>
+            {newClientsRoster.length === 0 ? (
+              <Text style={styles.emptyNote}>No new client accounts registered in this interval.</Text>
+            ) : (
+              newClientsRoster.map((r, i) => (
+                <View key={i} style={[styles.subCard, { marginBottom: 4 }]} wrap={false}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                    <View>
+                      <Text style={[styles.value, { fontSize: 8.5 }]}>{capitalizeWords(r.name)}</Text>
+                      <Text style={[styles.itemTextMuted, { fontSize: 6.5 }]}>{capitalizeWords(r.company || "Individual Client")}</Text>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 4 }}>
+                      <Text
+                        style={[
+                          styles.badge,
+                          r.kyc === "Verified" ? styles.badgeGreen : styles.badgeAmber,
+                          { fontSize: 6 },
+                        ]}
+                      >
+                        {r.kyc}
+                      </Text>
+                      <Text style={[styles.badge, styles.badgeBlue, { fontSize: 6 }]}>
+                        {r.jobsCount} {r.jobsCount === 1 ? "Job" : "Jobs"}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.grid}>
+                    <View style={styles.gridCellCol4}>
+                      <Text style={styles.label}>Email Address</Text>
+                      <Text style={styles.valueMono}>{r.email || "—"}</Text>
+                    </View>
+                    <View style={styles.gridCellCol4}>
+                      <Text style={styles.label}>Phone Number</Text>
+                      <Text style={styles.valueMono}>{r.phone || "—"}</Text>
+                    </View>
+                    <View style={styles.gridCellCol4}>
+                      <Text style={styles.label}>Location (State)</Text>
+                      <Text style={styles.value}>{capitalizeWords(r.state || r.location)}</Text>
+                    </View>
+                    <View style={styles.gridCellCol4}>
+                      <Text style={styles.label}>Registered At</Text>
+                      <Text style={styles.valueMono}>{formatReportDate(r.createdAt)}</Text>
+                    </View>
+                  </View>
                 </View>
-              ))}
-            </View>
+              ))
+            )}
           </View>
         </View>
 

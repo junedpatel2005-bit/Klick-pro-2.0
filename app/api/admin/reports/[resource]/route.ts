@@ -391,7 +391,14 @@ export async function POST(
     const { resource } = await params;
     const selectedOnly = reportRequest.scope === "selected";
     const ids = reportRequest.ids ?? [];
-    const numericIds = ids.map((id) => Number(String(id).replace(/^[A-Za-z]+-/, ""))).filter((n) => !isNaN(n) && n > 0);
+    const numericIds = ids
+      .map((id) => {
+        const directNum = Number(id);
+        if (!isNaN(directNum) && directNum > 0) return directNum;
+        const match = String(id).match(/\d+$/);
+        return match ? Number(match[0]) : NaN;
+      })
+      .filter((n) => !isNaN(n) && n > 0);
     const template = (rawBody as { template?: string } | null)?.template;
 
     const format = ((rawBody as { format?: string } | null)?.format || "").toLowerCase();
@@ -969,7 +976,29 @@ export async function POST(
           where: selectedOnly ? { id: { in: numericIds } } : { role: "CLIENT" },
           include: {
             clientProfiles: true,
-            clientJobs: { select: { id: true, locationState: true } },
+            clientJobs: {
+              select: {
+                id: true,
+                title: true,
+                category: true,
+                budgetMin: true,
+                budgetMax: true,
+                status: true,
+                createdAt: true,
+                locationState: true,
+              },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            },
+            sessions: {
+              select: { createdAt: true },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+            clientPayments: {
+              where: { status: "COMPLETED" },
+              select: { amount: true },
+            },
           },
           orderBy: { createdAt: "desc" },
           take: selectedOnly ? undefined : 300,
@@ -997,10 +1026,24 @@ export async function POST(
 
           const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
 
+          const recentJobs = c.clientJobs.map((j) => {
+            const b = j.budgetMax || j.budgetMin || 0;
+            return {
+              id: j.id,
+              title: j.title || "Project Posting",
+              category: j.category || "General Services",
+              budget: b > 0 ? `₹${b.toLocaleString("en-IN")}` : "Negotiable",
+              status: (j.status || "OPEN").toUpperCase(),
+            };
+          });
+          const totalSpend = c.clientPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          const lastActive = c.sessions[0]?.createdAt || c.lastLoginAt || null;
+
           return {
             id: c.id,
             name: fullName,
             company: isComp ? capitalizeWords(rawComp) : "Individual Client",
+            accountType: isComp ? "Corporate Enterprise" : "Individual Client",
             email: c.email,
             phone: c.phone || "—",
             industry: capitalizeWords(ind),
@@ -1009,6 +1052,9 @@ export async function POST(
             kyc: c.isVerified ? "Verified" : "Pending",
             jobsCount: c.clientJobs.length,
             createdAt: c.createdAt,
+            lastActive,
+            spendAmount: totalSpend > 0 ? `₹${totalSpend.toLocaleString("en-IN")}` : "₹0",
+            recentJobs,
           };
         });
 
@@ -1126,7 +1172,7 @@ export async function POST(
             lastLoginAt: true,
             createdAt: true,
             clientProfiles: true,
-            clientJobs: { select: { id: true, locationState: true } },
+            clientJobs: { select: { id: true, status: true, locationState: true } },
             sessions: { select: { createdAt: true }, take: 20 },
           },
           orderBy: { createdAt: "desc" },
@@ -1201,6 +1247,8 @@ export async function POST(
               month: "short",
               year: "numeric",
             }),
+            activeProjectsCount: c.clientJobs.filter((j) => j.status === "OPEN").length,
+            totalProjectsCount: c.clientJobs.length,
           };
         });
 
@@ -1895,7 +1943,7 @@ export async function POST(
             createdAt: true,
             isVerified: true,
             clientProfiles: true,
-            clientJobs: { select: { id: true, locationState: true } },
+            clientJobs: { select: { id: true, status: true, locationState: true } },
           },
           orderBy: { createdAt: "desc" },
           take: hasValidNumericIds ? undefined : 300,

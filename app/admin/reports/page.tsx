@@ -1796,7 +1796,9 @@ export default function AdminReportsPage() {
                             </div>
                             <div className="text-[11px] text-slate-500 mt-0.5">
                               Milestone: <span className="font-medium text-slate-700 dark:text-slate-300">{row.projectDetails?.milestoneTitle || "General Escrow"}</span>
-                              {row.projectDetails?.milestoneAmount && <span> (₹{Number(row.projectDetails.milestoneAmount).toLocaleString("en-IN")})</span>}
+                              {row.projectDetails?.milestoneAmount && (
+                                <span> ({String(row.projectDetails.milestoneAmount).startsWith("₹") ? row.projectDetails.milestoneAmount : `₹${Number(row.projectDetails.milestoneAmount || 0).toLocaleString("en-IN")}`})</span>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -1806,8 +1808,8 @@ export default function AdminReportsPage() {
                             <div className="text-[11px] text-slate-500 flex items-center gap-1">
                               <span>{row.clientDetails?.phone || "—"}</span> · <span>{row.clientDetails?.state || "India"}</span>
                             </div>
-                            <div className="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 truncate max-w-[160px]" title={row.clientDetails?.claims || row.disputeReason}>
-                              Claim: {row.clientDetails?.claims || row.disputeReason}
+                            <div className="text-[10px] text-rose-600 dark:text-rose-400 mt-0.5 truncate max-w-[160px]" title={row.clientDetails?.statement || row.clientDetails?.claims || row.disputeReason || "Case under arbitration"}>
+                              Claim: {row.clientDetails?.refundClaimed ? `₹${Number(row.clientDetails.refundClaimed).toLocaleString("en-IN")} · ` : ""}{row.clientDetails?.statement || row.clientDetails?.claims || row.disputeReason || "Under review"}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -1817,8 +1819,8 @@ export default function AdminReportsPage() {
                             <div className="text-[11px] text-slate-500 flex items-center gap-1">
                               <span>{row.proDetails?.phone || "—"}</span> · <span>{row.proDetails?.state || "India"}</span>
                             </div>
-                            <div className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 truncate max-w-[160px]" title={row.proDetails?.response || "Under Arbitration Review"}>
-                              Resp: {row.proDetails?.response || "Under Arbitration Review"}
+                            <div className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 truncate max-w-[160px]" title={row.proDetails?.statement || row.proDetails?.response || "Under Arbitration Review"}>
+                              Resp: {row.proDetails?.payoutClaimed ? `₹${Number(row.proDetails.payoutClaimed).toLocaleString("en-IN")} · ` : ""}{row.proDetails?.statement || row.proDetails?.response || "Under Arbitration Review"}
                             </div>
                           </td>
                           <td className="py-3 px-4">
