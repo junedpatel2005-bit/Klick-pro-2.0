@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 import { downloadCsvFile } from "@/lib/reports/csv/export-csv";
+import { ReportKpiCard } from "@/components/reports/ReportKpiCard";
 
 // ---------------------------------------------------------------------------
 // Type Definitions
@@ -448,7 +449,6 @@ export default function AdminReportsPage() {
     } else if (activeTab === "support-complaints") {
       filename = `klick-pro-support-complaints-full.csv`;
       headers = [
-        "Case Reference ID",
         "Source Channel",
         "Project / Job Title",
         "Project Category",
@@ -476,7 +476,6 @@ export default function AdminReportsPage() {
         "Resolution Date & Time",
       ];
       rowsData = rowsToExport.map((r) => [
-        r.id,
         r.source,
         capitalizeWords(r.projectDetails?.jobTitle || r.title || "Project"),
         capitalizeWords(r.projectDetails?.category || "General Services"),
@@ -516,7 +515,6 @@ export default function AdminReportsPage() {
         "System Log Status",
       ];
       rowsData = rowsToExport.map((r) => [
-        r.id,
         formatDateSafely(r.timestamp),
         r.eventType,
         r.target,
@@ -582,7 +580,6 @@ export default function AdminReportsPage() {
     } else if (activeTab === "posting-growth") {
       filename = `klick-pro-posting-growth-full.csv`;
       headers = [
-        "Job Reference Code",
         "Project Title",
         "Service Category",
         "Job Description / Scope",
@@ -600,7 +597,6 @@ export default function AdminReportsPage() {
         "Creation Date & Time",
       ];
       rowsData = rowsToExport.map((r) => [
-        r.reference || `#JOB-${r.id}`,
         capitalizeWords(r.title || "Untitled Project"),
         capitalizeWords(r.category || "General Services"),
         String(r.description || "Scope defined under professional contract agreement").replace(/[\r\n]+/g, " ").trim(),
@@ -794,409 +790,386 @@ export default function AdminReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {activeTab === "client-registrations" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Total New Clients</span>
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.totalClients ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-500" />
-                All verified client profiles
-              </div>
-            </div>
+            <ReportKpiCard
+              title="Total New Clients"
+              value={summaryData.totalClients ?? 0}
+              icon={UserPlus}
+              iconBgColor="bg-blue-500/10 text-blue-600"
+              definition="Cumulative count of client accounts registered on the marketplace within the active audit window."
+              formula="COUNT(User WHERE role = 'CLIENT' AND createdAt BETWEEN :startDate AND :endDate)"
+              source="PostgreSQL User table ('role' = 'CLIENT')"
+              why="Measures top-of-funnel customer acquisition velocity and aggregate demand volume."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>New Companies</span>
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Building2 className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.newCompaniesRegistered ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Corporate & business accounts</div>
-            </div>
+            <ReportKpiCard
+              title="New Companies"
+              value={summaryData.newCompaniesRegistered ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Corporate & business accounts</div>}
+              icon={Building2}
+              iconBgColor="bg-purple-500/10 text-purple-600"
+              definition="Verified corporate entities and business accounts registered to hire professionals."
+              formula="COUNT(User WHERE role = 'CLIENT' AND companyName IS NOT NULL AND LOWER(companyName) != 'individual')"
+              source="User & ClientProfile records ('companyName' attribute)"
+              why="Distinguishes high-value commercial B2B clients from single-project homeowners."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Top Industry</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white" title={summaryData.topIndustry}>
-                {summaryData.topIndustry || "General Services"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Primary registration category</div>
-            </div>
+            <ReportKpiCard
+              title="Top Industry"
+              value={summaryData.topIndustry || "General Services"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Primary registration category</div>}
+              icon={Briefcase}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
+              definition="The service industry sector generating the largest volume of client postings and registrations."
+              formula="MODE(Job.category WHERE Job.clientId IN ActiveClients)"
+              source="Job posting records ('category' field grouped by frequency)"
+              why="Informs service category expansion and targeted professional supply recruitment."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Top State</span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-                  <MapPin className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white" title={summaryData.topLocation}>
-                {summaryData.topLocation || "Maharashtra"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Highest client state concentration</div>
-            </div>
+            <ReportKpiCard
+              title="Top State"
+              value={summaryData.topLocation || "Maharashtra"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Highest client state concentration</div>}
+              icon={MapPin}
+              iconBgColor="bg-amber-500/10 text-amber-600"
+              valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
+              definition="The Indian state with the highest concentration of registered client users."
+              formula="MODE(EXTRACT_INDIAN_STATE(User.address, User.professionalState))"
+              source="User profiles ('address' and regional state fields parsed against 28 Indian States & 8 UTs)"
+              why="Guides regional marketing campaigns and geo-fenced professional onboarding."
+            />
           </>
         )}
 
         {activeTab === "client-activity" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Active Clients Today</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <Activity className="w-4 h-4" />
+            <ReportKpiCard
+              title="Active Clients Today"
+              value={summaryData.activeClientsToday ?? 0}
+              subtitle={
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Online & active today
                 </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.activeClientsToday ?? 0}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Online & active today
-              </div>
-            </div>
+              }
+              icon={Activity}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="Total unique client accounts that initiated a session, viewed jobs, or performed an action in the past 24 hours."
+              formula="COUNT(DISTINCT User.id WHERE role = 'CLIENT' AND lastActiveAt >= NOW() - INTERVAL '24 hours')"
+              source="AuditLog session entries & User 'updatedAt' telemetry"
+              why="Measures daily client engagement (DAU) and platform utilization health."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Active Users Today</span>
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.activeUsersToday ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Clients & Professionals combined</div>
-            </div>
+            <ReportKpiCard
+              title="Active Users Today"
+              value={summaryData.activeUsersToday ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Clients & Professionals combined</div>}
+              icon={UserPlus}
+              iconBgColor="bg-blue-500/10 text-blue-600"
+              definition="Combined count of all platform users (both Clients and Professionals) active today."
+              formula="COUNT(DISTINCT User.id WHERE lastActiveAt >= NOW() - INTERVAL '24 hours')"
+              source="Unified AuditLog authentication & user interaction telemetry"
+              why="Evaluates total platform concurrency, traffic load, and ecosystem vibrancy."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Login Frequency</span>
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.avgLoginFrequency || "3.2 / week"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Average user visits per week</div>
-            </div>
+            <ReportKpiCard
+              title="Login Frequency"
+              value={summaryData.avgLoginFrequency || "3.2 / week"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Average user visits per week</div>}
+              icon={Clock}
+              iconBgColor="bg-indigo-500/10 text-indigo-600"
+              definition="Average number of distinct login and check-in sessions recorded per active user per week."
+              formula="SUM(Weekly Logins) / COUNT(DISTINCT Active Users in Rolling 7-Day Window)"
+              source="AuditLog table (event = 'LOGIN_SUCCESS' aggregated per 7 days)"
+              why="Serves as a primary retention metric to track habit formation and repeat visits."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Time Spent on Platform</span>
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.avgTimeSpentPlatform || "28 mins / day"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Estimated session duration</div>
-            </div>
+            <ReportKpiCard
+              title="Time Spent on Platform"
+              value={summaryData.avgTimeSpentPlatform || "28 mins / day"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Estimated session duration</div>}
+              icon={Clock}
+              iconBgColor="bg-purple-500/10 text-purple-600"
+              definition="Average aggregate daily session length per active user browsing, chatting, or funding milestones."
+              formula="SUM(Session Heartbeat Intervals) / Total Daily Active Sessions"
+              source="Client-side telemetry heartbeat pings and route change timestamps in AuditLog"
+              why="High engagement duration correlates directly with milestone approvals and repeat contracts."
+            />
           </>
         )}
 
         {activeTab === "client-engagement" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Documents Uploaded</span>
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
-                  <Layers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.documentsUploaded ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Contracts, briefs & deliverables</div>
-            </div>
+            <ReportKpiCard
+              title="Documents Uploaded"
+              value={summaryData.documentsUploaded ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Contracts, briefs & deliverables</div>}
+              icon={Layers}
+              iconBgColor="bg-blue-500/10 text-blue-600"
+              definition="Total project briefs, architectural blueprints, deliverables, and contracts uploaded by users."
+              formula="COUNT(ProjectFile WHERE createdAt BETWEEN :startDate AND :endDate)"
+              source="ProjectFile table & S3 asset metadata storage"
+              why="Reflects tangible project execution and depth of professional collaboration."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Forms Submitted</span>
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.formsSubmitted ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Job postings & project specifications</div>
-            </div>
+            <ReportKpiCard
+              title="Forms Submitted"
+              value={summaryData.formsSubmitted ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Job postings & project specifications</div>}
+              icon={Briefcase}
+              iconBgColor="bg-purple-500/10 text-purple-600"
+              definition="Count of structured forms submitted across job postings, requirement briefs, and milestone creation."
+              formula="COUNT(Job) + COUNT(JobProposal) + COUNT(ProjectReview) in period"
+              source="Job, JobProposal, and Milestone configuration tables"
+              why="Tracks structured conversion events and client transactional intent."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Tasks Completed</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.tasksCompleted ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Approved milestones & task items</div>
-            </div>
+            <ReportKpiCard
+              title="Tasks Completed"
+              value={summaryData.tasksCompleted ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Approved milestones & task items</div>}
+              icon={CheckCircle2}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="Project milestones inspected and approved by clients, successfully fulfilling contract scopes."
+              formula="COUNT(ProjectMilestone WHERE status IN ('APPROVED', 'COMPLETED') AND approvedAt BETWEEN :start AND :end)"
+              source="ProjectMilestone table ('status' = 'APPROVED', approvedAt timestamp)"
+              why="Direct measure of project fulfillment success and marketplace gross output."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Features Used</span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-                  <Layers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.featuresUsedAcrossClients ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Escrow, Chat, Milestones, Reviews</div>
-            </div>
+            <ReportKpiCard
+              title="Features Used"
+              value={summaryData.featuresUsedAcrossClients ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Escrow, Chat, Milestones, Reviews</div>}
+              icon={Layers}
+              iconBgColor="bg-amber-500/10 text-amber-600"
+              definition="Number of platform modules actively utilized by clients (Escrow, In-app Messaging, Reviews, Milestone Tracking)."
+              formula="COUNT(DISTINCT FeatureType WHERE usageCount > 0 in period)"
+              source="Platform feature usage audit logs across core subsystems"
+              why="Identifies multi-feature stickiness and exposes under-utilized product capabilities."
+            />
           </>
         )}
 
         {activeTab === "support-complaints" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>New Issues Reported</span>
-                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600">
-                  <ShieldAlert className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.newIssuesReported ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Disputes & support tickets</div>
-            </div>
+            <ReportKpiCard
+              title="New Issues Reported"
+              value={summaryData.newIssuesReported ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Disputes & support tickets</div>}
+              icon={ShieldAlert}
+              iconBgColor="bg-rose-500/10 text-rose-600"
+              definition="New arbitration disputes and support requests filed during the selected reporting window."
+              formula="COUNT(ProjectDispute in range) + COUNT(ContactRequest in range)"
+              source="ProjectDispute & ContactRequest tables ('createdAt' timestamp)"
+              why="Signals dispute intake volume requiring mediation or admin investigation."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Pending Issues</span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.pendingIssues ?? 0}
-              </div>
-              <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                Awaiting review / arbitration
-              </div>
-            </div>
+            <ReportKpiCard
+              title="Pending Issues"
+              value={summaryData.pendingIssues ?? 0}
+              subtitle={<div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">Awaiting review / arbitration</div>}
+              icon={Clock}
+              iconBgColor="bg-amber-500/10 text-amber-600"
+              definition="Open dispute cases and customer inquiries currently in the admin arbitration queue."
+              formula="COUNT(ProjectDispute WHERE status = 'OPEN') + COUNT(ContactRequest WHERE status = 'NEW')"
+              source="ProjectDispute ('status' != 'RESOLVED') & ContactRequest ('status' != 'RESOLVED')"
+              why="Represents the active operational backlog requiring administrative attention."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Resolved Issues</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.resolvedIssues ?? 0}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">
-                Closed cases & settlements
-              </div>
-            </div>
+            <ReportKpiCard
+              title="Resolved Issues"
+              value={summaryData.resolvedIssues ?? 0}
+              subtitle={<div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Closed cases & settlements</div>}
+              icon={CheckCircle2}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="Disputes and tickets that have completed arbitration or received operational resolution."
+              formula="COUNT(ProjectDispute WHERE status = 'RESOLVED') + COUNT(ContactRequest WHERE status IN ('RESOLVED', 'CLOSED'))"
+              source="ProjectDispute and ContactRequest records with non-null 'decisionAt'"
+              why="Measures resolution output and arbitrator throughput efficiency."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Average Response Time</span>
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
-                  <Clock className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.avgResponseTime || "3.5 hours"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">First-response turnaround</div>
-            </div>
+            <ReportKpiCard
+              title="Average Response Time"
+              value={summaryData.avgResponseTime || "3.5 hours"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">First-response turnaround</div>}
+              icon={Clock}
+              iconBgColor="bg-indigo-500/10 text-indigo-600"
+              definition="Mean time elapsed between issue filing and formal administrative response or resolution."
+              formula="SUM(decisionAt - createdAt in hours) / COUNT(Resolved Disputes With Timestamps)"
+              source="ProjectDispute 'createdAt' vs 'decisionAt' (or 'respondedAt') timestamps"
+              why="Core SLA metric ensuring customer complaints are resolved swiftly to protect platform trust."
+            />
           </>
         )}
 
         {activeTab === "system-reliability" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>System Uptime</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <Cpu className="w-4 h-4" />
+            <ReportKpiCard
+              title="System Uptime"
+              value={summaryData.uptime || "99.96%"}
+              subtitle={
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                  <Check className="w-3.5 h-3.5" /> High availability
                 </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.uptime || "99.96%"}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                <Check className="w-3.5 h-3.5" /> High availability
-              </div>
-            </div>
+              }
+              icon={Cpu}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="Percentage of total time the production application and API server responded successfully without downtime."
+              formula="(Total Operational Runtime Seconds / Total Monitoring Window Seconds) × 100%"
+              source="Node.js process.uptime() & external HTTP healthcheck endpoint pings"
+              why="Guarantees platform infrastructure meets production enterprise SLA commitments."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>System Errors</span>
-                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.errors ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Logged runtime exceptions</div>
-            </div>
+            <ReportKpiCard
+              title="System Errors"
+              value={summaryData.errors ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Logged runtime exceptions</div>}
+              icon={AlertTriangle}
+              iconBgColor="bg-rose-500/10 text-rose-600"
+              definition="Unhandled application exceptions, 5xx server errors, or database transaction rollbacks recorded."
+              formula="COUNT(AuditLog WHERE action = 'ERROR' OR level = 'CRITICAL')"
+              source="AuditLog error entries & server-side error-boundary intercepts"
+              why="Provides real-time error tracking to catch software regressions before they affect transactions."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Failed Logins</span>
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-                  <ShieldAlert className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.failedLogins ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Authentication challenges</div>
-            </div>
+            <ReportKpiCard
+              title="Failed Logins"
+              value={summaryData.failedLogins ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Authentication challenges</div>}
+              icon={ShieldAlert}
+              iconBgColor="bg-amber-500/10 text-amber-600"
+              definition="Rejected authentication attempts caused by invalid credentials, expired OTPs, or rate-limited requests."
+              formula="COUNT(AuditLog WHERE action IN ('LOGIN_FAILED', 'OTP_EXPIRED', 'AUTH_BLOCKED'))"
+              source="AuditLog security telemetry generated by /api/auth handlers"
+              why="Detects unauthorized credential stuffing, brute-force attacks, and user sign-in hurdles."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>API Failures & Latency</span>
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Cpu className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.apiFailures ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Slow queries: {summaryData.slowPages ?? 0}</div>
-            </div>
+            <ReportKpiCard
+              title="API Failures & Latency"
+              value={summaryData.apiFailures ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Slow queries: {summaryData.slowPages ?? 0}</div>}
+              icon={Cpu}
+              iconBgColor="bg-purple-500/10 text-purple-600"
+              definition="API endpoints that failed with status 500+ or database queries that took longer than 1000ms."
+              formula="COUNT(HTTP Status >= 500) + COUNT(Query Execution Time > 1000ms)"
+              source="API gateway request logger and Prisma query latency middleware"
+              why="Identifies slow API routes and heavy database queries before they degrade user responsiveness."
+            />
           </>
         )}
 
         {activeTab === "client-growth" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Total Clients</span>
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.totalClients ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">All-time client accounts</div>
-            </div>
+            <ReportKpiCard
+              title="Total Clients"
+              value={summaryData.totalClients ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">All-time client accounts</div>}
+              icon={TrendingUp}
+              iconBgColor="bg-blue-500/10 text-blue-600"
+              definition="Cumulative number of client accounts registered on the marketplace since platform inception."
+              formula="COUNT(User WHERE role = 'CLIENT')"
+              source="PostgreSQL User table ('role' = 'CLIENT')"
+              why="Benchmarks overall marketplace scale and size of the customer base."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>New Clients This Week</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <UserPlus className="w-4 h-4" />
+            <ReportKpiCard
+              title="New Clients This Week"
+              value={summaryData.newClientsThisWeek ?? 0}
+              subtitle={
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-0.5 font-medium">
+                  <ArrowUpRight className="w-3.5 h-3.5" /> Recent acquisitions
                 </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.newClientsThisWeek ?? 0}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-0.5 font-medium">
-                <ArrowUpRight className="w-3.5 h-3.5" /> Recent acquisitions
-              </div>
-            </div>
+              }
+              icon={UserPlus}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="New client accounts registered within the current 7-day rolling window."
+              formula="COUNT(User WHERE role = 'CLIENT' AND createdAt >= NOW() - INTERVAL '7 days')"
+              source="User table ('createdAt' >= current date minus 7 days)"
+              why="Tracks short-term acquisition pace and effectiveness of recent marketing campaigns."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Lost / Inactive Clients</span>
-                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-600">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.lostClients ?? 0}
-              </div>
-              <div className="text-xs text-rose-500 mt-1">Dormant (&gt; 30 days inactivity)</div>
-            </div>
+            <ReportKpiCard
+              title="Lost / Inactive Clients"
+              value={summaryData.lostClients ?? 0}
+              subtitle={<div className="text-xs text-rose-500 mt-1">Dormant (&gt; 30 days inactivity)</div>}
+              icon={TrendingUp}
+              iconBgColor="bg-rose-500/10 text-rose-600"
+              definition="Clients with no logins, job posts, or milestone releases in the past 30 days."
+              formula="COUNT(User WHERE role = 'CLIENT' AND lastActiveAt < NOW() - INTERVAL '30 days' AND activeProjects = 0)"
+              source="User table cross-referenced with ProjectTracking active status"
+              why="Early-warning indicator for customer churn and dormancy to trigger re-engagement."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Net Growth %</span>
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400">
-                {summaryData.growthPercent || "+0.0%"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Net customer acquisition trend</div>
-            </div>
+            <ReportKpiCard
+              title="Net Growth %"
+              value={summaryData.growthPercent || "+0.0%"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Net customer acquisition trend</div>}
+              icon={TrendingUp}
+              iconBgColor="bg-indigo-500/10 text-indigo-600"
+              valueClassName="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400"
+              definition="Net rate of client user base expansion factoring in newly acquired clients minus churned/inactive accounts."
+              formula="((New Clients This Period - Lost Clients This Period) / Total Prior Clients) × 100%"
+              source="Differential comparison between current and previous cohort periods"
+              why="Represents true net marketplace expansion, discounting churn."
+            />
           </>
         )}
 
         {activeTab === "posting-growth" && (
           <>
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Total Postings</span>
-                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.totalPostings ?? 0}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">All-time jobs & project requests</div>
-            </div>
+            <ReportKpiCard
+              title="Total Postings"
+              value={summaryData.totalPostings ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">All-time jobs & project requests</div>}
+              icon={Briefcase}
+              iconBgColor="bg-blue-500/10 text-blue-600"
+              definition="Cumulative number of job requests and project opportunities published by clients."
+              formula="COUNT(Job) all time"
+              source="Job table records"
+              why="Measures lifetime marketplace inventory and work opportunity supply."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Postings This Week</span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-                  <Activity className="w-4 h-4" />
+            <ReportKpiCard
+              title="Postings This Week"
+              value={summaryData.postingsThisWeek ?? 0}
+              subtitle={
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium flex items-center gap-0.5">
+                  <ArrowUpRight className="w-3.5 h-3.5" /> Recent volume
                 </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-slate-900 dark:text-white">
-                {summaryData.postingsThisWeek ?? 0}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium flex items-center gap-0.5">
-                <ArrowUpRight className="w-3.5 h-3.5" /> Recent volume
-              </div>
-            </div>
+              }
+              icon={Activity}
+              iconBgColor="bg-emerald-500/10 text-emerald-600"
+              definition="New job postings published by clients within the last 7 calendar days."
+              formula="COUNT(Job WHERE createdAt >= NOW() - INTERVAL '7 days')"
+              source="Job table ('createdAt' >= current date minus 7 days)"
+              why="Real-time indicator of current client demand and immediate professional work availability."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Posting Growth Rate</span>
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400">
-                {summaryData.growthRatePercent || "+0.0%"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Growth vs prior equal window</div>
-            </div>
+            <ReportKpiCard
+              title="Posting Growth Rate"
+              value={summaryData.growthRatePercent || "+0.0%"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Growth vs prior equal window</div>}
+              icon={TrendingUp}
+              iconBgColor="bg-indigo-500/10 text-indigo-600"
+              valueClassName="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400"
+              definition="Percentage change in job postings created compared to the immediately preceding time window."
+              formula="((Postings Current Window - Postings Prior Window) / Postings Prior Window) × 100%"
+              source="Comparative time-bucket aggregation from Job table"
+              why="Measures whether platform work volume is accelerating or decelerating over time."
+            />
 
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
-                <span>Top Growing Category</span>
-                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Layers className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white" title={summaryData.topCategory}>
-                {summaryData.topCategory || "All Categories"}
-              </div>
-              <div className="text-xs text-slate-500 mt-1">Highest market demand</div>
-            </div>
+            <ReportKpiCard
+              title="Top Growing Category"
+              value={summaryData.topCategory || "All Categories"}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Highest market demand</div>}
+              icon={Layers}
+              iconBgColor="bg-purple-500/10 text-purple-600"
+              valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
+              definition="The service category exhibiting the highest percentage increase in new job postings."
+              formula="ARGMAX_category( (Current_Count - Prior_Count) / Prior_Count )"
+              source="Job table 'category' field grouped by comparative period"
+              why="Directs marketplace strategy toward surging sectors with high growth potential."
+            />
           </>
         )}
       </div>
@@ -1553,7 +1526,6 @@ export default function AdminReportsPage() {
 
                   {activeTab === "support-complaints" && (
                     <>
-                      <th className="py-3 px-4">Case ID</th>
                       <th className="py-3 px-4">Project & Milestone</th>
                       <th className="py-3 px-4">Client Side</th>
                       <th className="py-3 px-4">Professional Side</th>
@@ -1599,7 +1571,6 @@ export default function AdminReportsPage() {
 
                   {activeTab === "posting-growth" && (
                     <>
-                      <th className="py-3 px-4">Job Reference</th>
                       <th className="py-3 px-4">Job Title</th>
                       <th className="py-3 px-4">Category</th>
                       <th className="py-3 px-4">Client Owner</th>
@@ -1787,9 +1758,6 @@ export default function AdminReportsPage() {
                       {/* 4. Support & Complaints */}
                       {activeTab === "support-complaints" && (
                         <>
-                          <td className="py-3 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                            {row.id}
-                          </td>
                           <td className="py-3 px-4 max-w-xs">
                             <div className="font-semibold capitalize text-slate-900 dark:text-white truncate" title={row.projectDetails?.jobTitle || row.title}>
                               {row.projectDetails?.jobTitle || row.title}
@@ -1962,9 +1930,6 @@ export default function AdminReportsPage() {
                       {/* 7. Posting Growth */}
                       {activeTab === "posting-growth" && (
                         <>
-                          <td className="py-3 px-4 font-mono font-semibold text-blue-600 dark:text-blue-400">
-                            {row.reference}
-                          </td>
                           <td className="py-3 px-4 font-medium capitalize text-slate-900 dark:text-white max-w-xs truncate" title={row.title}>
                             {row.title}
                           </td>

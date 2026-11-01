@@ -52,7 +52,7 @@ const formatCurrency = (value: number | null) =>
   value == null ? "Not set" : `₹${value.toLocaleString("en-US")}`;
 
 const jobLabel = (job: ClientJob) =>
-  `${job.title ?? `Job #${job.id}`} · ${job.timingType === "HOURLY" ? `${formatCurrency(job.hourlyRate)}/hr` : `${formatCurrency(job.budgetMin)} – ${formatCurrency(job.budgetMax)}`}`;
+  `${job.title ?? "Untitled Job"} · ${job.timingType === "HOURLY" ? `${formatCurrency(job.hourlyRate)}/hr` : `${formatCurrency(job.budgetMin)} – ${formatCurrency(job.budgetMax)}`}`;
 
 function ProProfileContent() {
   const router = useRouter();
@@ -409,7 +409,7 @@ function ProProfileContent() {
                           <div className="rounded-2xl border border-border bg-muted p-4">
                             <p className="text-sm font-medium text-foreground">Selected job</p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {selectedJob.title ?? `Job #${selectedJob.id}`}
+                              {selectedJob.title ?? "Untitled Job"}
                             </p>
                             <p className="mt-2 text-sm">
                               {selectedJob.timingType === "HOURLY"
@@ -487,7 +487,7 @@ function ProProfileContent() {
                             <p className="font-semibold">Confirm hire request</p>
                             <p>
                               <span className="text-muted-foreground">Job:</span>{" "}
-                              {selectedJob.title ?? `Job #${selectedJob.id}`}
+                              {selectedJob.title ?? "Untitled Job"}
                             </p>
                             <p>
                               <span className="text-muted-foreground">Professional:</span>{" "}

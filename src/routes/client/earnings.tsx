@@ -891,13 +891,15 @@ export default function ClientEarnings() {
   const historyItems = useMemo(
     () =>
       [
-        ...(payments ?? []).map((payment) => ({
-          key: `payment-${payment.id}`,
-          kind: "payment" as const,
-          createdAt: payment.createdAt,
-          status: payment.status,
-          payment,
-        })),
+        ...(payments ?? [])
+          .filter((payment) => payment.type !== "PLATFORM_COMMISSION")
+          .map((payment) => ({
+            key: `payment-${payment.id}`,
+            kind: "payment" as const,
+            createdAt: payment.createdAt,
+            status: payment.status,
+            payment,
+          })),
         ...(wallet?.transactions ?? [])
           .filter((transaction) => transaction.type === "WALLET_TOP_UP")
           .map((transaction) => ({
@@ -913,14 +915,7 @@ export default function ClientEarnings() {
   const tabCounts = useMemo(
     () => ({
       all: historyItems.length,
-      milestones: historyItems.filter(
-        (item) => item.kind === "payment" && item.payment.type !== "PLATFORM_COMMISSION",
-      ).length,
-      commissions: historyItems.filter(
-        (item) =>
-          (item.kind === "payment" && item.payment.type === "PLATFORM_COMMISSION") ||
-          (item.kind === "topup" && item.transaction.type === "PLATFORM_COMMISSION"),
-      ).length,
+      milestones: historyItems.filter((item) => item.kind === "payment").length,
       deposits: historyItems.filter(
         (item) => item.kind === "topup" && item.transaction.type === "WALLET_TOP_UP",
       ).length,
@@ -933,7 +928,7 @@ export default function ClientEarnings() {
     () =>
       historyItems.filter((item) => {
         if (historyFilter === "milestones") {
-          return item.kind === "payment" && item.payment.type !== "PLATFORM_COMMISSION";
+          return item.kind === "payment";
         }
         if (historyFilter === "deposits") {
           return item.kind === "topup" && item.transaction.type === "WALLET_TOP_UP";
@@ -2176,33 +2171,17 @@ export default function ClientEarnings() {
                     className="group flex cursor-pointer items-center justify-between gap-4 border-b border-border/60 p-4 sm:p-5 transition-all hover:bg-muted/40 last:border-0"
                   >
                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                      <div
-                        className={`h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105 ${
-                          item.payment.type === "PLATFORM_COMMISSION"
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                            : "bg-primary/10 text-primary border-primary/20"
-                        }`}
-                      >
-                        {item.payment.type === "PLATFORM_COMMISSION" ? (
-                          <Percent className="h-5 w-5" />
-                        ) : (
-                          <FolderKanban className="h-5 w-5" />
-                        )}
+                      <div className="h-11 w-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105 bg-primary/10 text-primary border-primary/20">
+                        <FolderKanban className="h-5 w-5" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-foreground text-sm sm:text-base truncate">
                             {item.payment.description}
                           </p>
-                          {item.payment.type === "PLATFORM_COMMISSION" ? (
-                            <span className="shrink-0 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                              Platform fee
-                            </span>
-                          ) : (
-                            <span className="shrink-0 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                              Milestone payment
-                            </span>
-                          )}
+                          <span className="shrink-0 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            Milestone payment
+                          </span>
                         </div>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           <span>
@@ -2231,13 +2210,7 @@ export default function ClientEarnings() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
-                        <p
-                          className={`text-sm sm:text-base font-bold tabular-nums ${
-                            item.payment.type === "PLATFORM_COMMISSION"
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-foreground"
-                          }`}
-                        >
+                        <p className="text-sm sm:text-base font-bold tabular-nums text-foreground">
                           -₹{item.payment.amount.toLocaleString("en-IN")}{" "}
                           <span className="text-xs font-normal text-muted-foreground">
                             {item.payment.currency}

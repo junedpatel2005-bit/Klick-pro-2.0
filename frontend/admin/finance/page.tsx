@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatReadableLabel, capitalizeWords } from "@/lib/utils";
 import { useRealtimeRefresh } from "@/lib/use-realtime-refresh";
@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Briefcase,
   Building2,
+  Calendar,
   CheckCircle2,
   Clock,
   Coins,
@@ -179,6 +180,8 @@ type FinanceData = {
   names: Record<string, string>;
   usersById?: Record<string, UserProfile>;
   autoWithdrawalEnabled?: boolean;
+  commissionEnabled?: boolean;
+  commissionRate?: number;
 };
 
 type TabView = "all" | "payments" | "escrow" | "topups" | "withdrawals" | "ledger";
@@ -233,6 +236,59 @@ export default function AdminFinancePage() {
   const [activeTab, setActiveTab] = useState<TabView>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  type DateFilterType = "ALL" | "TODAY" | "7D" | "30D" | "90D" | "THIS_MONTH" | "CUSTOM";
+  const [dateFilter, setDateFilter] = useState<DateFilterType>("ALL");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+
+  const isDateInRange = useCallback((isoDate?: string | null): boolean => {
+    if (dateFilter === "ALL" || !isoDate) return dateFilter === "ALL";
+    const itemDate = new Date(isoDate);
+    if (isNaN(itemDate.getTime())) return false;
+
+    const now = new Date();
+    if (dateFilter === "TODAY") {
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return itemDate >= startOfToday;
+    }
+    if (dateFilter === "7D") {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return itemDate >= sevenDaysAgo;
+    }
+    if (dateFilter === "30D") {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return itemDate >= thirtyDaysAgo;
+    }
+    if (dateFilter === "90D") {
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      return itemDate >= ninetyDaysAgo;
+    }
+    if (dateFilter === "THIS_MONTH") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return itemDate >= startOfMonth;
+    }
+    if (dateFilter === "CUSTOM") {
+      if (customStartDate && customEndDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      }
+      if (customStartDate) {
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        return itemDate >= start;
+      }
+      if (customEndDate) {
+        const end = new Date(customEndDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate <= end;
+      }
+      return true;
+    }
+    return true;
+  }, [dateFilter, customStartDate, customEndDate]);
   const [selectedPayment, setSelectedPayment] = useState<EnrichedPayment | null>(null);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null);
   const [selectedTopUp, setSelectedTopUp] = useState<UnifiedItem | null>(null);
@@ -314,28 +370,33 @@ export default function AdminFinancePage() {
       };
     }
 
-    const completedOrFunded = data.payments.filter(
+    const datePayments = data.payments.filter((p) => isDateInRange(p.createdAt));
+    const completedOrFunded = datePayments.filter(
       (p) => p.status === "COMPLETED" || p.status === "FUNDED",
     );
 
     const grossVolume = completedOrFunded.reduce((sum, p) => sum + p.amount, 0);
 
-    const platformCommission = completedOrFunded.reduce((sum, p) => {
-      const comm = p.commissionAmount ?? (p.adminNetAmount ?? 0);
-      return sum + comm;
-    }, 0);
+    const isCommissionOn = Boolean(data.commissionEnabled);
 
-    const proDisbursements = data.payments
-      .filter((p) => p.status === "COMPLETED")
+    const platformCommission = isCommissionOn
+      ? completedOrFunded.reduce((sum, p) => {
+          const comm = p.commissionAmount ?? (p.adminNetAmount ?? 0);
+          return sum + comm;
+        }, 0)
+      : 0;
+
+    const proDisbursements = datePayments.filter((p) => p.status === "COMPLETED")
       .reduce((sum, p) => {
         const payout =
           p.professionalPayoutAmount ??
-          Math.max(0, p.baseAmount - (p.commissionAmount ?? 0));
+          (isCommissionOn
+            ? Math.max(0, p.baseAmount - (p.commissionAmount ?? 0))
+            : (p.baseAmount || p.amount));
         return sum + payout;
       }, 0);
 
-    const inEscrow = data.payments
-      .filter((p) => p.status === "FUNDED" || p.status === "AWAITING_ADMIN_APPROVAL")
+    const inEscrow = datePayments.filter((p) => p.status === "FUNDED" || p.status === "AWAITING_ADMIN_APPROVAL")
       .reduce((sum, p) => sum + p.amount, 0);
 
     const adminBalance = data.platformWallet?.balance ?? 0;
@@ -347,15 +408,16 @@ export default function AdminFinancePage() {
       inEscrow,
       adminBalance,
     };
-  }, [data]);
+  }, [data, isDateInRange]);
 
   // --- Unified Activity List (Combines all transactions so all are visible) ---
 
   const allActivities = useMemo<UnifiedItem[]>(() => {
     if (!data) return [];
     const items: UnifiedItem[] = [];
+    const isCommissionOn = Boolean(data.commissionEnabled);
 
-    // 1. Milestone Payments: 2 entries (1. Milestone Money, 2. Platform Commission)
+    // 1. Milestone Payments: Milestone Money + Optional Platform Commission (only if enabled)
     for (const p of data.payments) {
       const clientName = getUserDisplayName(
         p.client,
@@ -365,8 +427,10 @@ export default function AdminFinancePage() {
         p.professional,
         data.names[p.professionalId] || `Professional #${p.professionalId}`,
       );
-      const proComm = p.commissionAmount ?? (p.adminNetAmount ?? 0);
-      const proPayout = p.professionalPayoutAmount ?? Math.max(0, p.baseAmount - proComm);
+      const proComm = isCommissionOn ? (p.commissionAmount ?? (p.adminNetAmount ?? 0)) : 0;
+      const proPayout = isCommissionOn
+        ? (p.professionalPayoutAmount ?? Math.max(0, p.baseAmount - proComm))
+        : (p.baseAmount || p.amount);
 
       // Entry 1: Milestone Money
       items.push({
@@ -394,8 +458,8 @@ export default function AdminFinancePage() {
         paymentRaw: p,
       });
 
-      // Entry 2: Platform Commission (only shown when commission is on / deducted)
-      if (proComm > 0) {
+      // Entry 2: Platform Commission (STRICTLY only shown when commission is explicitly ON)
+      if (isCommissionOn && proComm > 0) {
         items.push({
           id: `payment-${p.id}-commission`,
           kind: "PAYMENT",
@@ -560,6 +624,10 @@ export default function AdminFinancePage() {
       list = list.filter((i) => i.status === statusFilter);
     }
 
+    if (dateFilter !== "ALL") {
+      list = list.filter((i) => isDateInRange(i.date));
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((i) => {
@@ -579,14 +647,14 @@ export default function AdminFinancePage() {
     }
 
     return list;
-  }, [allActivities, activeTab, statusFilter, searchQuery]);
+  }, [allActivities, activeTab, statusFilter, searchQuery, dateFilter, isDateInRange]);
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
   useEffect(() => {
     setPage(1);
-  }, [activeTab, statusFilter, searchQuery]);
+  }, [activeTab, statusFilter, searchQuery, isDateInRange]);
 
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -762,6 +830,33 @@ export default function AdminFinancePage() {
   }
 
   const [togglingAutoWithdraw, setTogglingAutoWithdraw] = useState(false);
+  const [togglingCommission, setTogglingCommission] = useState(false);
+
+  const isCommissionOn = Boolean(data?.commissionEnabled);
+
+  async function handleToggleCommission() {
+    const current = Boolean(data?.commissionEnabled);
+    const nextVal = !current;
+    setTogglingCommission(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: { commission_enabled: nextVal ? "true" : "false" } }),
+      });
+      if (!res.ok) throw new Error("Failed to update commission setting.");
+      toast.success(
+        nextVal
+          ? `Platform Commission turned ON (${data?.commissionRate ? Math.round(data.commissionRate * 100) : 10}%). Commission will be deducted from milestone payouts.`
+          : "Platform Commission turned OFF. Zero commission cut: 100% full payout to professionals."
+      );
+      await fetchFinance();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to toggle commission.");
+    } finally {
+      setTogglingCommission(false);
+    }
+  }
 
   async function handleToggleAutoWithdraw() {
     const current = Boolean(data?.autoWithdrawalEnabled);
@@ -796,11 +891,44 @@ export default function AdminFinancePage() {
             Finance & Milestone Settlements
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Real-time platform cashflow, escrow balances, milestone settlements, and net revenue.
+            {isCommissionOn
+              ? "Real-time platform cashflow, escrow balances, milestone settlements, and net platform revenue."
+              : "Real-time platform cashflow, escrow balances, and milestone settlements."}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
+          {/* Quick Platform Commission Mode Status & Toggle */}
+          <button
+            type="button"
+            onClick={() => void handleToggleCommission()}
+            disabled={togglingCommission || loading}
+            title={
+              data?.commissionEnabled
+                ? "Platform Commission is ON: Milestone payouts deduct commission. Click to turn OFF (100% payout to pro)."
+                : "Platform Commission is OFF: Zero commission cut (100% payout to pro). Click to turn ON."
+            }
+            className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-95 disabled:opacity-50 cursor-pointer ${
+              data?.commissionEnabled
+                ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                : "border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
+            }`}
+          >
+            <Percent
+              className={`h-4 w-4 ${
+                data?.commissionEnabled ? "text-emerald-600" : "text-slate-500"
+              } ${togglingCommission ? "animate-spin" : ""}`}
+            />
+            <span>
+              Commission:{" "}
+              <span className="font-bold underline underline-offset-2">
+                {data?.commissionEnabled
+                  ? `ON (${data?.commissionRate ? Math.round(data.commissionRate * 100) : 10}%)`
+                  : "OFF (0% Cut)"}
+              </span>
+            </span>
+          </button>
+
           {/* Quick Auto-Withdrawal Mode Toggle */}
           <button
             type="button"
@@ -811,7 +939,7 @@ export default function AdminFinancePage() {
                 ? "Auto-Withdrawal is ON: User withdrawals complete automatically without admin approval. Click to switch to manual approval."
                 : "Auto-Withdrawal is OFF: User withdrawals require manual admin approval. Click to turn ON auto-settlement."
             }
-            className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-95 disabled:opacity-50 ${
+            className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-95 disabled:opacity-50 cursor-pointer ${
               data?.autoWithdrawalEnabled
                 ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                 : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
@@ -843,7 +971,7 @@ export default function AdminFinancePage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {/* Card 1: Gross Platform Volume */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
           <div className="flex items-center justify-between">
@@ -864,25 +992,27 @@ export default function AdminFinancePage() {
           <p className="mt-0.5 text-[11px] text-slate-400">Total client volume</p>
         </div>
 
-        {/* Card 2: Platform Net */}
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
-              Platform Net
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-              <Percent className="h-3.5 w-3.5" />
-            </span>
+        {/* Card 2: Platform Net (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
+        {isCommissionOn && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                Platform Net
+              </span>
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
+                <Percent className="h-3.5 w-3.5" />
+              </span>
+            </div>
+            {loading ? (
+              <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-emerald-200/70" />
+            ) : (
+              <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-700">
+                +{formatMoney(metrics.platformCommission)}
+              </p>
+            )}
+            <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">Net platform revenue</p>
           </div>
-          {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-emerald-200/70" />
-          ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-700">
-              +{formatMoney(metrics.platformCommission)}
-            </p>
-          )}
-          <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">Net platform revenue</p>
-        </div>
+        )}
 
         {/* Card 3: Professional Disbursements */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
@@ -901,7 +1031,9 @@ export default function AdminFinancePage() {
               {formatMoney(metrics.proDisbursements)}
             </p>
           )}
-          <p className="mt-0.5 text-[11px] text-slate-400">Released milestone payouts</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {isCommissionOn ? "Released milestone payouts" : "100% milestone payouts released"}
+          </p>
         </div>
 
         {/* Card 4: Escrow In-Transit */}
@@ -1034,16 +1166,35 @@ export default function AdminFinancePage() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400 font-medium">
               Showing <span className="font-bold text-slate-700">{filteredItems.length}</span>{" "}
               records
             </span>
 
+            {/* Date Preset Filter */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-2xs">
+              <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as DateFilterType)}
+                className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-hidden cursor-pointer"
+              >
+                <option value="ALL">All Time</option>
+                <option value="TODAY">Today</option>
+                <option value="7D">Last 7 Days</option>
+                <option value="30D">Last 30 Days</option>
+                <option value="90D">Last 90 Days</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="CUSTOM">Custom Date Range...</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
               <option value="COMPLETED">Completed</option>
@@ -1054,6 +1205,45 @@ export default function AdminFinancePage() {
             </select>
           </div>
         </div>
+
+        {/* Custom Date Range Pickers */}
+        {dateFilter === "CUSTOM" && (
+          <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-slate-100 text-xs">
+            <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Date Range:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">From:</span>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">To:</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            {(customStartDate || customEndDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomStartDate("");
+                  setCustomEndDate("");
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 transition-colors"
+              >
+                <X className="h-3 w-3" /> Clear Dates
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Unified Transactions Table */}
@@ -1067,7 +1257,7 @@ export default function AdminFinancePage() {
                 <th className="py-3 px-2 w-40">Client</th>
                 <th className="py-3 px-2 w-40">Professional</th>
                 <th className="py-3 px-2 text-right w-24">Gross</th>
-                <th className="py-3 px-2 text-right w-24">Platform Net</th>
+                {isCommissionOn && <th className="py-3 px-2 text-right w-24">Platform Net</th>}
                 <th className="py-3 px-2 text-right w-24">Pro Payout</th>
                 <th className="py-3 px-2 text-center w-28">Status</th>
                 <th className="py-3 pr-5 pl-2 text-right w-20">Actions</th>
@@ -1203,16 +1393,18 @@ export default function AdminFinancePage() {
                       )}
                     </td>
 
-                    {/* Platform Net (CLEAN: No "fee + commission" label!) */}
-                    <td className="py-3 px-2 text-right whitespace-nowrap">
-                      {item.adminNet !== null && item.adminNet !== undefined ? (
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                          +{formatMoney(item.adminNet)}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300 text-xs">—</span>
-                      )}
-                    </td>
+                    {/* Platform Net (STRICTLY ONLY when commission is ON) */}
+                    {isCommissionOn && (
+                      <td className="py-3 px-2 text-right whitespace-nowrap">
+                        {item.adminNet !== null && item.adminNet !== undefined ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
+                            +{formatMoney(item.adminNet)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
 
                     {/* Pro Payout */}
                     <td className="py-3 px-2 text-right whitespace-nowrap">
@@ -1323,7 +1515,7 @@ export default function AdminFinancePage() {
               {loading &&
                 [1, 2, 3, 4, 5].map((i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={9} className="py-4 px-5">
+                    <td colSpan={isCommissionOn ? 9 : 8} className="py-4 px-5">
                       <div className="h-4 bg-slate-100 rounded-md w-full" />
                     </td>
                   </tr>
@@ -1331,7 +1523,7 @@ export default function AdminFinancePage() {
 
               {!loading && !filteredItems.length && (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-sm text-slate-500">
+                  <td colSpan={isCommissionOn ? 9 : 8} className="py-12 text-center text-sm text-slate-500">
                     No transactions found matching your criteria.
                   </td>
                 </tr>
@@ -1359,6 +1551,7 @@ export default function AdminFinancePage() {
           names={data?.names ?? {}}
           onCopy={copyToClipboard}
           copySuccess={copySuccess}
+          isCommissionOn={isCommissionOn}
         />
       )}
 
@@ -2090,6 +2283,7 @@ function TransactionDrawer({
   names,
   onCopy,
   copySuccess,
+  isCommissionOn = false,
 }: {
   payment: EnrichedPayment;
   onClose: () => void;
@@ -2098,6 +2292,7 @@ function TransactionDrawer({
   names: Record<string, string>;
   onCopy: (text: string, label: string) => void;
   copySuccess: string | null;
+  isCommissionOn?: boolean;
 }) {
   const clientName = getUserDisplayName(
     payment.client,
@@ -2110,9 +2305,11 @@ function TransactionDrawer({
   );
 
   const baseAmount = payment.baseAmount;
-  const proComm = payment.commissionAmount ?? (payment.adminNetAmount ?? 0);
+  const proComm = isCommissionOn ? (payment.commissionAmount ?? (payment.adminNetAmount ?? 0)) : 0;
   const totalCharged = payment.baseAmount || payment.amount;
-  const proPayout = payment.professionalPayoutAmount ?? Math.max(0, baseAmount - proComm);
+  const proPayout = isCommissionOn
+    ? (payment.professionalPayoutAmount ?? Math.max(0, baseAmount - proComm))
+    : baseAmount;
 
   const isMilestoneInValidity = Boolean(
     payment.milestoneValidityDays &&
@@ -2177,7 +2374,7 @@ function TransactionDrawer({
                 <span>Total Client Paid:</span>
                 <span className="text-sm text-indigo-950">{formatMoney(totalCharged)}</span>
               </div>
-              {proComm > 0 && (
+              {isCommissionOn && proComm > 0 && (
                 <div className="flex justify-between text-rose-600 font-medium">
                   <span>(-) Pro Commission Deducted:</span>
                   <span>-{formatMoney(proComm)}</span>
@@ -2185,12 +2382,17 @@ function TransactionDrawer({
               )}
               <div className="flex justify-between text-slate-800 font-semibold">
                 <span>Net Disbursed to Professional:</span>
-                <span>{formatMoney(proPayout)}</span>
+                <span>
+                  {formatMoney(proPayout)}
+                  {!isCommissionOn && (
+                    <span className="ml-1 text-[11px] font-normal text-emerald-600">(100% Payout · Zero Commission)</span>
+                  )}
+                </span>
               </div>
             </div>
 
-            {/* Admin Commission Highlight: only shown when commission is on */}
-            {proComm > 0 && (
+            {/* Admin Commission Highlight: strictly only shown when commission is on */}
+            {isCommissionOn && proComm > 0 && (
               <div className="rounded-xl border border-emerald-300 bg-emerald-100/70 p-3 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">

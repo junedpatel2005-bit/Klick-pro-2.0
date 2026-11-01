@@ -311,7 +311,7 @@ export default function ReviewModerationPage() {
                       target="_blank"
                       className="text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 text-xs font-semibold bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs hover:border-indigo-300"
                     >
-                      <ExternalLink className="h-3 w-3" /> Job #{r.jobId}
+                      <ExternalLink className="h-3 w-3" /> View Job
                     </Link>
                   )}
                 </div>

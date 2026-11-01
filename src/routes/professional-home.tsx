@@ -403,7 +403,7 @@ export default function ProfessionalHome({
                       {capitalizeWords(job.category ?? "General")}
                     </p>
                     <h3 className="mt-2 line-clamp-2 font-display text-lg font-semibold">
-                      {capitalizeWords(job.title ?? `Job #${job.id}`)}
+                      {capitalizeWords(job.title ?? "Untitled Job")}
                     </h3>
                     <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                       {capitalizeFirst(job.description)}

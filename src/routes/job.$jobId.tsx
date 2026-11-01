@@ -2077,8 +2077,7 @@ export default function JobDetails({
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">Job #{jobId}</span>
-                </div>
+                  </div>
 
                 {/* Previous terms if countered */}
                 {ownProposal.status === "PENDING" &&

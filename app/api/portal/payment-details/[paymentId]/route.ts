@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
+import { isCommissionEnabled } from "@/lib/platform-settings";
 
 export async function GET(
   request: NextRequest,
@@ -33,15 +34,19 @@ export async function GET(
     : null;
   const isAdmin = session.role === "ADMIN";
   const isClient = session.userId === payment.clientId;
+  const commissionOn = await isCommissionEnabled();
+
   return NextResponse.json({
     id: payment.id,
-    amount: isClient || isAdmin ? payment.amount : payment.baseAmount,
+    amount: payment.baseAmount,
     baseAmount: payment.baseAmount,
-    clientFeeAmount: isClient || isAdmin ? payment.clientFeeAmount : 0,
+    clientFeeAmount: 0,
     professionalPayoutAmount:
-      !isClient || isAdmin ? payment.professionalPayoutAmount : payment.baseAmount,
-    adminNetAmount: isAdmin ? payment.adminNetAmount : 0,
-    commissionAmount: !isClient || isAdmin ? payment.commissionAmount : 0,
+      commissionOn && (!isClient || isAdmin)
+        ? payment.professionalPayoutAmount
+        : payment.baseAmount,
+    adminNetAmount: commissionOn && isAdmin ? payment.adminNetAmount : 0,
+    commissionAmount: commissionOn && (!isClient || isAdmin) ? payment.commissionAmount : 0,
     currency: payment.currency,
     provider: payment.provider,
     status: payment.status,

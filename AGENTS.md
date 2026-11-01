@@ -56,3 +56,22 @@ Whenever any schema change is requested:
 - **TITLE CASING FOR NAMES & ENTITIES**: Proper nouns such as names (`john doe` → `John Doe`), bank names (`bank of baroda` → `Bank Of Baroda`), cities (`mumbai` → `Mumbai`), and designations (`software developer` → `Software Developer`) must have the first letter of each word capitalized.
 - **SENTENCE CASING FOR DESCRIPTIONS & MESSAGES**: Descriptions, project overviews, bios, and message text must always begin with a capitalized first letter (`capitalizeFirst`).
 
+# Commission & Revenue Visibility Rules (STRICT & MANDATORY)
+
+## Rule 6: Zero Commission & Zero Platform Revenue Visibility Unless Explicitly Enabled in Admin Settings
+
+- **DEFAULT IS STRICTLY ZERO COMMISSION (100% PAYOUT TO PRO)**: Platform commission is disabled by default (`commission_enabled = "false"`). When commission is OFF, professionals receive 100% full net disbursements (`payout = 100% milestone amount`), zero platform cut is taken, and clients pay strictly the agreed project price with zero platform fees.
+- **NEVER SHOW COMMISSION OR NET REVENUE WHEN OFF**:
+  - Across the entire application — Admin Finance, Professional Finance, Client Portal, Emails, Notifications, Invoices, Receipts, and CSV/PDF Reports — NEVER display words such as "Net Platform Revenue", "Platform Net", "Platform Commission", "Platform fee", or commission deduction lines unless `commission_enabled` is explicitly toggled ON in Admin Settings (`commission_enabled === true` / `"true"`).
+  - **Admin Finance Page (`app/admin/finance/page.tsx` & mirrors)**:
+    * When Commission is OFF: Completely HIDE the "Platform Net" KPI card (+₹0 / "Net platform revenue"). Completely HIDE the "Platform Net" table column in the transactions table. Do not generate "Platform Commission" activity items. In the payment inspection modal, do not show "(-) Pro Commission Deducted" or "Platform Commission" highlight boxes. Display 100% full payout to the professional.
+    * When Commission is ON: Display the platform commission card, table column, and deduction breakdowns reflecting the active commission rate.
+    * Header must provide a live status indicator and quick toggle for Platform Commission so administrators have immediate clarity and control.
+  - **Client Portal (`src/routes/client/*`)**:
+    * Clients must NEVER see "Platform fee", "Platform commission", or any commission count or mention. Filter out all commission references from client earnings, payment history, and receipts. Clients pay purely for agreed milestone deliverables.
+  - **Professional Portal (`src/routes/professional/*`)**:
+    * When Commission is OFF: Display full 100% milestone earnings without commission deduction columns or deduction rows.
+  - **Notifications & Receipts**:
+    * When Commission is 0 / OFF: Omit platform commission labels and deduction rows from emails, notifications, and generated invoice/receipt PDFs.
+
+

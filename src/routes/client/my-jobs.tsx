@@ -410,7 +410,7 @@ export default function MyJobs() {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="truncate text-base font-semibold sm:text-lg">
-                            {capitalizeWords(job.title ?? `Untitled job #${job.id}`)}
+                            {capitalizeWords(job.title ?? `Untitled Job`)}
                           </h3>
                           <span
                             className={`rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${isScheduled(job) ? "border-violet-200 bg-violet-50 text-violet-700" : statusStyle(currentStatus)}`}

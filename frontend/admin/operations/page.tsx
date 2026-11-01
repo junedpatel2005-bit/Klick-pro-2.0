@@ -818,7 +818,7 @@ function OperationsContent() {
           }
         : current,
     );
-    setMessage(`Case #${details.dispute.id} is now ${label(data.dispute.status)}.`);
+    setMessage(`Dispute is now ${label(data.dispute.status)}.`);
   }
 
   async function executeDisputeDecision(
@@ -875,7 +875,7 @@ function OperationsContent() {
         : decision === "PROFESSIONAL_WINS"
           ? "Professional Wins (Released)"
           : `Partial Settlement (₹${(refundAmount ?? 0).toLocaleString()} refunded, ₹${(payoutAmount ?? 0).toLocaleString()} released)`;
-    setMessage(`Case #${details.dispute.id} decided: ${decisionText}.`);
+    setMessage(`Dispute decided: ${decisionText}.`);
   }
 
   async function toggleJobStatus(job: JobDetails) {
@@ -900,7 +900,7 @@ function OperationsContent() {
           }
         : current,
     );
-    setMessage(`"${job.title ?? `Job #${job.id}`}" is now ${label(data.job.status)}.`);
+    setMessage(`"${job.title ?? "Job"}" is now ${label(data.job.status)}.`);
   }
 
   async function deleteJob(job: JobDetails) {
@@ -912,7 +912,7 @@ function OperationsContent() {
     );
     setSelectedJob((current) => (current?.id === job.id ? null : current));
     setDetailsStatus("idle");
-    setMessage(`"${job.title ?? `Job #${job.id}`}" was deleted.`);
+    setMessage(`"${job.title ?? "Job"}" was deleted.`);
   }
 
   if (selectedDispute || disputeDetailsStatus !== "idle") {
@@ -959,8 +959,8 @@ function OperationsContent() {
               </h2>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                 {confirmDisputeAction.dispute.status === "RESOLVED"
-                  ? `Case #${confirmDisputeAction.dispute.id} will be reopened and flagged for attention again.`
-                  : `Case #${confirmDisputeAction.dispute.id} will be marked resolved and cleared from the open queue.`}
+                  ? `Dispute case will be reopened and flagged for attention again.`
+                  : `Dispute case will be marked resolved and cleared from the open queue.`}
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <Button
@@ -1206,18 +1206,7 @@ function OperationsContent() {
           </section>
         </>
       )}
-      {(selectedJob || detailsStatus !== "idle") && (
-        <JobDetailsPanel
-          job={selectedJob}
-          status={detailsStatus}
-          onClose={() => {
-            setSelectedJob(null);
-            setDetailsStatus("idle");
-          }}
-          onToggle={(job) => setConfirmJobAction({ kind: "toggle", job })}
-          onDelete={(job) => setConfirmJobAction({ kind: "delete", job })}
-        />
-      )}
+
       {confirmJobAction && (
         <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
@@ -1230,10 +1219,10 @@ function OperationsContent() {
             </h2>
             <p className="mt-2 text-sm text-slate-600 leading-relaxed">
               {confirmJobAction.kind === "delete"
-                ? `"${confirmJobAction.job.title ?? `Job #${confirmJobAction.job.id}`}" and its attachments will be permanently deleted. This cannot be undone.`
+                ? `"${confirmJobAction.job.title ?? "Untitled Job"}" and its attachments will be permanently deleted. This cannot be undone.`
                 : confirmJobAction.job.status === "CLOSED"
-                  ? `"${confirmJobAction.job.title ?? `Job #${confirmJobAction.job.id}`}" will become visible on the marketplace again.`
-                  : `"${confirmJobAction.job.title ?? `Job #${confirmJobAction.job.id}`}" will be hidden from the marketplace.`}
+                  ? `"${confirmJobAction.job.title ?? "Untitled Job"}" will become visible on the marketplace again.`
+                  : `"${confirmJobAction.job.title ?? "Untitled Job"}" will be hidden from the marketplace.`}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <Button
@@ -1372,7 +1361,7 @@ function JobRow({ job, onOpen }: { job: Job; onOpen: (id: number) => void }) {
       </span>
       <div className="min-w-56 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-semibold text-slate-900">{capitalize(job.title) || `Untitled Job #${job.id}`}</h3>
+          <h3 className="font-semibold text-slate-900">{capitalize(job.title) || "Untitled Job"}</h3>
           <Badge value={job.status} />
         </div>
         <p className="mt-1 text-sm text-slate-500">
@@ -1431,7 +1420,7 @@ function DisputeRow({ dispute, onOpen }: { dispute: Dispute; onOpen: (id: number
       </div>
       <div className="min-w-36 sm:text-right">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Case #{dispute.id}
+          Dispute Case
         </p>
         <p className="mt-1 text-sm font-medium text-slate-700">Updated {date(dispute.updatedAt)}</p>
       </div>
@@ -1537,7 +1526,7 @@ function RunningJobRow({
               onClick={() => onOpenJob(item.jobId)}
               className="text-left font-semibold text-slate-900 hover:text-indigo-600 transition line-clamp-2"
             >
-              {capitalize(item.job?.title) || `Project #${item.jobId}`}
+              {capitalize(item.job?.title) || "Active Project"}
             </button>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Badge value={item.status} />
@@ -1546,7 +1535,7 @@ function RunningJobRow({
               </span>
             </div>
             <p className="mt-1 text-[11px] text-slate-400">
-              Job #{item.jobId} · Track #{item.id}
+              Tracked Milestone Project
             </p>
           </div>
         </td>
@@ -2213,7 +2202,7 @@ function JobDetailsPanel({
                           <p className="font-semibold text-slate-900">
                             {proposal.professional
                               ? `${proposal.professional.firstName} ${proposal.professional.lastName}`
-                              : `Professional #${proposal.professionalId}`}
+                              : "Assigned Professional"}
                           </p>
                           <p className="text-xs text-slate-500 mt-0.5">
                             {proposal.duration} · {date(proposal.createdAt)}
@@ -2599,7 +2588,7 @@ function DisputeDetailsPanel({
                 <Badge value={dispute.status} />
                 <Badge value={dispute.priority} />
                 <span className="text-sm text-slate-500 font-medium">
-                  Case #{dispute.id} · Updated {date(dispute.updatedAt)}
+                  Updated {date(dispute.updatedAt)}
                 </span>
               </div>
             )}
@@ -2689,7 +2678,7 @@ function DisputeDetailsPanel({
                       </span>
                     )}
                     <span className="text-sm text-slate-500 font-medium">
-                      Case #{dispute.id} · Updated {date(dispute.updatedAt)}
+                      Updated {date(dispute.updatedAt)}
                     </span>
                   </div>
 

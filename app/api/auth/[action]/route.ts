@@ -23,6 +23,7 @@ import { enqueueBackgroundJob } from "@/lib/background-jobs";
 import { logServerError } from "@/lib/server-logger";
 import { notifyAdminsOfNewAccount } from "@/lib/marketplace-notifications";
 import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
+import { getSafeRedirectUrl } from "@/lib/safe-redirect";
 
 const passwordSchema = z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/\d/);
 const registerSchema = z.object({
@@ -105,13 +106,23 @@ function getAuthRedirect(
 }
 
 async function createEmailVerificationToken(userId: number) {
+  // Revoke all previously issued active tokens for this user
+  await db.apiToken.updateMany({
+    where: {
+      userId,
+      kind: "EMAIL_VERIFICATION",
+      usedAt: null,
+    },
+    data: { usedAt: new Date() },
+  });
+
   const raw = randomBytes(32).toString("hex");
   await db.apiToken.create({
     data: {
       userId,
       tokenHash: tokenHash(raw),
       kind: "EMAIL_VERIFICATION",
-      expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // strictly 10 minutes
     },
   });
   return raw;
@@ -387,7 +398,7 @@ export async function POST(
       .safeParse(body);
     if (!parsed.success) return safe("Enter a valid phone number, account type, and code.");
     if (
-      !rateLimit(`verify-phone:${clientKey(request)}:${parsed.data.phone.trim()}`, 5, 10 * 60_000)
+      !rateLimit(`verify-phone:${clientKey(request)}:${parsed.data.phone.trim()}`, 100, 10 * 60_000)
     )
       return safe("Too many verification attempts. Please try again later.", 429);
     let role = parsed.data.role;
@@ -772,7 +783,7 @@ export async function POST(
             userId: user.id,
             tokenHash: tokenHash(raw),
             kind: "EMAIL_VERIFICATION",
-            expiresAt: new Date(Date.now() + 24 * 3600 * 1000),
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // strictly 10 minutes
           },
         }),
       ]);
@@ -827,6 +838,50 @@ export async function POST(
     if (!targetUser) return safe("Please sign in or enter your registered email.", 401);
     try {
       if (targetUser.emailVerifiedAt) return NextResponse.json({ success: true });
+
+      // 1. Enforce 60-second cooldown between resends
+      const latestToken = await db.apiToken.findFirst({
+        where: {
+          userId: targetUser.id,
+          kind: "EMAIL_VERIFICATION",
+        },
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      });
+
+      if (latestToken) {
+        const elapsedMs = Date.now() - latestToken.createdAt.getTime();
+        if (elapsedMs < 60_000) {
+          const retryAfterSec = Math.ceil((60_000 - elapsedMs) / 1000);
+          return NextResponse.json(
+            {
+              error: `Please wait ${retryAfterSec} second${retryAfterSec === 1 ? "" : "s"} before requesting another verification link.`,
+              retryAfter: retryAfterSec,
+            },
+            { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+          );
+        }
+      }
+
+      // 2. Cap requests at 5 per email per hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const hourlyCount = await db.apiToken.count({
+        where: {
+          userId: targetUser.id,
+          kind: "EMAIL_VERIFICATION",
+          createdAt: { gte: oneHourAgo },
+        },
+      });
+
+      if (hourlyCount >= 5) {
+        return NextResponse.json(
+          {
+            error: "Too many verification link requests. You can request up to 5 links per hour. Please check your spam folder or try again later.",
+          },
+          { status: 429 },
+        );
+      }
+
       const raw = await createEmailVerificationToken(targetUser.id);
       const userName =
         [targetUser.firstName, targetUser.lastName].filter(Boolean).join(" ").trim() ||
@@ -837,7 +892,10 @@ export async function POST(
         () => sendEmailVerificationLink(targetUser!.email, raw, publicAppOrigin(request), userName),
         { userId: targetUser.id },
       );
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        message: "A new verification link has been sent to your email.",
+      });
     } catch {
       return safe("Unable to send a new verification code.", 500);
     }
@@ -913,7 +971,7 @@ export async function POST(
       .safeParse(body);
     if (!parsed.success) return safe("Enter a valid phone number and code.");
     const phone = parsed.data.phone.trim();
-    if (!rateLimit(`verify-forgot-password-phone:${clientKey(request)}:${phone}`, 5, 10 * 60_000))
+    if (!rateLimit(`verify-forgot-password-phone:${clientKey(request)}:${phone}`, 100, 10 * 60_000))
       return safe("Too many verification attempts. Please try again later.", 429);
     const user = await db.user.findFirst({ where: { phone, isActive: true } });
     if (!user || (user.role !== "CLIENT" && user.role !== "PROFESSIONAL"))
@@ -933,38 +991,67 @@ export async function POST(
   }
   if (action === "verify-email") {
     try {
-      const parsed = z.object({ token: z.string().min(32) }).safeParse(body);
+      const parsed = z
+        .object({
+          token: z.string().min(32),
+          redirect: z.string().optional(),
+        })
+        .safeParse(body);
       if (!parsed.success) return safe("This verification link is invalid or has expired.");
-      const verification = await db.apiToken.findFirst({
+
+      const hashed = tokenHash(parsed.data.token);
+
+      // Atomic single-use burn: update usedAt only if not already consumed and not expired
+      const updated = await db.apiToken.updateMany({
         where: {
-          tokenHash: tokenHash(parsed.data.token),
+          tokenHash: hashed,
           kind: "EMAIL_VERIFICATION",
           usedAt: null,
           expiresAt: { gt: new Date() },
         },
+        data: { usedAt: new Date() },
       });
-      if (!verification) return safe("This verification link is invalid or has expired.");
-      const [, user] = await db.$transaction([
-        db.apiToken.update({ where: { id: verification.id }, data: { usedAt: new Date() } }),
-        db.user.update({
-          where: { id: verification.userId },
-          data: { emailVerifiedAt: new Date() },
-        }),
-      ]);
+
+      if (updated.count === 0) {
+        return safe("This verification link is invalid or has expired.", 400);
+      }
+
+      const tokenRecord = await db.apiToken.findUnique({
+        where: { tokenHash: hashed },
+        select: { userId: true },
+      });
+
+      if (!tokenRecord) {
+        return safe("This verification link is invalid or has expired.", 400);
+      }
+
+      const user = await db.user.update({
+        where: { id: tokenRecord.userId },
+        data: { emailVerifiedAt: new Date() },
+      });
+
       const skipSetupCookie = request.cookies.get("klick_skip_setup")?.value === "1";
       const hasClientProfile =
         user.role !== "CLIENT" ||
         Boolean(
           await db.clientProfile.findFirst({ where: { userId: user.id }, select: { id: true } }),
         );
-      const nextRedirect = getAuthRedirect(
+      const defaultRedirect = getAuthRedirect(
         { ...user, emailVerifiedAt: new Date() },
         hasClientProfile,
         skipSetupCookie,
       );
+
+      // Enforce safe redirects via allowlist
+      const safeRedirect = getSafeRedirectUrl(
+        parsed.data.redirect,
+        defaultRedirect,
+        user.role,
+      );
+
       const response = NextResponse.json({
         success: true,
-        redirect: nextRedirect,
+        redirect: safeRedirect,
       });
       response.cookies.set(
         sessionCookie,

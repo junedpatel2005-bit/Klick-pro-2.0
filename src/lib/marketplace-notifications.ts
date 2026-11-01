@@ -779,13 +779,18 @@ export async function notifyMilestonePayoutApproved(input: {
       payout_amount: payout,
       amount: payout,
       project_title: jobTitle,
-      platform_fee: `₹${input.platformEarnings.toLocaleString("en-IN")}`,
+      platform_fee:
+        input.platformEarnings > 0
+          ? `₹${input.platformEarnings.toLocaleString("en-IN")}`
+          : "₹0 (Zero fee)",
     },
     emailDetails: [
       { label: "Project", value: jobTitle },
       { label: "Milestone", value: input.milestoneTitle },
       { label: "Payout credited", value: payout },
-      { label: "Platform commission", value: `₹${input.platformEarnings.toLocaleString("en-IN")}` },
+      ...(input.platformEarnings > 0
+        ? [{ label: "Platform commission", value: `₹${input.platformEarnings.toLocaleString("en-IN")}` }]
+        : []),
     ],
   });
 }

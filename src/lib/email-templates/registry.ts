@@ -718,7 +718,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultSubject: "Verify your email address for Klick-Pro",
     defaultHeading: "Confirm your Klick-Pro email address",
     defaultBodyText:
-      "Hello {{user_name}},\n\nThank you for signing up with Klick-Pro! Please confirm your email address by clicking the button below.\n\nThis verification link is secure and will expire in 24 hours. If you did not create a Klick-Pro account, you can safely ignore this email.",
+      "Hello {{user_name}},\n\nThank you for signing up with Klick-Pro! Please confirm your email address by clicking the button below.\n\nThis verification link is secure and will expire in 10 minutes. If you did not create a Klick-Pro account, you can safely ignore this email.",
     defaultActionText: "Verify Email Address",
     defaultActionUrl: "/verify-email?token={{verification_token}}",
     variables: [

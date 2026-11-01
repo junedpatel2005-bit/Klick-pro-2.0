@@ -935,6 +935,7 @@ model ApiToken {
   createdAt DateTime  @default(now())
 
   @@index([userId, kind])
+  @@index([userId, kind, createdAt])
 }
 
 model OtpCode {

@@ -1127,7 +1127,7 @@ export default function AdminServicesPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition">
-                        {job.title || `Job #${job.id}`}
+                        {job.title || "Untitled Job"}
                       </p>
                       <p className="mt-0.5 text-[11px] text-slate-500 line-clamp-1">
                         {job.description || "No description provided."}

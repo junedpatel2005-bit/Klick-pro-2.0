@@ -300,7 +300,7 @@ export default function Admin() {
               <div key={job.id} className="flex items-center justify-between gap-3 py-3.5">
                 <div>
                   <p className="font-semibold text-sm text-slate-900">
-                    {capitalizeFirst(job.title ?? `Job #${job.id}`)}
+                    {capitalizeFirst(job.title ?? "Untitled Job")}
                   </p>
                   <p className="text-xs text-slate-500">
                     {capitalizeWords(job.category ?? "General")} · {capitalizeWords(`${job.user.firstName} ${job.user.lastName}`)}

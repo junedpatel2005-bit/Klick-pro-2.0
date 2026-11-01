@@ -43,7 +43,7 @@ export default function Verify() {
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(5);
+  const [resendCooldown, setResendCooldown] = useState(60);
 
   const provider = getEmailProviderInfo(userEmail);
 
@@ -150,12 +150,15 @@ export default function Verify() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: userEmail }),
       });
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as { error?: string; retryAfter?: number };
       if (!response.ok) {
+        if (result.retryAfter && typeof result.retryAfter === "number") {
+          setResendCooldown(result.retryAfter);
+        }
         setError(result.error ?? "Unable to resend the confirmation link.");
       } else {
         setMessage("A new confirmation link has been sent to your email.");
-        setResendCooldown(30);
+        setResendCooldown(60);
       }
     } catch {
       setError("Unable to resend the confirmation link. Please check your connection.");
@@ -186,7 +189,7 @@ export default function Verify() {
     setUserEmail(updated);
     setEditingEmail(false);
     setEmailMessage(result.message ?? "Email updated. A new confirmation link has been sent.");
-    setResendCooldown(5);
+    setResendCooldown(60);
   }
 
   return (
@@ -194,7 +197,7 @@ export default function Verify() {
       hideAside
       title="Verify your email"
       subtitle="Registration successful! Please confirm your email address."
-      footer={<>Need help? Check your spam or promotions folder. The link expires in 24 hours.</>}
+      footer={<>Need help? Check your spam or promotions folder. The link expires in 10 minutes.</>}
     >
       <div className="space-y-5">
         <div className="flex justify-center">
