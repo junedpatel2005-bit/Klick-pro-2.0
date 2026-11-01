@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   UserPlus,
   Activity,
@@ -128,8 +129,14 @@ function getBadgeStyle(status: string) {
   return "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30";
 }
 
-export default function AdminReportsPage() {
-  const [activeTab, setActiveTab] = useState<TabKey>("client-registrations");
+function AdminReportsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchTab = searchParams.get("tab") as TabKey | null;
+
+  const validInitialTab = searchTab && TABS.some((t) => t.id === searchTab) ? searchTab : null;
+  const [activeTab, setActiveTab] = useState<TabKey>(validInitialTab || "client-registrations");
+  const currentTab = useMemo(() => TABS.find((t) => t.id === activeTab), [activeTab]);
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -150,13 +157,25 @@ export default function AdminReportsPage() {
   const [newClientsDetails, setNewClientsDetails] = useState<Record<string, any>[]>([]);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(new Set());
 
-  // Reset pagination, search, and selection on tab change
+  // Keep state in sync when URL query param changes (e.g. clicked from AdminSidebar)
+  useEffect(() => {
+    if (searchTab && TABS.some((t) => t.id === searchTab) && searchTab !== activeTab) {
+      setActiveTab(searchTab);
+      setSearch("");
+      setSubFilter("ALL");
+      setPage(1);
+      setSelectedRowIds(new Set());
+    }
+  }, [searchTab, activeTab]);
+
+  // Reset pagination, search, and selection on tab change, and sync URL
   const handleTabChange = (tab: TabKey) => {
     setActiveTab(tab);
     setSearch("");
     setSubFilter("ALL");
     setPage(1);
     setSelectedRowIds(new Set());
+    router.replace(`/admin/reports?tab=${tab}`, { scroll: false });
   };
 
   const fetchReport = useCallback(async () => {
@@ -421,10 +440,10 @@ export default function AdminReportsPage() {
         "Industry Category",
         "Documents Uploaded (Count)",
         "Itemized Uploaded Documents",
-        "Job Forms Submitted (Count)",
-        "Itemized Submitted Forms",
-        "Tasks Completed (Count)",
-        "Itemized Completed Tasks",
+        "Jobs Posted (Count)",
+        "Itemized Posted Jobs",
+        "Milestones Completed (Count)",
+        "Itemized Completed Milestones",
         "Primary Platform Feature",
         "All Platform Features Used",
         "Engagement Score",
@@ -438,10 +457,10 @@ export default function AdminReportsPage() {
         capitalizeWords(r.category || "General Services"),
         r.documentsUploaded ?? 0,
         String(r.documentsList || "No uploaded documents").replace(/[\r\n]+/g, " ").trim(),
-        r.formsSubmitted ?? 0,
-        String(r.formsList || "No forms submitted").replace(/[\r\n]+/g, " ").trim(),
+        r.jobsPosted ?? r.formsSubmitted ?? 0,
+        String(r.jobsList || r.formsList || "No jobs posted").replace(/[\r\n]+/g, " ").trim(),
         r.tasksCompleted ?? 0,
-        String(r.tasksList || "No tasks completed").replace(/[\r\n]+/g, " ").trim(),
+        String(r.tasksList || "No milestones completed").replace(/[\r\n]+/g, " ").trim(),
         capitalizeWords(r.primaryFeature || "Job Posting Engine"),
         String(r.featuresList || "None").replace(/[\r\n]+/g, " ").trim(),
         r.engagementScore ?? 0,
@@ -745,9 +764,14 @@ export default function AdminReportsPage() {
       {/* ----------------------------------------------------------------- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
+            <span>Reports & Exports</span>
+            <span>/</span>
+            <span className="text-indigo-600 dark:text-indigo-400">{currentTab?.label || "Overview"}</span>
+          </div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              Admin Operations & Growth Reports
+              {currentTab?.label || "Admin Reports"}
             </h1>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -755,33 +779,9 @@ export default function AdminReportsPage() {
             </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Enterprise analytics across client registrations, engagement, platform reliability, support, and posting growth.
+            Enterprise analytics and real-time audit data for {currentTab?.label.toLowerCase() || "the marketplace"}.
           </p>
         </div>
-      </div>
-
-      {/* ----------------------------------------------------------------- */}
-      {/* 7 TABS NAVIGATION BAR                                             */}
-      {/* ----------------------------------------------------------------- */}
-      <div className="flex overflow-x-auto pb-1 gap-2 border-b border-slate-200 dark:border-slate-800 no-scrollbar">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-medium text-xs sm:text-sm whitespace-nowrap transition-all duration-150 ${
-                isActive
-                  ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md scale-[1.01]"
-                  : "bg-slate-100 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <Icon className={`w-4 h-4 ${isActive ? "text-blue-400 dark:text-blue-600" : ""}`} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* ----------------------------------------------------------------- */}
@@ -795,10 +795,7 @@ export default function AdminReportsPage() {
               value={summaryData.totalClients ?? 0}
               icon={UserPlus}
               iconBgColor="bg-blue-500/10 text-blue-600"
-              definition="Cumulative count of client accounts registered on the marketplace within the active audit window."
-              formula="COUNT(User WHERE role = 'CLIENT' AND createdAt BETWEEN :startDate AND :endDate)"
-              source="PostgreSQL User table ('role' = 'CLIENT')"
-              why="Measures top-of-funnel customer acquisition velocity and aggregate demand volume."
+              definition="This metric tracks the total number of new client accounts registered on the marketplace within the selected time window, measuring customer acquisition pace and incoming demand volume."
             />
 
             <ReportKpiCard
@@ -807,10 +804,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Corporate & business accounts</div>}
               icon={Building2}
               iconBgColor="bg-purple-500/10 text-purple-600"
-              definition="Verified corporate entities and business accounts registered to hire professionals."
-              formula="COUNT(User WHERE role = 'CLIENT' AND companyName IS NOT NULL AND LOWER(companyName) != 'individual')"
-              source="User & ClientProfile records ('companyName' attribute)"
-              why="Distinguishes high-value commercial B2B clients from single-project homeowners."
+              definition="This metric counts verified corporate entities and commercial business accounts registered during the period, helping distinguish high-value enterprise clients from individual homeowners."
             />
 
             <ReportKpiCard
@@ -820,10 +814,7 @@ export default function AdminReportsPage() {
               icon={Briefcase}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
               valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
-              definition="The service industry sector generating the largest volume of client postings and registrations."
-              formula="MODE(Job.category WHERE Job.clientId IN ActiveClients)"
-              source="Job posting records ('category' field grouped by frequency)"
-              why="Informs service category expansion and targeted professional supply recruitment."
+              definition="This metric identifies the service sector generating the largest volume of client job postings and registrations, highlighting the primary industry driving marketplace demand."
             />
 
             <ReportKpiCard
@@ -833,10 +824,7 @@ export default function AdminReportsPage() {
               icon={MapPin}
               iconBgColor="bg-amber-500/10 text-amber-600"
               valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
-              definition="The Indian state with the highest concentration of registered client users."
-              formula="MODE(EXTRACT_INDIAN_STATE(User.address, User.professionalState))"
-              source="User profiles ('address' and regional state fields parsed against 28 Indian States & 8 UTs)"
-              why="Guides regional marketing campaigns and geo-fenced professional onboarding."
+              definition="This metric highlights the Indian state or union territory with the highest concentration of registered client accounts to help guide regional marketing campaigns and professional onboarding."
             />
           </>
         )}
@@ -854,10 +842,7 @@ export default function AdminReportsPage() {
               }
               icon={Activity}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="Total unique client accounts that initiated a session, viewed jobs, or performed an action in the past 24 hours."
-              formula="COUNT(DISTINCT User.id WHERE role = 'CLIENT' AND lastActiveAt >= NOW() - INTERVAL '24 hours')"
-              source="AuditLog session entries & User 'updatedAt' telemetry"
-              why="Measures daily client engagement (DAU) and platform utilization health."
+              definition="This metric shows the total number of unique client accounts that logged in, viewed jobs, or initiated platform actions in the past 24 hours, reflecting current daily client engagement."
             />
 
             <ReportKpiCard
@@ -866,10 +851,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Clients & Professionals combined</div>}
               icon={UserPlus}
               iconBgColor="bg-blue-500/10 text-blue-600"
-              definition="Combined count of all platform users (both Clients and Professionals) active today."
-              formula="COUNT(DISTINCT User.id WHERE lastActiveAt >= NOW() - INTERVAL '24 hours')"
-              source="Unified AuditLog authentication & user interaction telemetry"
-              why="Evaluates total platform concurrency, traffic load, and ecosystem vibrancy."
+              definition="This metric records the combined count of all active users, including both clients and verified professionals, active on the platform today to measure total ecosystem activity and concurrency."
             />
 
             <ReportKpiCard
@@ -878,10 +860,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Average user visits per week</div>}
               icon={Clock}
               iconBgColor="bg-indigo-500/10 text-indigo-600"
-              definition="Average number of distinct login and check-in sessions recorded per active user per week."
-              formula="SUM(Weekly Logins) / COUNT(DISTINCT Active Users in Rolling 7-Day Window)"
-              source="AuditLog table (event = 'LOGIN_SUCCESS' aggregated per 7 days)"
-              why="Serves as a primary retention metric to track habit formation and repeat visits."
+              definition="This metric measures the average number of distinct login and check-in sessions recorded per active user over a rolling seven-day window, serving as a primary indicator of repeat user retention."
             />
 
             <ReportKpiCard
@@ -890,10 +869,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Estimated session duration</div>}
               icon={Clock}
               iconBgColor="bg-purple-500/10 text-purple-600"
-              definition="Average aggregate daily session length per active user browsing, chatting, or funding milestones."
-              formula="SUM(Session Heartbeat Intervals) / Total Daily Active Sessions"
-              source="Client-side telemetry heartbeat pings and route change timestamps in AuditLog"
-              why="High engagement duration correlates directly with milestone approvals and repeat contracts."
+              definition="This metric calculates the estimated average daily session duration per active user across browsing, chatting, and managing project milestones, reflecting overall user engagement."
             />
           </>
         )}
@@ -906,34 +882,25 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Contracts, briefs & deliverables</div>}
               icon={Layers}
               iconBgColor="bg-blue-500/10 text-blue-600"
-              definition="Total project briefs, architectural blueprints, deliverables, and contracts uploaded by users."
-              formula="COUNT(ProjectFile WHERE createdAt BETWEEN :startDate AND :endDate)"
-              source="ProjectFile table & S3 asset metadata storage"
-              why="Reflects tangible project execution and depth of professional collaboration."
+              definition="This metric counts all project briefs, architectural blueprints, deliverables, and legal contracts uploaded by users during this period, measuring collaborative project execution depth."
             />
 
             <ReportKpiCard
-              title="Forms Submitted"
-              value={summaryData.formsSubmitted ?? 0}
-              subtitle={<div className="text-xs text-slate-500 mt-1">Job postings & project specifications</div>}
+              title="Jobs Posted"
+              value={summaryData.jobsPosted ?? summaryData.formsSubmitted ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Published client job requests</div>}
               icon={Briefcase}
               iconBgColor="bg-purple-500/10 text-purple-600"
-              definition="Count of structured forms submitted across job postings, requirement briefs, and milestone creation."
-              formula="COUNT(Job) + COUNT(JobProposal) + COUNT(ProjectReview) in period"
-              source="Job, JobProposal, and Milestone configuration tables"
-              why="Tracks structured conversion events and client transactional intent."
+              definition="This metric tracks the total number of job postings, project specifications, and hiring briefs published by clients on the marketplace."
             />
 
             <ReportKpiCard
-              title="Tasks Completed"
+              title="Milestones Completed"
               value={summaryData.tasksCompleted ?? 0}
-              subtitle={<div className="text-xs text-slate-500 mt-1">Approved milestones & task items</div>}
+              subtitle={<div className="text-xs text-slate-500 mt-1">Approved project milestones</div>}
               icon={CheckCircle2}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="Project milestones inspected and approved by clients, successfully fulfilling contract scopes."
-              formula="COUNT(ProjectMilestone WHERE status IN ('APPROVED', 'COMPLETED') AND approvedAt BETWEEN :start AND :end)"
-              source="ProjectMilestone table ('status' = 'APPROVED', approvedAt timestamp)"
-              why="Direct measure of project fulfillment success and marketplace gross output."
+              definition="This metric tracks the total number of project milestones and deliverables successfully reviewed, fulfilled, and approved by clients during this reporting period."
             />
 
             <ReportKpiCard
@@ -942,10 +909,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Escrow, Chat, Milestones, Reviews</div>}
               icon={Layers}
               iconBgColor="bg-amber-500/10 text-amber-600"
-              definition="Number of platform modules actively utilized by clients (Escrow, In-app Messaging, Reviews, Milestone Tracking)."
-              formula="COUNT(DISTINCT FeatureType WHERE usageCount > 0 in period)"
-              source="Platform feature usage audit logs across core subsystems"
-              why="Identifies multi-feature stickiness and exposes under-utilized product capabilities."
+              definition="This metric shows the variety of core platform modules actively utilized by clients during this period, including secure escrow payments, live messaging, milestone tracking, and verified reviews."
             />
           </>
         )}
@@ -958,10 +922,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Disputes & support tickets</div>}
               icon={ShieldAlert}
               iconBgColor="bg-rose-500/10 text-rose-600"
-              definition="New arbitration disputes and support requests filed during the selected reporting window."
-              formula="COUNT(ProjectDispute in range) + COUNT(ContactRequest in range)"
-              source="ProjectDispute & ContactRequest tables ('createdAt' timestamp)"
-              why="Signals dispute intake volume requiring mediation or admin investigation."
+              definition="This metric tracks the total number of new support inquiries, dispute tickets, and arbitration requests filed by users during the selected reporting window, indicating intake volume."
             />
 
             <ReportKpiCard
@@ -970,10 +931,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">Awaiting review / arbitration</div>}
               icon={Clock}
               iconBgColor="bg-amber-500/10 text-amber-600"
-              definition="Open dispute cases and customer inquiries currently in the admin arbitration queue."
-              formula="COUNT(ProjectDispute WHERE status = 'OPEN') + COUNT(ContactRequest WHERE status = 'NEW')"
-              source="ProjectDispute ('status' != 'RESOLVED') & ContactRequest ('status' != 'RESOLVED')"
-              why="Represents the active operational backlog requiring administrative attention."
+              definition="This metric shows the total count of unresolved support requests and active arbitration cases currently in the operational queue awaiting review or administrative action."
             />
 
             <ReportKpiCard
@@ -982,10 +940,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Closed cases & settlements</div>}
               icon={CheckCircle2}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="Disputes and tickets that have completed arbitration or received operational resolution."
-              formula="COUNT(ProjectDispute WHERE status = 'RESOLVED') + COUNT(ContactRequest WHERE status IN ('RESOLVED', 'CLOSED'))"
-              source="ProjectDispute and ContactRequest records with non-null 'decisionAt'"
-              why="Measures resolution output and arbitrator throughput efficiency."
+              definition="This metric records the total number of customer issues, support tickets, and arbitration disputes successfully mediated, settled, and closed within the reporting period."
             />
 
             <ReportKpiCard
@@ -994,10 +949,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">First-response turnaround</div>}
               icon={Clock}
               iconBgColor="bg-indigo-500/10 text-indigo-600"
-              definition="Mean time elapsed between issue filing and formal administrative response or resolution."
-              formula="SUM(decisionAt - createdAt in hours) / COUNT(Resolved Disputes With Timestamps)"
-              source="ProjectDispute 'createdAt' vs 'decisionAt' (or 'respondedAt') timestamps"
-              why="Core SLA metric ensuring customer complaints are resolved swiftly to protect platform trust."
+              definition="This metric calculates the average turnaround time between an issue or dispute being filed and the first administrative response or resolution, reflecting customer support responsiveness."
             />
           </>
         )}
@@ -1014,10 +966,7 @@ export default function AdminReportsPage() {
               }
               icon={Cpu}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="Percentage of total time the production application and API server responded successfully without downtime."
-              formula="(Total Operational Runtime Seconds / Total Monitoring Window Seconds) × 100%"
-              source="Node.js process.uptime() & external HTTP healthcheck endpoint pings"
-              why="Guarantees platform infrastructure meets production enterprise SLA commitments."
+              definition="This metric measures the percentage of total time the production application, APIs, and database services remained fully operational without unplanned downtime during the monitoring window."
             />
 
             <ReportKpiCard
@@ -1026,10 +975,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Logged runtime exceptions</div>}
               icon={AlertTriangle}
               iconBgColor="bg-rose-500/10 text-rose-600"
-              definition="Unhandled application exceptions, 5xx server errors, or database transaction rollbacks recorded."
-              formula="COUNT(AuditLog WHERE action = 'ERROR' OR level = 'CRITICAL')"
-              source="AuditLog error entries & server-side error-boundary intercepts"
-              why="Provides real-time error tracking to catch software regressions before they affect transactions."
+              definition="This metric logs the total count of unhandled software exceptions, server-side 5xx errors, and database transaction failures recorded during the reporting period to monitor software stability."
             />
 
             <ReportKpiCard
@@ -1038,10 +984,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Authentication challenges</div>}
               icon={ShieldAlert}
               iconBgColor="bg-amber-500/10 text-amber-600"
-              definition="Rejected authentication attempts caused by invalid credentials, expired OTPs, or rate-limited requests."
-              formula="COUNT(AuditLog WHERE action IN ('LOGIN_FAILED', 'OTP_EXPIRED', 'AUTH_BLOCKED'))"
-              source="AuditLog security telemetry generated by /api/auth handlers"
-              why="Detects unauthorized credential stuffing, brute-force attacks, and user sign-in hurdles."
+              definition="This metric records the number of unsuccessful sign-in attempts caused by incorrect credentials, expired one-time passwords, or security rate limits, helping detect potential security threats."
             />
 
             <ReportKpiCard
@@ -1050,10 +993,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">Slow queries: {summaryData.slowPages ?? 0}</div>}
               icon={Cpu}
               iconBgColor="bg-purple-500/10 text-purple-600"
-              definition="API endpoints that failed with status 500+ or database queries that took longer than 1000ms."
-              formula="COUNT(HTTP Status >= 500) + COUNT(Query Execution Time > 1000ms)"
-              source="API gateway request logger and Prisma query latency middleware"
-              why="Identifies slow API routes and heavy database queries before they degrade user responsiveness."
+              definition="This metric tracks server API endpoints that returned errors or experienced database query processing times longer than 1000 milliseconds, identifying performance bottlenecks before users are impacted."
             />
           </>
         )}
@@ -1066,10 +1006,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">All-time client accounts</div>}
               icon={TrendingUp}
               iconBgColor="bg-blue-500/10 text-blue-600"
-              definition="Cumulative number of client accounts registered on the marketplace since platform inception."
-              formula="COUNT(User WHERE role = 'CLIENT')"
-              source="PostgreSQL User table ('role' = 'CLIENT')"
-              why="Benchmarks overall marketplace scale and size of the customer base."
+              definition="This metric represents the cumulative lifetime number of client accounts registered on the marketplace since platform launch, benchmarking overall platform scale and customer base expansion."
             />
 
             <ReportKpiCard
@@ -1082,10 +1019,7 @@ export default function AdminReportsPage() {
               }
               icon={UserPlus}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="New client accounts registered within the current 7-day rolling window."
-              formula="COUNT(User WHERE role = 'CLIENT' AND createdAt >= NOW() - INTERVAL '7 days')"
-              source="User table ('createdAt' >= current date minus 7 days)"
-              why="Tracks short-term acquisition pace and effectiveness of recent marketing campaigns."
+              definition="This metric measures the number of new client accounts created within the current seven-day rolling window, tracking short-term user acquisition velocity and campaign impact."
             />
 
             <ReportKpiCard
@@ -1094,10 +1028,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-rose-500 mt-1">Dormant (&gt; 30 days inactivity)</div>}
               icon={TrendingUp}
               iconBgColor="bg-rose-500/10 text-rose-600"
-              definition="Clients with no logins, job posts, or milestone releases in the past 30 days."
-              formula="COUNT(User WHERE role = 'CLIENT' AND lastActiveAt < NOW() - INTERVAL '30 days' AND activeProjects = 0)"
-              source="User table cross-referenced with ProjectTracking active status"
-              why="Early-warning indicator for customer churn and dormancy to trigger re-engagement."
+              definition="This metric identifies client accounts that have recorded no logins, job posts, or active project interactions for more than thirty consecutive days, serving as an early indicator of user churn."
             />
 
             <ReportKpiCard
@@ -1107,10 +1038,7 @@ export default function AdminReportsPage() {
               icon={TrendingUp}
               iconBgColor="bg-indigo-500/10 text-indigo-600"
               valueClassName="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400"
-              definition="Net rate of client user base expansion factoring in newly acquired clients minus churned/inactive accounts."
-              formula="((New Clients This Period - Lost Clients This Period) / Total Prior Clients) × 100%"
-              source="Differential comparison between current and previous cohort periods"
-              why="Represents true net marketplace expansion, discounting churn."
+              definition="This metric calculates the net percentage expansion of the client user base by factoring in newly registered clients against dormant or lost accounts over the period."
             />
           </>
         )}
@@ -1123,10 +1051,7 @@ export default function AdminReportsPage() {
               subtitle={<div className="text-xs text-slate-500 mt-1">All-time jobs & project requests</div>}
               icon={Briefcase}
               iconBgColor="bg-blue-500/10 text-blue-600"
-              definition="Cumulative number of job requests and project opportunities published by clients."
-              formula="COUNT(Job) all time"
-              source="Job table records"
-              why="Measures lifetime marketplace inventory and work opportunity supply."
+              definition="This metric represents the cumulative lifetime number of job requests, tenders, and project briefs published by clients on the platform since inception, measuring total work opportunity supply."
             />
 
             <ReportKpiCard
@@ -1139,10 +1064,7 @@ export default function AdminReportsPage() {
               }
               icon={Activity}
               iconBgColor="bg-emerald-500/10 text-emerald-600"
-              definition="New job postings published by clients within the last 7 calendar days."
-              formula="COUNT(Job WHERE createdAt >= NOW() - INTERVAL '7 days')"
-              source="Job table ('createdAt' >= current date minus 7 days)"
-              why="Real-time indicator of current client demand and immediate professional work availability."
+              definition="This metric counts the total number of new job requests and project opportunities published by clients over the last seven calendar days, reflecting immediate hiring demand."
             />
 
             <ReportKpiCard
@@ -1152,10 +1074,7 @@ export default function AdminReportsPage() {
               icon={TrendingUp}
               iconBgColor="bg-indigo-500/10 text-indigo-600"
               valueClassName="text-2xl font-bold mt-2 text-indigo-600 dark:text-indigo-400"
-              definition="Percentage change in job postings created compared to the immediately preceding time window."
-              formula="((Postings Current Window - Postings Prior Window) / Postings Prior Window) × 100%"
-              source="Comparative time-bucket aggregation from Job table"
-              why="Measures whether platform work volume is accelerating or decelerating over time."
+              definition="This metric shows the percentage change in job postings created compared to the immediately preceding time window, measuring whether platform work volume is accelerating or decelerating."
             />
 
             <ReportKpiCard
@@ -1165,10 +1084,7 @@ export default function AdminReportsPage() {
               icon={Layers}
               iconBgColor="bg-purple-500/10 text-purple-600"
               valueClassName="text-lg font-bold mt-2 truncate text-slate-900 dark:text-white"
-              definition="The service category exhibiting the highest percentage increase in new job postings."
-              formula="ARGMAX_category( (Current_Count - Prior_Count) / Prior_Count )"
-              source="Job table 'category' field grouped by comparative period"
-              why="Directs marketplace strategy toward surging sectors with high growth potential."
+              definition="This metric highlights the specific service category exhibiting the highest percentage increase in new job postings, identifying trending industries and surging market demand."
             />
           </>
         )}
@@ -1517,8 +1433,8 @@ export default function AdminReportsPage() {
                     <>
                       <th className="py-3 px-4">Client & Company</th>
                       <th className="py-3 px-4">Documents Uploaded</th>
-                      <th className="py-3 px-4">Forms Submitted</th>
-                      <th className="py-3 px-4">Tasks Completed</th>
+                      <th className="py-3 px-4">Jobs Posted</th>
+                      <th className="py-3 px-4">Milestones Completed</th>
                       <th className="py-3 px-4">Primary Feature</th>
                       <th className="py-3 px-4">Features Used</th>
                     </>
@@ -1728,17 +1644,17 @@ export default function AdminReportsPage() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-semibold text-slate-800 dark:text-slate-200">
-                              {row.formsSubmitted} forms
+                              {row.jobsPosted ?? row.formsSubmitted} jobs
                             </div>
-                            {row.formsList && (
-                              <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={row.formsList}>
-                                {row.formsList}
+                            {(row.jobsList || row.formsList) && (
+                              <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={row.jobsList || row.formsList}>
+                                {row.jobsList || row.formsList}
                               </div>
                             )}
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-semibold text-slate-800 dark:text-slate-200">
-                              {row.tasksCompleted} tasks
+                              {row.tasksCompleted} milestones
                             </div>
                             {row.tasksList && (
                               <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={row.tasksList}>
@@ -2120,5 +2036,19 @@ export default function AdminReportsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminReportsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[400px] text-slate-500 font-medium">
+          Loading report data…
+        </div>
+      }
+    >
+      <AdminReportsContent />
+    </Suspense>
   );
 }

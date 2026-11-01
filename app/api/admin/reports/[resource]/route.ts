@@ -1487,10 +1487,10 @@ export async function POST(
             "Location (State)",
             "Documents Uploaded (Count)",
             "Itemized Uploaded Documents",
-            "Job Forms Submitted (Count)",
-            "Itemized Submitted Forms",
-            "Tasks Completed (Count)",
-            "Itemized Completed Tasks",
+            "Jobs Posted (Count)",
+            "Itemized Posted Jobs",
+            "Milestones Completed (Count)",
+            "Itemized Completed Milestones",
             "Primary Platform Feature",
             "All Platform Features Used",
             "Engagement Score",
@@ -1532,13 +1532,13 @@ export async function POST(
 
         const summaryStats: ReportSummaryStat[] = [
           { label: "Total Documents", value: String(totalDocs) },
-          { label: "Forms Submitted", value: String(totalForms) },
-          { label: "Tasks Completed", value: String(totalTasks) },
+          { label: "Jobs Posted", value: String(totalForms) },
+          { label: "Milestones Completed", value: String(totalTasks) },
           { label: "Active Workflows", value: String(engagementClients.length) },
         ];
 
         title = "Client Engagement & Workflow Report";
-        subtitle = "Full Itemized Audit — Uploaded Documents, Submitted Forms & Approved Tasks";
+        subtitle = "Full Itemized Audit — Uploaded Documents, Posted Jobs & Approved Milestones";
         downloadFilename = isSingle
           ? `klick-pro-client-engagement-${singleUserId}-full-audit.pdf`
           : `klick-pro-client-engagement-${new Date().toISOString().slice(0, 10)}.pdf`;

@@ -824,10 +824,10 @@ export function ClientEngagementDetailedDocument({
                 <View style={styles.gridCellCol3}>
                   <View style={styles.subCard}>
                     <Text style={styles.sectionTitle}>
-                      Job Forms Submitted ({c.forms.length})
+                      Jobs Posted ({c.forms.length})
                     </Text>
                     {c.forms.length === 0 ? (
-                      <Text style={styles.emptyNote}>No job forms submitted</Text>
+                      <Text style={styles.emptyNote}>No jobs posted</Text>
                     ) : (
                       c.forms.map((f, fIdx) => (
                         <View key={fIdx} style={styles.itemRow}>
@@ -847,10 +847,10 @@ export function ClientEngagementDetailedDocument({
                 <View style={styles.gridCellCol3}>
                   <View style={styles.subCard}>
                     <Text style={styles.sectionTitle}>
-                      Tasks Completed ({c.tasks.length})
+                      Milestones Completed ({c.tasks.length})
                     </Text>
                     {c.tasks.length === 0 ? (
-                      <Text style={styles.emptyNote}>No milestone tasks completed</Text>
+                      <Text style={styles.emptyNote}>No milestones completed</Text>
                     ) : (
                       c.tasks.map((t, tIdx) => (
                         <View key={tIdx} style={styles.itemRow}>

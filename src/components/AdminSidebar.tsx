@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDatabaseStatus } from "@/hooks/use-database-status";
 import {
@@ -10,6 +10,7 @@ import {
   Briefcase,
   BriefcaseBusiness,
   ChevronRight,
+  ChevronDown,
   CircleDollarSign,
   FileBarChart,
   FileText,
@@ -25,8 +26,25 @@ import {
   Megaphone,
   History,
   Landmark,
+  UserPlus,
+  Activity,
+  Layers,
+  ShieldAlert,
+  Cpu,
+  TrendingUp,
 } from "lucide-react";
 import { ENABLE_ADMIN_EXTRA_SECTION } from "@/config/extra-features";
+import { useAdminSidebar } from "@/components/AdminSidebarContext";
+
+export const REPORT_SUB_TABS = [
+  { id: "client-registrations", label: "Client Registrations", icon: UserPlus },
+  { id: "client-activity", label: "Client Activity", icon: Activity },
+  { id: "client-engagement", label: "Client Engagement", icon: Layers },
+  { id: "support-complaints", label: "Support & Complaints", icon: ShieldAlert },
+  { id: "system-reliability", label: "System Reliability", icon: Cpu },
+  { id: "client-growth", label: "Client Growth", icon: TrendingUp },
+  { id: "posting-growth", label: "Posting Growth", icon: Briefcase },
+] as const;
 
 const linkGroups = [
   {
@@ -88,13 +106,22 @@ const linkGroups = [
     : []),
 ];
 
-import { useAdminSidebar } from "@/components/AdminSidebarContext";
-
 export function AdminSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const dbStatus = useDatabaseStatus();
   const { collapsed } = useAdminSidebar();
   const [counts, setCounts] = useState<Record<string, number>>({});
+
+  const isReportsPage = pathname === "/admin/reports" || pathname?.startsWith("/admin/reports");
+  const activeReportTab = searchParams?.get("tab") || "client-registrations";
+  const [reportsSubmenuOpen, setReportsSubmenuOpen] = useState(true);
+
+  useEffect(() => {
+    if (isReportsPage) {
+      setReportsSubmenuOpen(true);
+    }
+  }, [isReportsPage]);
 
   useEffect(() => {
     let inflight = false;
@@ -224,60 +251,116 @@ export function AdminSidebar() {
               )}
               <div className="space-y-1">
                 {group.items.map((link) => {
-                  const active = pathname === link.href;
+                  const isThisReportLink = link.href === "/admin/reports";
+                  const active = isThisReportLink
+                    ? isReportsPage
+                    : pathname === link.href;
                   const badgeCount = link.badge ? (counts[link.badge] ?? 0) : 0;
+
                   return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      prefetch={false}
-                      title={link.label}
-                      className={`group relative flex items-center rounded-xl transition-all duration-150 ${
-                        collapsed
-                          ? "h-11 w-11 justify-center mx-auto"
-                          : "gap-3 px-3 py-2.5 text-sm font-medium"
-                      } ${
-                        active
-                          ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/80 shadow-2xs"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <div
-                        className={`grid h-7 w-7 place-items-center rounded-lg transition ${
+                    <div key={link.href} className="space-y-1">
+                      <Link
+                        href={link.href}
+                        prefetch={false}
+                        title={link.label}
+                        className={`group relative flex items-center rounded-xl transition-all duration-150 ${
+                          collapsed
+                            ? "h-11 w-11 justify-center mx-auto"
+                            : "gap-3 px-3 py-2.5 text-sm font-medium"
+                        } ${
                           active
-                            ? "bg-indigo-600 text-white shadow-2xs"
-                            : "text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/60"
+                            ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/80 shadow-2xs"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                         }`}
                       >
-                        <link.icon className="h-4 w-4" />
-                      </div>
-                      {!collapsed && <span>{link.label}</span>}
-                      {badgeCount > 0 &&
-                        (collapsed ? (
-                          <span
-                            className={`absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[9px] font-bold text-white shadow-xs ${
-                              link.badge === "payouts" ? "bg-amber-500" : "bg-indigo-600"
-                            }`}
-                          >
-                            {badgeCount > 99 ? "99+" : badgeCount}
-                          </span>
-                        ) : (
-                          <span
-                            className={`ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold ${
-                              link.badge === "payouts"
-                                ? "bg-amber-500 text-white shadow-xs"
-                                : active
-                                  ? "bg-indigo-600 text-white shadow-2xs"
-                                  : "bg-indigo-100 text-indigo-700"
-                            }`}
-                          >
-                            {badgeCount > 99 ? "99+" : badgeCount}
-                          </span>
-                        ))}
-                      {active && !collapsed && badgeCount === 0 && (
-                        <ChevronRight className="ml-auto h-4 w-4 text-indigo-500" />
+                        <div
+                          className={`grid h-7 w-7 place-items-center rounded-lg transition ${
+                            active
+                              ? "bg-indigo-600 text-white shadow-2xs"
+                              : "text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/60"
+                          }`}
+                        >
+                          <link.icon className="h-4 w-4" />
+                        </div>
+                        {!collapsed && <span className="truncate">{link.label}</span>}
+                        {badgeCount > 0 &&
+                          (collapsed ? (
+                            <span
+                              className={`absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[9px] font-bold text-white shadow-xs ${
+                                link.badge === "payouts" ? "bg-amber-500" : "bg-indigo-600"
+                              }`}
+                            >
+                              {badgeCount > 99 ? "99+" : badgeCount}
+                            </span>
+                          ) : (
+                            <span
+                              className={`ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold ${
+                                link.badge === "payouts"
+                                  ? "bg-amber-500 text-white shadow-xs"
+                                  : active
+                                    ? "bg-indigo-600 text-white shadow-2xs"
+                                    : "bg-indigo-100 text-indigo-700"
+                              }`}
+                            >
+                              {badgeCount > 99 ? "99+" : badgeCount}
+                            </span>
+                          ))}
+                        {active && !collapsed && badgeCount === 0 && (
+                          isThisReportLink ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setReportsSubmenuOpen((prev) => !prev);
+                              }}
+                              className="ml-auto p-1 rounded-md hover:bg-indigo-100/60 text-indigo-600 transition"
+                              aria-label={reportsSubmenuOpen ? "Collapse reports submenu" : "Expand reports submenu"}
+                            >
+                              {reportsSubmenuOpen ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </button>
+                          ) : (
+                            <ChevronRight className="ml-auto h-4 w-4 text-indigo-500" />
+                          )
+                        )}
+                      </Link>
+
+                      {/* 7 Tabs Sub-menu under Reports & Exports */}
+                      {isThisReportLink && isReportsPage && reportsSubmenuOpen && !collapsed && (
+                        <div className="ml-4 pl-3.5 border-l-2 border-indigo-200 dark:border-slate-800 space-y-1 py-1">
+                          {REPORT_SUB_TABS.map((sub) => {
+                            const SubIcon = sub.icon;
+                            const isSubActive = activeReportTab === sub.id;
+                            return (
+                              <Link
+                                key={sub.id}
+                                href={`/admin/reports?tab=${sub.id}`}
+                                prefetch={false}
+                                title={sub.label}
+                                className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                  isSubActive
+                                    ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/60 shadow-2xs"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                                }`}
+                              >
+                                <SubIcon
+                                  className={`h-3.5 w-3.5 shrink-0 ${
+                                    isSubActive
+                                      ? "text-indigo-600 font-bold"
+                                      : "text-slate-400 group-hover:text-slate-600"
+                                  }`}
+                                />
+                                <span className="truncate">{sub.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
                       )}
-                    </Link>
+                    </div>
                   );
                 })}
               </div>

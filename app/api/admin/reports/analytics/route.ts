@@ -478,9 +478,13 @@ export async function GET(request: NextRequest) {
           documentsUploaded,
           documentsList: allDocNames.join("; ") || "No uploaded documents",
           formsSubmitted,
-          formsList: formNames.join("; ") || "No forms submitted",
+          jobsPosted: formsSubmitted,
+          formsList: formNames.join("; ") || "No jobs posted",
+          jobsList: formNames.join("; ") || "No jobs posted",
           tasksCompleted,
-          tasksList: taskNames.join("; ") || "No tasks completed",
+          milestonesCompleted: tasksCompleted,
+          tasksList: taskNames.join("; ") || "No milestones completed",
+          milestonesList: taskNames.join("; ") || "No milestones completed",
           paymentsCount: c.clientPayments.length,
           featuresUsedCount: usedFeatures.length,
           primaryFeature,
@@ -498,6 +502,7 @@ export async function GET(request: NextRequest) {
               r.location.toLowerCase().includes(search) ||
               r.primaryFeature.toLowerCase().includes(search) ||
               r.formsList.toLowerCase().includes(search) ||
+              r.jobsList.toLowerCase().includes(search) ||
               r.documentsList.toLowerCase().includes(search) ||
               r.tasksList.toLowerCase().includes(search),
           )
@@ -508,7 +513,9 @@ export async function GET(request: NextRequest) {
         summary: {
           documentsUploaded: totalDocsUploaded,
           formsSubmitted: totalFormsSubmitted,
+          jobsPosted: totalFormsSubmitted,
           tasksCompleted: totalTasksCompleted,
+          milestonesCompleted: totalTasksCompleted,
           featuresUsedAcrossClients: featuresUsedCount,
           activeClientsCount: clients.length,
         },

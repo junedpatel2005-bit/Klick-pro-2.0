@@ -516,8 +516,8 @@ export function generateClientEngagementDossierCsv(client: {
     "Primary Platform Feature",
     "Active Platform Modules",
     "Documents Uploaded Count",
-    "Job Forms Submitted Count",
-    "Completed Tasks Count",
+    "Jobs Posted Count",
+    "Completed Milestones Count",
   ];
   lines.push(headers1.map(sanitizeCell).join(","));
 
@@ -549,11 +549,11 @@ export function generateClientEngagementDossierCsv(client: {
   }
   lines.push('""');
 
-  // Table 3: Submitted Job Forms Itemization
-  const headers3 = ["Job Reference", "Project Title", "Service Category", "Budget / Agreed Amount", "Status", "Date Submitted"];
+  // Table 3: Posted Jobs Itemization
+  const headers3 = ["Job Reference", "Job Title", "Service Category", "Budget / Agreed Amount", "Status", "Date Posted"];
   lines.push(headers3.map(sanitizeCell).join(","));
   if (client.forms.length === 0) {
-    lines.push(["None", "No job forms submitted by client yet", "—", "—", "—", "—"].map(sanitizeCell).join(","));
+    lines.push(["None", "No jobs posted by client yet", "—", "—", "—", "—"].map(sanitizeCell).join(","));
   } else {
     for (const f of client.forms) {
       lines.push([

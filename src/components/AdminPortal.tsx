@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { AdminHeader } from "@/components/AdminHeader";
 import { AdminSidebar } from "@/components/AdminSidebar";
@@ -18,7 +19,9 @@ function AdminPortalContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       <AdminRealtime />
-      <AdminSidebar />
+      <Suspense fallback={null}>
+        <AdminSidebar />
+      </Suspense>
       <main
         className={`flex flex-col min-h-screen transition-[padding] duration-200 ease-in-out ${
           collapsed ? "lg:pl-20" : "lg:pl-64"
