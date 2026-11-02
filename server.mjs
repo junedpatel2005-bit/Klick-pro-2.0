@@ -170,9 +170,14 @@ httpServer.listen(port, hostname, () => {
   const MILESTONE_CRON_INTERVAL_MS = 15 * 60 * 1000;
   setInterval(async () => {
     try {
+      const cronSecret = process.env.CRON_SECRET || "";
+      const headers = { "x-internal-loopback": "true" };
+      if (cronSecret) {
+        headers["authorization"] = `Bearer ${cronSecret}`;
+      }
       const response = await fetch(`http://127.0.0.1:${port}/api/cron/milestone-releases`, {
         method: "GET",
-        headers: { "x-internal-loopback": "true" },
+        headers,
       });
       if (response.ok) {
         const data = await response.json().catch(() => null);

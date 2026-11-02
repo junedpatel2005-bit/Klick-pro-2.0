@@ -20,7 +20,7 @@ const collection = {
     { key: "milestoneId", value: "1", type: "string" },
     { key: "professionalId", value: "1", type: "string" },
     { key: "paymentId", value: "1", type: "string" },
-    { key: "cronSecret", value: "servio-cron-internal-secret-2026", type: "string" },
+    { key: "cronSecret", value: process.env.CRON_SECRET || "", type: "string" },
     { key: "razorpayOrderId", value: "", type: "string" },
     { key: "razorpayPaymentId", value: "", type: "string" },
     { key: "razorpaySignature", value: "", type: "string" }
@@ -54,7 +54,7 @@ const collection = {
               mode: "raw",
               raw: JSON.stringify({
                 email: "seed.client@servio.example",
-                password: "ServioSeed#2026"
+                password: "{{seedPassword}}"
               }, null, 2)
             },
             url: { raw: "{{baseUrl}}/api/auth/login", host: ["{{baseUrl}}"], path: ["api", "auth", "login"] }
@@ -85,7 +85,7 @@ const collection = {
               mode: "raw",
               raw: JSON.stringify({
                 email: "seed.pro@servio.example",
-                password: "ServioSeed#2026"
+                password: "{{seedPassword}}"
               }, null, 2)
             },
             url: { raw: "{{baseUrl}}/api/auth/login", host: ["{{baseUrl}}"], path: ["api", "auth", "login"] }
@@ -115,7 +115,7 @@ const collection = {
               mode: "raw",
               raw: JSON.stringify({
                 username: "admin",
-                password: "ServioAdmin#2026"
+                password: "{{adminPassword}}"
               }, null, 2)
             },
             url: { raw: "{{baseUrl}}/api/admin/login", host: ["{{baseUrl}}"], path: ["api", "admin", "login"] }

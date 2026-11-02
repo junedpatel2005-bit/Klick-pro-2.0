@@ -17,12 +17,10 @@ const DEMO_ACCOUNTS = {
   client: {
     username: "seed_client",
     email: "seed.client@servio.example",
-    password: "ServioSeed#2026",
   },
   professional: {
     username: "surat_pro",
     email: "surat.pro@servio.example",
-    password: "ServioSeed#2026",
   },
 } as const;
 
@@ -46,7 +44,6 @@ export default function Login() {
     if (!role) return;
     const account = DEMO_ACCOUNTS[role];
     if (emailRef.current) emailRef.current.value = account.email;
-    if (passwordRef.current) passwordRef.current.value = account.password;
     setFieldErrors({ email: "", password: "" });
     setError(null);
     passwordRef.current?.focus();
@@ -55,7 +52,6 @@ export default function Login() {
   async function quickLogin(role: "" | keyof typeof DEMO_ACCOUNTS) {
     if (!role) return;
     quickFill(role);
-    await submit();
   }
 
   useEffect(() => {
@@ -364,16 +360,16 @@ export default function Login() {
                 <option value="professional">Professional</option>
               </select>
               <div className="space-y-1 text-xs text-amber-800">
-                <p>Selecting an account signs in immediately.</p>
+                <p>Selecting an account fills the email field.</p>
                 <p>
-                  Client: <code>seed_client</code> / <code>ServioSeed#2026</code>
+                  Client: <code>seed_client</code> (seed.client@servio.example)
                 </p>
                 <p>
-                  Professional: <code>surat_pro</code> / <code>ServioSeed#2026</code>
+                  Professional: <code>surat_pro</code> (surat.pro@servio.example)
                 </p>
               </div>
               <p className="text-xs text-amber-700">
-                Fills the email and password below — just press Enter to log in.
+                Fills the email below — enter your password to log in.
               </p>
             </div>
             <div className="space-y-1.5">

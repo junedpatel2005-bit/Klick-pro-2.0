@@ -19,8 +19,24 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+
+# Environment files
 .env
+.env*.local
+.env.development
 .env.test
+.env.production
+.env.staging
+.env.backup
+.env.*
+!.env.example
+
+# API Collections & Credential Dumps
+*postman*.json
+*collection*.json
+*.postman_collection.json
+*.postman_environment.json
+
 *.tsbuildinfo
 prisma/*.db
 prisma/*.db-shm

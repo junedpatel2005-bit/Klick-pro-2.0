@@ -11,7 +11,7 @@ const collection = {
   variable: [
     { key: "baseUrl", value: "http://localhost:3000", type: "string" },
     { key: "token", value: "", type: "string" },
-    { key: "cronSecret", value: "servio-cron-internal-secret-2026", type: "string" },
+    { key: "cronSecret", value: process.env.CRON_SECRET || "", type: "string" },
     { key: "jobId", value: "28", type: "string" },
     { key: "projectId", value: "27", type: "string" },
     { key: "milestoneId", value: "26", type: "string" },
@@ -180,7 +180,7 @@ const collection = {
                 exec: [
                   "const orderId = pm.collectionVariables.get('razorpayOrderId') || 'order_mock';",
                   "const paymentId = 'pay_test_' + Date.now();",
-                  "const keySecret = '5ryRjcIKPwsT7UeAACX1JJZM';",
+                  "const keySecret = pm.collectionVariables.get('razorpayKeySecret') || '{{razorpayKeySecret}}';",
                   "const signature = CryptoJS.HmacSHA256(orderId + '|' + paymentId, keySecret).toString();",
                   "pm.collectionVariables.set('razorpayPaymentId', paymentId);",
                   "pm.collectionVariables.set('razorpaySignature', signature);"
