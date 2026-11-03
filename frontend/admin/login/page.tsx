@@ -55,6 +55,7 @@ export default function AdminLogin() {
 
   const fillDemo = () => {
     setUsername("seed-admin");
+    setPassword("ServioSeed#2026");
     setError("");
   };
 
@@ -248,7 +249,7 @@ export default function AdminLogin() {
                     className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/80 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition disabled:opacity-50 shadow-2xs"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-                    Auto-fill demo username
+                    Auto-fill demo credentials
                   </button>
                 </div>
 
