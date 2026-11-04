@@ -31,24 +31,34 @@ import {
   ChevronsRight,
   Filter,
   FileText,
+  UsersRound,
+  BriefcaseBusiness,
+  Eye,
 } from "lucide-react";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 import { downloadCsvFile } from "@/lib/reports/csv/export-csv";
 import { ReportKpiCard } from "@/components/reports/ReportKpiCard";
+import { AdminUserInspectionDrawer } from "@/components/admin/AdminUserInspectionDrawer";
+import { UserManagementView } from "@/components/admin/UserManagementView";
+import { OperationsManagementView } from "../operations/page";
 
 // ---------------------------------------------------------------------------
-// Type Definitions
+// 3 Master Hubs & Underlying Sub-Reports
 // ---------------------------------------------------------------------------
-type TabKey =
+export type MasterGroupKey = "users" | "jobs" | "system-reliability";
+
+export type TabKey =
+  | "directory"
   | "client-registrations"
   | "client-activity"
   | "client-engagement"
-  | "support-complaints"
-  | "system-reliability"
   | "client-growth"
-  | "posting-growth";
+  | "operations"
+  | "support-complaints"
+  | "posting-growth"
+  | "system-reliability";
 
-type TimeRange =
+export type TimeRange =
   | "all"
   | "today"
   | "yesterday"
@@ -58,14 +68,58 @@ type TimeRange =
   | "lastMonth"
   | "custom";
 
-const TABS: Array<{ id: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { id: "client-registrations", label: "New Client Registrations", icon: UserPlus },
-  { id: "client-activity", label: "Client Activity", icon: Activity },
-  { id: "client-engagement", label: "Client Engagement", icon: Layers },
+export const MASTER_MENUS = [
+  {
+    id: "users" as const,
+    label: "User Management",
+    icon: UsersRound,
+    badge: "5 Views",
+    description: "User Directory, Registrations, Activity, Engagement & Growth Cohorts for Clients & Professionals",
+    defaultTab: "directory" as TabKey,
+    reports: [
+      { id: "directory" as const, label: "Accounts Directory", icon: UsersRound },
+      { id: "client-registrations" as const, label: "New Registrations", icon: UserPlus },
+      { id: "client-activity" as const, label: "User Activity", icon: Activity },
+      { id: "client-engagement" as const, label: "User Engagement", icon: Layers },
+      { id: "client-growth" as const, label: "User Growth", icon: TrendingUp },
+    ],
+  },
+  {
+    id: "jobs" as const,
+    label: "Job Management",
+    icon: BriefcaseBusiness,
+    badge: "3 Views",
+    description: "Operations Console, Disputes Arbitration, Support Requests, and Posting Growth Velocity",
+    defaultTab: "operations" as TabKey,
+    reports: [
+      { id: "operations" as const, label: "Jobs & Operations", icon: BriefcaseBusiness },
+      { id: "support-complaints" as const, label: "Support & Complaints", icon: ShieldAlert },
+      { id: "posting-growth" as const, label: "Posting Growth", icon: Briefcase },
+    ],
+  },
+  {
+    id: "system-reliability" as const,
+    label: "System Reliability",
+    icon: Cpu,
+    badge: "Single Report",
+    description: "Production Server Uptime, Runtime Errors, Login Challenges, and API Latency",
+    defaultTab: "system-reliability" as TabKey,
+    reports: [
+      { id: "system-reliability" as const, label: "Platform Telemetry & Health", icon: Cpu },
+    ],
+  },
+] as const;
+
+export const ALL_REPORTS: Array<{ id: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { id: "directory", label: "Accounts Directory", icon: UsersRound },
+  { id: "client-registrations", label: "New Registrations", icon: UserPlus },
+  { id: "client-activity", label: "User Activity", icon: Activity },
+  { id: "client-engagement", label: "User Engagement", icon: Layers },
+  { id: "client-growth", label: "User Growth", icon: TrendingUp },
+  { id: "operations", label: "Jobs & Operations", icon: BriefcaseBusiness },
   { id: "support-complaints", label: "Support & Complaints", icon: ShieldAlert },
-  { id: "system-reliability", label: "System Reliability", icon: Cpu },
-  { id: "client-growth", label: "Client Growth", icon: TrendingUp },
   { id: "posting-growth", label: "Posting Growth", icon: Briefcase },
+  { id: "system-reliability", label: "System Reliability", icon: Cpu },
 ];
 
 function formatDateSafely(dateStr?: string | null): string {
@@ -132,11 +186,39 @@ function getBadgeStyle(status: string) {
 function AdminReportsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchTab = searchParams.get("tab") as TabKey | null;
+  const rawTab = (searchParams.get("tab") || "").toLowerCase();
 
-  const validInitialTab = searchTab && TABS.some((t) => t.id === searchTab) ? searchTab : null;
-  const [activeTab, setActiveTab] = useState<TabKey>(validInitialTab || "client-registrations");
-  const currentTab = useMemo(() => TABS.find((t) => t.id === activeTab), [activeTab]);
+  // Resolve active master menu and sub-report from URL query
+  const { masterGroup, activeTab }: { masterGroup: MasterGroupKey; activeTab: TabKey } = useMemo(() => {
+    if (rawTab === "jobs" || rawTab === "operations") {
+      return { masterGroup: "jobs", activeTab: "operations" };
+    }
+    if (rawTab === "support-complaints" || rawTab === "posting-growth") {
+      return { masterGroup: "jobs", activeTab: rawTab as TabKey };
+    }
+    if (rawTab === "system-reliability" || rawTab === "reliability") {
+      return { masterGroup: "system-reliability", activeTab: "system-reliability" };
+    }
+    if (
+      rawTab === "client-registrations" ||
+      rawTab === "client-activity" ||
+      rawTab === "client-engagement" ||
+      rawTab === "client-growth"
+    ) {
+      return { masterGroup: "users", activeTab: rawTab as TabKey };
+    }
+    return { masterGroup: "users", activeTab: "directory" };
+  }, [rawTab]);
+
+  const currentTab = useMemo(() => ALL_REPORTS.find((t) => t.id === activeTab), [activeTab]);
+  const activeMasterMenu = useMemo(() => MASTER_MENUS.find((m) => m.id === masterGroup), [masterGroup]);
+
+  // Dual-role selector for User Management
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "CLIENT" | "PROFESSIONAL">("ALL");
+
+  // Deep Details Slide-Over Sheet
+  const [inspectUserId, setInspectUserId] = useState<number | null>(null);
+
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -157,34 +239,39 @@ function AdminReportsContent() {
   const [newClientsDetails, setNewClientsDetails] = useState<Record<string, any>[]>([]);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string | number>>(new Set());
 
-  // Keep state in sync when URL query param changes (e.g. clicked from AdminSidebar)
-  useEffect(() => {
-    if (searchTab && TABS.some((t) => t.id === searchTab) && searchTab !== activeTab) {
-      setActiveTab(searchTab);
-      setSearch("");
-      setSubFilter("ALL");
-      setPage(1);
-      setSelectedRowIds(new Set());
-    }
-  }, [searchTab, activeTab]);
-
-  // Reset pagination, search, and selection on tab change, and sync URL
   const handleTabChange = (tab: TabKey) => {
-    setActiveTab(tab);
     setSearch("");
     setSubFilter("ALL");
     setPage(1);
     setSelectedRowIds(new Set());
-    router.replace(`/admin/reports?tab=${tab}`, { scroll: false });
+    router.push(`/admin/reports?tab=${tab}`);
+  };
+
+  const handleMasterGroupChange = (group: MasterGroupKey) => {
+    const targetMenu = MASTER_MENUS.find((m) => m.id === group);
+    if (targetMenu) {
+      setSearch("");
+      setSubFilter("ALL");
+      setPage(1);
+      setSelectedRowIds(new Set());
+      router.push(`/admin/reports?tab=${targetMenu.defaultTab}`);
+    }
   };
 
   const fetchReport = useCallback(async () => {
+    if (activeTab === "directory" || activeTab === "operations") {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const params = new URLSearchParams({
         report: activeTab,
         timeRange,
       });
+      if (masterGroup === "users") {
+        params.set("role", roleFilter);
+      }
       if (timeRange === "custom") {
         if (customStart) params.set("startDate", customStart);
         if (customEnd) params.set("endDate", customEnd);
@@ -207,7 +294,7 @@ function AdminReportsContent() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, timeRange, customStart, customEnd, search]);
+  }, [activeTab, timeRange, customStart, customEnd, search, masterGroup, roleFilter]);
 
   useEffect(() => {
     void fetchReport();
@@ -356,6 +443,7 @@ function AdminReportsContent() {
 
   // CSV Export handler with Full Info & Metadata
   const handleExportCsv = (selectedOnly = false) => {
+    if (activeTab === "directory" || activeTab === "operations") return;
     const rowsToExport = selectedOnly && selectedRowIds.size > 0
       ? filteredRows.filter((r, i) => selectedRowIds.has(r.id ?? i))
       : filteredRows;
@@ -635,7 +723,7 @@ function AdminReportsContent() {
     }
 
     const metadata = [
-      { label: "Report Dashboard", value: TABS.find((t) => t.id === activeTab)?.label || "Report" },
+      { label: "Report Dashboard", value: ALL_REPORTS.find((t) => t.id === activeTab)?.label || "Report" },
       { label: "Export Scope", value: selectedOnly ? `Selected Rows (${rowsToExport.length})` : "Full Table Filtered" },
       { label: "Time Range Preset", value: timeRange === "custom" ? `${customStart || "Start"} to ${customEnd || "End"}` : timeRange },
       { label: "Active Sub-Filter", value: subFilter },
@@ -645,7 +733,7 @@ function AdminReportsContent() {
 
     downloadCsvFile({
       filename,
-      title: `${TABS.find((t) => t.id === activeTab)?.label || "Report"} — Complete Enterprise Data`,
+      title: `${ALL_REPORTS.find((t) => t.id === activeTab)?.label || "Report"} — Complete Enterprise Data`,
       metadata,
       headers,
       rows: rowsData,
@@ -654,6 +742,7 @@ function AdminReportsContent() {
   };
 
   const handleExportPdf = async (selectedOnly = false) => {
+    if (activeTab === "directory" || activeTab === "operations") return;
     setExportingPdf(true);
     try {
       const isClientGrowthCohorts = activeTab === "client-growth" && subFilter !== "DETAILS";
@@ -703,6 +792,7 @@ function AdminReportsContent() {
     recordId: string | number,
     format: "pdf" | "csv" = "pdf",
   ) => {
+    if (activeTab === "directory" || activeTab === "operations") return;
     // In Client Growth Cohorts view, rows are weekly intervals, not individual user IDs
     if (activeTab === "client-growth" && subFilter !== "DETAILS") {
       if (format === "csv") {
@@ -760,34 +850,165 @@ function AdminReportsContent() {
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto min-h-screen text-slate-900 dark:text-slate-100">
       {/* ----------------------------------------------------------------- */}
-      {/* HEADER SECTION                                                    */}
+      {/* HEADER SECTION & 3 MASTER MENUS                                   */}
       {/* ----------------------------------------------------------------- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
-            <span>Reports & Exports</span>
-            <span>/</span>
-            <span className="text-indigo-600 dark:text-indigo-400">{currentTab?.label || "Overview"}</span>
+      <div className="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
+              <span>Admin Reports Console</span>
+              <span>/</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">
+                {activeMasterMenu?.label || "Reports"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                {activeMasterMenu?.label || "Admin Reports"}
+              </h1>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Sync
+              </span>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {activeMasterMenu?.description || "Enterprise analytics and real-time audit data for the marketplace."}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              {currentTab?.label || "Admin Reports"}
-            </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Sync
-            </span>
+        </div>
+
+        {/* The 3 Primary Master Menus */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {MASTER_MENUS.map((menu) => {
+            const Icon = menu.icon;
+            const isSelected = masterGroup === menu.id;
+            return (
+              <button
+                key={menu.id}
+                onClick={() => handleMasterGroupChange(menu.id)}
+                className={`flex items-start gap-3.5 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                  isSelected
+                    ? "bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 shadow-xs ring-1 ring-indigo-500/20"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs hover:shadow-xs"
+                }`}
+              >
+                <div
+                  className={`p-2.5 rounded-xl shrink-0 ${
+                    isSelected
+                      ? "bg-indigo-600 text-white shadow-2xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {menu.label}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isSelected
+                          ? "bg-indigo-200/70 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                      }`}
+                    >
+                      {menu.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                    {menu.description}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sub-Tabs for Active Master Menu & Dual Role Selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {activeMasterMenu?.reports.map((r) => {
+              const SubIcon = r.icon;
+              const isSubActive = activeTab === r.id;
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => handleTabChange(r.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    isSubActive
+                      ? "bg-indigo-600 text-white shadow-2xs"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <SubIcon className="h-3.5 w-3.5" />
+                  <span>{r.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Enterprise analytics and real-time audit data for {currentTab?.label.toLowerCase() || "the marketplace"}.
-          </p>
+
+          {/* Role Filter Selector for User Management (Analytics Reports) */}
+          {masterGroup === "users" && activeTab !== "directory" && (
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 self-start sm:self-auto">
+              <span className="text-[11px] font-bold text-slate-400 px-2 uppercase tracking-wider">
+                Role:
+              </span>
+              <button
+                onClick={() => setRoleFilter("ALL")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  roleFilter === "ALL"
+                    ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                All Users
+              </button>
+              <button
+                onClick={() => setRoleFilter("CLIENT")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  roleFilter === "CLIENT"
+                    ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                Clients Only
+              </button>
+              <button
+                onClick={() => setRoleFilter("PROFESSIONAL")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  roleFilter === "PROFESSIONAL"
+                    ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                Professionals Only
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ----------------------------------------------------------------- */}
-      {/* TOP KPI METRIC CARDS FOR CURRENT TAB                             */}
+      {/* EMBEDDED CONSOLES FOR DIRECTORY & OPERATIONS                      */}
       {/* ----------------------------------------------------------------- */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {activeTab === "directory" && (
+        <UserManagementView onInspectUser={(id) => setInspectUserId(id)} />
+      )}
+
+      {activeTab === "operations" && (
+        <OperationsManagementView />
+      )}
+
+      {/* ----------------------------------------------------------------- */}
+      {/* ANALYTICS REPORT VIEWS (KPIs, FILTERS & TABLES)                   */}
+      {/* ----------------------------------------------------------------- */}
+      {activeTab !== "directory" && activeTab !== "operations" && (
+        <>
+          {/* ----------------------------------------------------------------- */}
+          {/* TOP KPI METRIC CARDS FOR CURRENT TAB                             */}
+          {/* ----------------------------------------------------------------- */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {activeTab === "client-registrations" && (
           <>
             <ReportKpiCard
@@ -1508,11 +1729,18 @@ function AdminReportsContent() {
                   return (
                     <tr
                       key={rowId}
+                      onClick={() => {
+                        if (masterGroup === "users" && typeof row.id === "number") {
+                          setInspectUserId(row.id);
+                        }
+                      }}
                       className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${
+                        masterGroup === "users" && typeof row.id === "number" ? "cursor-pointer hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20" : ""
+                      } ${
                         isSelected ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
                       }`}
                     >
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           aria-label={`Select row ${rowId}`}
@@ -1526,8 +1754,19 @@ function AdminReportsContent() {
                       {activeTab === "client-registrations" && (
                         <>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-900 dark:text-white capitalize">
-                              {row.name}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white capitalize hover:text-indigo-600 transition">
+                                {row.name}
+                              </span>
+                              {row.role && (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${
+                                  row.role === "PROFESSIONAL"
+                                    ? "bg-purple-50 text-purple-700 border-purple-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
+                                  {row.roleDisplay || row.role}
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                               <span>{row.email}</span>
@@ -1556,8 +1795,19 @@ function AdminReportsContent() {
                       {activeTab === "client-activity" && (
                         <>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-slate-900 dark:text-white capitalize">
-                              {row.name}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-white capitalize hover:text-indigo-600 transition">
+                                {row.name}
+                              </span>
+                              {row.role && (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${
+                                  row.role === "PROFESSIONAL"
+                                    ? "bg-purple-50 text-purple-700 border-purple-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
+                                  {row.roleDisplay || row.role}
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
                               <span>{row.email}</span>
@@ -1886,8 +2136,22 @@ function AdminReportsContent() {
                       )}
 
                       {/* Row Action Column */}
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
+                          {masterGroup === "users" && typeof row.id === "number" && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInspectUserId(row.id);
+                              }}
+                              title="Open website work & live milestone progress details"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Inspect</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => void handleExportSingleRecord(rowId, "pdf")}
                             disabled={downloadingRecordId === rowId}
@@ -2035,6 +2299,14 @@ function AdminReportsContent() {
           </div>
         </div>
       </div>
+        </>
+      )}
+
+      {/* Deep Details Slide-Over Sheet (Website Work & Milestones) */}
+      <AdminUserInspectionDrawer
+        userId={inspectUserId}
+        onClose={() => setInspectUserId(null)}
+      />
     </div>
   );
 }

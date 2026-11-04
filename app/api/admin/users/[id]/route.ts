@@ -124,19 +124,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
     const userRoleFilter =
       user.role === "CLIENT" ? { clientId: userId } : { professionalId: userId };
-    const [jobsPosted, proposals, allProjects, completedPayments] = await Promise.all([
+    const [jobsPosted, proposals, allProjects, completedPayments, userJobs, userRequests] = await Promise.all([
       db.clientJob.count({ where: { userId } }),
       db.projectRequest.count({ where: userRoleFilter }),
       db.projectTracking.findMany({
         where: userRoleFilter,
-        select: {
-          id: true,
-          status: true,
-          progress: true,
-          createdAt: true,
-          updatedAt: true,
+        include: {
           job: { select: { id: true, title: true, category: true } },
-          milestones: { select: { id: true, status: true } },
+          milestones: { select: { id: true, title: true, amount: true, status: true } },
         },
         orderBy: { updatedAt: "desc" },
         take: 30,
@@ -149,6 +144,39 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         _sum: { amount: true },
         _count: true,
       }),
+      user.role === "CLIENT"
+        ? db.clientJob.findMany({
+            where: { userId },
+            select: {
+              id: true,
+              title: true,
+              category: true,
+              status: true,
+              budgetMin: true,
+              budgetMax: true,
+              createdAt: true,
+              _count: { select: { projectRequests: true } },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+          })
+        : Promise.resolve([]),
+      user.role === "PROFESSIONAL"
+        ? db.projectRequest.findMany({
+            where: { professionalId: userId },
+            select: {
+              id: true,
+              jobId: true,
+              bidAmount: true,
+              status: true,
+              duration: true,
+              createdAt: true,
+              job: { select: { id: true, title: true } },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+          })
+        : Promise.resolve([]),
     ]);
     const completedProjects = allProjects.filter(
       (p) => p.status === "COMPLETED" || p.status.toUpperCase().includes("COMPLETED"),
@@ -171,6 +199,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         money: completedPayments._sum.amount ?? 0,
         services: user.services.length,
       },
+      metrics: {
+        totalSpent: user.role === "CLIENT" ? (completedPayments._sum.amount ?? 0) : 0,
+        totalEarnings: user.role === "PROFESSIONAL" ? (completedPayments._sum.amount ?? 0) : 0,
+        completedProjectsCount: completedProjects,
+      },
+      jobs: (userJobs as Array<{ id: number; title: string; category: string; status: string; budgetMin: number | null; budgetMax: number | null; createdAt: Date; _count: { projectRequests: number } }>).map((j) => ({
+        ...j,
+        budget: j.budgetMax || j.budgetMin || 0,
+        proposalsCount: j._count?.projectRequests ?? 0,
+      })),
+      projectRequests: userRequests,
+      trackings: allProjects,
       projects: allProjects.map((p) => ({
         id: p.id,
         jobId: p.job.id,
@@ -178,8 +218,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         category: p.job.category,
         status: p.status,
         progress: p.progress,
+        milestones: p.milestones,
         totalMilestones: p.milestones.length,
-        completedMilestones: p.milestones.filter((m) => m.status === "APPROVED").length,
+        completedMilestones: p.milestones.filter((m: { status?: string | null }) => m.status === "APPROVED" || m.status === "COMPLETED").length,
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
       })),

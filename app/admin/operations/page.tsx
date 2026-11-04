@@ -380,6 +380,40 @@ const getValidityCountdown = (releaseAt: string) => {
     return "";
   }
 };
+
+export type TimeRangePreset = "all" | "thisMonth" | "lastMonth" | "last30days" | "last7days" | "today";
+
+function isDateWithinRange(dateStr?: string | null, range: TimeRangePreset = "all"): boolean {
+  if (range === "all" || !dateStr) return true;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+
+  const now = new Date();
+  if (range === "today") {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return d >= start && d <= end;
+  }
+  if (range === "last7days") {
+    const start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return d >= start;
+  }
+  if (range === "last30days") {
+    const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return d >= start;
+  }
+  if (range === "thisMonth") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    return d >= start;
+  }
+  if (range === "lastMonth") {
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    return d >= start && d <= end;
+  }
+  return true;
+}
+
 function getTimelineNodeConfig(type: AdminTimelineItem["type"]) {
   switch (type) {
     case "PAYMENT":
@@ -543,6 +577,7 @@ function OperationsContent() {
   const [view, setView] = useState<"jobs" | "running_jobs" | "disputes">("jobs");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("ALL");
+  const [timeRange, setTimeRange] = useState<TimeRangePreset>("all");
   const [selectedJob, setSelectedJob] = useState<JobDetails | null>(null);
   const [detailsStatus, setDetailsStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -635,9 +670,10 @@ function OperationsContent() {
       (data?.jobs ?? []).filter((job) => {
         const text =
           `${job.title} ${job.category} ${job.user.firstName} ${job.user.lastName} ${job.locationLabel}`.toLowerCase();
-        return text.includes(query.toLowerCase()) && (filter === "ALL" || job.status === filter);
+        const matchesDate = isDateWithinRange(job.createdAt, timeRange);
+        return text.includes(query.toLowerCase()) && (filter === "ALL" || job.status === filter) && matchesDate;
       }),
-    [data, query, filter],
+    [data, query, filter, timeRange],
   );
   const runningProjects = data?.jobs.filter((item) => item.status === "RUNNING").length ?? 0;
   const runningCount = Math.max(data?.runningJobs?.length ?? 0, data?.stats?.runningJobs ?? 0, runningProjects);
@@ -694,6 +730,9 @@ function OperationsContent() {
       }
     }
     return list.filter((item) => {
+      const jobDate = item.startedAt || item.acceptedAt || item.job?.createdAt;
+      if (!isDateWithinRange(jobDate, timeRange)) return false;
+
       const text = `
         ${item.job?.title ?? `Project #${item.jobId}`}
         ${item.job?.category ?? ""}
@@ -718,21 +757,22 @@ function OperationsContent() {
       }
       return item.status === filter;
     });
-  }, [data?.runningJobs, data?.jobs, query, filter]);
+  }, [data?.runningJobs, data?.jobs, query, filter, timeRange]);
   const disputes = useMemo(
     () =>
       (data?.disputes ?? []).filter((dispute) => {
         const text =
           `${dispute.issueType} ${dispute.message} ${dispute.reporterRole}`.toLowerCase();
         const matchesQuery = text.includes(query.toLowerCase());
+        const matchesDate = isDateWithinRange(dispute.createdAt, timeRange);
         const isOpen = dispute.status !== "RESOLVED" && dispute.status !== "CLOSED";
         const matchesFilter =
           filter === "ALL" ||
           (filter === "OPEN" ? isOpen : dispute.status === filter) ||
           dispute.priority === filter;
-        return matchesQuery && matchesFilter;
+        return matchesQuery && matchesFilter && matchesDate;
       }),
-    [data, query, filter],
+    [data, query, filter, timeRange],
   );
   const openDisputes =
     data?.disputes.filter((item) => item.status !== "RESOLVED" && item.status !== "CLOSED").length ?? 0;
@@ -1157,6 +1197,22 @@ function OperationsContent() {
                 />
               </label>
               <div className="flex items-center gap-2 overflow-x-auto">
+                <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs shadow-2xs">
+                  <CalendarDays className="h-4 w-4 text-slate-400 shrink-0" />
+                  <select
+                    value={timeRange}
+                    onChange={(event) => { setTimeRange(event.target.value as TimeRangePreset); setPage(1); }}
+                    aria-label="Filter operations by date range"
+                    className="bg-transparent border-none text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="thisMonth">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="last30days">Last 30 Days</option>
+                    <option value="last7days">Last 7 Days</option>
+                    <option value="today">Today</option>
+                  </select>
+                </div>
                 <SlidersHorizontal className="h-4 w-4 shrink-0 text-slate-400" />
                 {options.map((item) => (
                   <button
@@ -1260,12 +1316,16 @@ function OperationsContent() {
   );
 }
 
-export default function OperationsPage() {
+export function OperationsManagementView() {
   return (
     <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-slate-100" />}>
       <OperationsContent />
     </Suspense>
   );
+}
+
+export default function OperationsPage() {
+  return <OperationsManagementView />;
 }
 
 function Metric({

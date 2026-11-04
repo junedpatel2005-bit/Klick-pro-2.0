@@ -37,13 +37,9 @@ import { ENABLE_ADMIN_EXTRA_SECTION } from "@/config/extra-features";
 import { useAdminSidebar } from "@/components/AdminSidebarContext";
 
 export const REPORT_SUB_TABS = [
-  { id: "client-registrations", label: "Client Registrations", icon: UserPlus },
-  { id: "client-activity", label: "Client Activity", icon: Activity },
-  { id: "client-engagement", label: "Client Engagement", icon: Layers },
-  { id: "support-complaints", label: "Support & Complaints", icon: ShieldAlert },
+  { id: "users", label: "User Management", icon: UsersRound },
+  { id: "jobs", label: "Job Management", icon: BriefcaseBusiness },
   { id: "system-reliability", label: "System Reliability", icon: Cpu },
-  { id: "client-growth", label: "Client Growth", icon: TrendingUp },
-  { id: "posting-growth", label: "Posting Growth", icon: Briefcase },
 ] as const;
 
 const linkGroups = [
@@ -329,12 +325,18 @@ export function AdminSidebar() {
                         )}
                       </Link>
 
-                      {/* 7 Tabs Sub-menu under Reports & Exports */}
+                      {/* 3 Menus Sub-menu under Reports & Exports */}
                       {isThisReportLink && isReportsPage && reportsSubmenuOpen && !collapsed && (
                         <div className="ml-4 pl-3.5 border-l-2 border-indigo-200 dark:border-slate-800 space-y-1 py-1">
                           {REPORT_SUB_TABS.map((sub) => {
                             const SubIcon = sub.icon;
-                            const isSubActive = activeReportTab === sub.id;
+                            const currentTabParam = searchParams?.get("tab") || "users";
+                            const isSubActive =
+                              sub.id === "users"
+                                ? (!searchParams?.get("tab") || ["users", "directory", "client-registrations", "client-activity", "client-engagement", "client-growth"].includes(currentTabParam))
+                                : sub.id === "jobs"
+                                  ? ["jobs", "operations", "support-complaints", "posting-growth"].includes(currentTabParam)
+                                  : ["system-reliability", "reliability"].includes(currentTabParam);
                             return (
                               <Link
                                 key={sub.id}

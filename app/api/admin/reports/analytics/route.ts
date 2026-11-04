@@ -74,27 +74,35 @@ export async function GET(request: NextRequest) {
   const customStart = searchParams.get("startDate");
   const customEnd = searchParams.get("endDate");
   const search = (searchParams.get("search") || "").trim().toLowerCase();
+  const roleParam = (searchParams.get("role") || "ALL").toUpperCase();
+  const roleWhere =
+    roleParam === "CLIENT"
+      ? { role: "CLIENT" as const }
+      : roleParam === "PROFESSIONAL"
+        ? { role: "PROFESSIONAL" as const }
+        : { role: { in: ["CLIENT" as const, "PROFESSIONAL" as const] } };
 
   const { start, end } = parseDateBoundary(timeRange, customStart, customEnd);
   const isTimeFiltered = timeRange !== "all";
 
   try {
     // =========================================================================
-    // 1. NEW CLIENT REGISTRATIONS
+    // 1. NEW USER REGISTRATIONS (CLIENT & PROFESSIONAL DUAL-ROLE)
     // =========================================================================
     if (report === "client-registrations") {
       const dateWhere = isTimeFiltered
         ? { createdAt: { gte: start, lte: end } }
         : {};
 
-      const clients = await db.user.findMany({
+      const users = await db.user.findMany({
         where: {
-          role: "CLIENT",
+          ...roleWhere,
           ...dateWhere,
         },
         include: {
           clientProfiles: true,
           clientJobs: { select: { id: true, locationState: true } },
+          professionalCategoryRecord: { select: { name: true } },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -103,28 +111,38 @@ export async function GET(request: NextRequest) {
       const stateMap: Record<string, number> = {};
       let companiesCount = 0;
 
-      const rows = clients.map((c) => {
+      const rows = users.map((c) => {
         const rawCompany = c.companyName?.trim() || c.clientProfiles?.companyName?.trim() || "";
         const isCompany = Boolean(rawCompany && rawCompany.toLowerCase() !== "individual");
         if (isCompany) companiesCount++;
 
-        const industry = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
+        const industry =
+          c.role === "PROFESSIONAL"
+            ? c.professionalCategory?.trim() || c.professionalCategoryRecord?.name || c.industry?.trim() || "Professional Services"
+            : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
         industryMap[industry] = (industryMap[industry] || 0) + 1;
 
         const rawLoc =
           c.address?.trim() ||
           c.clientProfiles?.address?.trim() ||
+          c.professionalCity?.trim() ||
           c.clientJobs[0]?.locationState ||
           "";
         const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
         stateMap[stateLoc] = (stateMap[stateLoc] || 0) + 1;
 
-        const companyDisplay = isCompany ? capitalizeWords(rawCompany) : "Individual Client";
-        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
+        const companyDisplay = isCompany
+          ? capitalizeWords(rawCompany)
+          : c.role === "PROFESSIONAL"
+            ? "Freelance Professional"
+            : "Individual Client";
+        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
 
         return {
           id: c.id,
           name: fullName,
+          role: c.role,
+          roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
           email: c.email,
           phone: c.phone || "—",
           companyName: companyDisplay,
@@ -149,16 +167,20 @@ export async function GET(request: NextRequest) {
               r.email.toLowerCase().includes(search) ||
               r.companyName.toLowerCase().includes(search) ||
               r.industryType.toLowerCase().includes(search) ||
-              r.location.toLowerCase().includes(search),
+              r.location.toLowerCase().includes(search) ||
+              r.role.toLowerCase().includes(search),
           )
         : rows;
 
       return NextResponse.json({
         report: "client-registrations",
         summary: {
-          totalClients: clients.length,
+          totalClients: users.length,
+          totalUsers: users.length,
+          clientsCount: users.filter((u) => u.role === "CLIENT").length,
+          professionalsCount: users.filter((u) => u.role === "PROFESSIONAL").length,
           newCompaniesRegistered: companiesCount,
-          newUsersRegistered: clients.length,
+          newUsersRegistered: users.length,
           topIndustry: capitalizeWords(topIndustry),
           topLocation: capitalizeWords(topState),
         },
@@ -184,15 +206,18 @@ export async function GET(request: NextRequest) {
           select: { userId: true, createdAt: true },
         }),
         db.user.findMany({
-          where: { role: "CLIENT" },
+          where: { ...roleWhere },
           select: {
             id: true,
+            role: true,
             firstName: true,
             lastName: true,
             email: true,
             phone: true,
             address: true,
             industry: true,
+            professionalCategory: true,
+            professionalCity: true,
             professionalState: true,
             companyName: true,
             isActive: true,
@@ -282,17 +307,27 @@ export async function GET(request: NextRequest) {
         const rawLoc =
           c.address?.trim() ||
           c.clientProfiles?.address?.trim() ||
+          c.professionalCity?.trim() ||
           c.clientJobs[0]?.locationState ||
           "";
         const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
-        const industry = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
+        const industry =
+          c.role === "PROFESSIONAL"
+            ? c.professionalCategory?.trim() || c.industry?.trim() || "Professional Services"
+            : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
 
-        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
-        const company = c.companyName ? capitalizeWords(c.companyName) : "Individual";
+        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
+        const company = c.companyName
+          ? capitalizeWords(c.companyName)
+          : c.role === "PROFESSIONAL"
+            ? "Freelance Professional"
+            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
+          role: c.role,
+          roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
           company,
           email: c.email,
           phone: c.phone || "—",
@@ -359,16 +394,19 @@ export async function GET(request: NextRequest) {
         ? { createdAt: { gte: start, lte: end } }
         : {};
 
-      const clients = await db.user.findMany({
-        where: { role: "CLIENT" },
+      const users = await db.user.findMany({
+        where: { ...roleWhere },
         select: {
           id: true,
+          role: true,
           firstName: true,
           lastName: true,
           email: true,
           phone: true,
           address: true,
           industry: true,
+          professionalCategory: true,
+          professionalCity: true,
           professionalState: true,
           companyName: true,
           clientProfiles: true,
@@ -390,11 +428,27 @@ export async function GET(request: NextRequest) {
               status: true,
               job: { select: { id: true, title: true } },
               milestones: {
-                where: { status: { in: ["COMPLETED", "RELEASED"] } },
+                where: { status: { in: ["COMPLETED", "RELEASED", "APPROVED"] } },
                 select: { id: true, title: true, amount: true, status: true },
               },
               workUploads: { select: { id: true, fileName: true } },
             },
+          },
+          professionalProjectTrackings: {
+            select: {
+              id: true,
+              status: true,
+              job: { select: { id: true, title: true } },
+              milestones: {
+                where: { status: { in: ["COMPLETED", "RELEASED", "APPROVED"] } },
+                select: { id: true, title: true, amount: true, status: true },
+              },
+              workUploads: { select: { id: true, fileName: true } },
+            },
+          },
+          professionalProjectRequests: {
+            where: dateWhere,
+            select: { id: true, status: true, bidAmount: true },
           },
           clientPayments: {
             where: dateWhere,
@@ -409,14 +463,18 @@ export async function GET(request: NextRequest) {
       let totalTasksCompleted = 0;
       let featuresUsedCount = 0;
 
-      const rows = clients.map((c) => {
+      const rows = users.map((c) => {
         const rawLoc =
           c.address?.trim() ||
           c.clientProfiles?.address?.trim() ||
+          c.professionalCity?.trim() ||
           c.clientJobs[0]?.locationState ||
           "";
         const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
-        const industry = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
+        const industry =
+          c.role === "PROFESSIONAL"
+            ? c.professionalCategory?.trim() || c.industry?.trim() || "Professional Services"
+            : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
 
         // Itemized documents
         const jobDocNames: string[] = [];
@@ -426,7 +484,9 @@ export async function GET(request: NextRequest) {
           });
         });
         const trackingDocNames: string[] = [];
-        c.clientProjectTrackings.forEach((t) => {
+        const relevantTrackings =
+          c.role === "PROFESSIONAL" ? c.professionalProjectTrackings : c.clientProjectTrackings;
+        relevantTrackings.forEach((t) => {
           t.workUploads.forEach((w) => {
             trackingDocNames.push(`${w.fileName || `File #${w.id}`} (Project #${t.id})`);
           });
@@ -435,16 +495,23 @@ export async function GET(request: NextRequest) {
         const documentsUploaded = allDocNames.length;
         totalDocsUploaded += documentsUploaded;
 
-        // Itemized forms
-        const formNames = c.clientJobs.map(
-          (j) => `${capitalizeWords(j.title || "Project")} [${j.status || "OPEN"}]`,
-        );
-        const formsSubmitted = c.clientJobs.length;
+        // Itemized forms / proposals
+        const formNames: string[] = [];
+        if (c.role === "CLIENT") {
+          c.clientJobs.forEach((j) => {
+            formNames.push(`${capitalizeWords(j.title || "Project")} [${j.status || "OPEN"}]`);
+          });
+        } else {
+          c.professionalProjectRequests.forEach((p) => {
+            formNames.push(`Proposal #${p.id} (₹${(p.bidAmount || 0).toLocaleString("en-IN")}) [${p.status || "PENDING"}]`);
+          });
+        }
+        const formsSubmitted = formNames.length;
         totalFormsSubmitted += formsSubmitted;
 
         // Itemized tasks / milestones
         const taskNames: string[] = [];
-        c.clientProjectTrackings.forEach((t) => {
+        relevantTrackings.forEach((t) => {
           t.milestones.forEach((m) => {
             taskNames.push(
               `${capitalizeWords(m.title || "Task")} (₹${(m.amount || 0).toLocaleString("en-IN")})`,
@@ -456,19 +523,26 @@ export async function GET(request: NextRequest) {
 
         const usedFeatures: string[] = [];
         if (c.clientJobs.length > 0) usedFeatures.push("Job Postings Engine");
+        if (c.professionalProjectRequests.length > 0) usedFeatures.push("Proposal Submissions");
         if (tasksCompleted > 0) usedFeatures.push("Milestone Tracker & Escrow Settlement");
         if (c.clientPayments.length > 0) usedFeatures.push("Escrow Wallet & Digital Invoicing");
         if (documentsUploaded > 0) usedFeatures.push("Document & File Repository");
 
         if (usedFeatures.length > 0) featuresUsedCount++;
 
-        const primaryFeature = usedFeatures[0] || "Catalog Browsing";
-        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
-        const company = c.companyName ? capitalizeWords(c.companyName) : "Individual";
+        const primaryFeature = usedFeatures[0] || (c.role === "PROFESSIONAL" ? "Pro Proposal Engine" : "Catalog Browsing");
+        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
+        const company = c.companyName
+          ? capitalizeWords(c.companyName)
+          : c.role === "PROFESSIONAL"
+            ? "Freelance Professional"
+            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
+          role: c.role,
+          roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
           company,
           email: c.email,
           phone: c.phone || "—",
@@ -517,7 +591,7 @@ export async function GET(request: NextRequest) {
           tasksCompleted: totalTasksCompleted,
           milestonesCompleted: totalTasksCompleted,
           featuresUsedAcrossClients: featuresUsedCount,
-          activeClientsCount: clients.length,
+          activeClientsCount: users.length,
         },
         rows: filteredRows,
       });
@@ -1028,15 +1102,18 @@ export async function GET(request: NextRequest) {
     // =========================================================================
     if (report === "client-growth") {
       const allClients = await db.user.findMany({
-        where: { role: "CLIENT" },
+        where: { ...roleWhere },
         select: {
           id: true,
+          role: true,
           firstName: true,
           lastName: true,
           email: true,
           phone: true,
           address: true,
           industry: true,
+          professionalCategory: true,
+          professionalCity: true,
           professionalState: true,
           companyName: true,
           createdAt: true,
@@ -1078,16 +1155,26 @@ export async function GET(request: NextRequest) {
         const rawLoc =
           c.address?.trim() ||
           c.clientProfiles?.address?.trim() ||
+          c.professionalCity?.trim() ||
           c.clientJobs[0]?.locationState ||
           "";
         const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
-        const industry = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
-        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
-        const company = c.companyName ? capitalizeWords(c.companyName) : "Individual Client";
+        const industry =
+          c.role === "PROFESSIONAL"
+            ? c.professionalCategory?.trim() || c.industry?.trim() || "Professional Services"
+            : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
+        const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
+        const company = c.companyName
+          ? capitalizeWords(c.companyName)
+          : c.role === "PROFESSIONAL"
+            ? "Freelance Professional"
+            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
+          role: c.role,
+          roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
           company,
           email: c.email,
           phone: c.phone || "—",
