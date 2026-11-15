@@ -13,18 +13,18 @@ model CmsPage {
   title           String
   slug            String        @unique
   content         String        @default("")
-  metaTitle       String        @default("")
-  metaDescription String        @default("")
+  metaTitle       String        @default("") @map("meta_title")
+  metaDescription String        @default("") @map("meta_description")
   status          CmsPageStatus @default(DRAFT)
-  pageKey         String        @default("")
+  pageKey         String        @default("") @map("page_key")
   sections        String        @default("{}")
   keywords        String        @default("")
-  ogTitle         String        @default("")
-  ogDescription   String        @default("")
-  ogImage         String        @default("")
-  canonicalUrl    String        @default("")
-  createdAt       DateTime
-  updatedAt       DateTime
+  ogTitle         String        @default("") @map("og_title")
+  ogDescription   String        @default("") @map("og_description")
+  ogImage         String        @default("") @map("og_image")
+  canonicalUrl    String        @default("") @map("canonical_url")
+  createdAt       DateTime      @map("created_at")
+  updatedAt       DateTime      @map("updated_at")
 
   @@index([slug])
   @@index([status])
@@ -47,36 +47,36 @@ model CmsPageVersion {
 model CmsMedia {
   id        Int      @id @default(autoincrement())
   name      String
-  mimeType  String
+  mimeType  String   @map("mime_type")
   url       String
-  createdBy Int?
-  createdAt DateTime
+  createdBy Int?     @map("created_by")
+  createdAt DateTime @map("created_at")
 
   @@index([createdAt])
   @@map("cms_media")
 }
 
 model SQLiteMigrationTableArchive {
-  sourceTable String   @id
+  sourceTable String   @id @map("source_table")
   rows        Json
-  sourceCount Int
-  migratedAt  DateTime @default(now())
+  sourceCount Int      @map("source_count")
+  migratedAt  DateTime @default(now()) @map("migrated_at")
 }
 
 model SQLiteMigrationAudit {
-  sourceTable   String   @id
-  sourceCount   Int
-  archivedCount Int
-  migratedAt    DateTime @default(now())
+  sourceTable   String   @id @map("source_table")
+  sourceCount   Int      @map("source_count")
+  archivedCount Int      @map("archived_count")
+  migratedAt    DateTime @default(now()) @map("migrated_at")
 }
 
 model WebsitePage {
-  pageKey   String        @id @map("pageKey")
+  pageKey   String        @id @map("page_key")
   path      String        @unique
   title     String
   content   String        @default("")
   status    CmsPageStatus @default(DRAFT)
-  updatedAt DateTime
+  updatedAt DateTime      @map("updated_at")
   css       String        @default("")
 }
 
@@ -85,7 +85,7 @@ model LegalPage {
   title     String
   content   String        @default("")
   status    CmsPageStatus @default(PUBLISHED)
-  updatedAt DateTime
+  updatedAt DateTime      @map("updated_at")
 }
 
 model ServiceCategory {
@@ -93,12 +93,12 @@ model ServiceCategory {
   name              String            @unique
   slug              String            @unique
   description       String            @default("")
-  iconName          String            @default("")
-  sortOrder         Int               @default(0)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @default(now())
+  iconName          String            @default("") @map("icon_name")
+  sortOrder         Int               @default(0) @map("sort_order")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @default(now()) @map("updated_at")
   segment           String            @default("RESIDENTIAL")
-  parentId          Int?
+  parentId          Int?              @map("parent_id")
   services          Service[]
   parent            ServiceCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children          ServiceCategory[] @relation("CategoryHierarchy")
@@ -110,57 +110,57 @@ model ServiceCategory {
 model User {
   id                                  Int                       @id @default(autoincrement())
   role                                UserRole                  @default(CLIENT)
-  firstName                           String
-  lastName                            String
+  firstName                           String                    @map("first_name")
+  lastName                            String                    @map("last_name")
   email                               String                    @unique
   phone                               String?                   @unique
-  passwordHash                        String?
-  googleId                            String?                   @unique
-  avatarUrl                           String?
-  companyName                         String?
-  companyWebsite                      String?
+  passwordHash                        String?                   @map("password_hash")
+  googleId                            String?                   @unique @map("google_id")
+  avatarUrl                           String?                   @map("avatar_url")
+  companyName                         String?                   @map("company_name")
+  companyWebsite                      String?                   @map("company_website")
   industry                            String?
-  teamSize                            String?
-  companyDescription                  String?
+  teamSize                            String?                   @map("team_size")
+  companyDescription                  String?                   @map("company_description")
   address                             String?
-  professionalCategory                String?
-  professionalCity                    String?
-  professionalSkillsJson              String?
-  experienceYears                     Int?
-  hourlyRate                          Int?
-  fixedRate                           Int?
-  portfolioUrl                        String?
-  workPhotosJson                      String?
-  certificationsJson                  String?
-  tradeLicenseUrl                     String?
-  serviceArea                         String?
-  workMode                            String                    @default("both")
-  serviceRadiusKm                     Int?
-  averageRating                       Float                     @default(0)
-  reviewCount                         Int                       @default(0)
-  isVerified                          Boolean                   @default(false)
-  availabilityStatus                  String                    @default("available")
-  savedLocationsJson                  String?
-  hiringNeedsJson                     String?
-  authProvider                        String                    @default("LOCAL")
-  isActive                            Boolean                   @default(true)
-  lastLoginAt                         DateTime?
-  createdAt                           DateTime                  @default(now())
-  updatedAt                           DateTime                  @updatedAt
-  professionalLatitude                Float?
-  professionalLongitude               Float?
-  biometricEnabled                    Boolean                   @default(false)
-  biometricType                       String?
-  browserNotificationsEnabled         Boolean                   @default(true)
-  emailNotificationsEnabled           Boolean                   @default(true)
-  emailVerifiedAt                     DateTime?
-  projectActivityNotificationsEnabled Boolean                   @default(true)
-  phoneVerifiedAt                     DateTime?
+  professionalCategory                String?                   @map("professional_category")
+  professionalCity                    String?                   @map("professional_city")
+  professionalSkillsJson              String?                   @map("professional_skills_json")
+  experienceYears                     Int?                      @map("experience_years")
+  hourlyRate                          Int?                      @map("hourly_rate")
+  fixedRate                           Int?                      @map("fixed_rate")
+  portfolioUrl                        String?                   @map("portfolio_url")
+  workPhotosJson                      String?                   @map("work_photos_json")
+  certificationsJson                  String?                   @map("certifications_json")
+  tradeLicenseUrl                     String?                   @map("trade_license_url")
+  serviceArea                         String?                   @map("service_area")
+  workMode                            String                    @default("both") @map("work_mode")
+  serviceRadiusKm                     Int?                      @map("service_radius_km")
+  averageRating                       Float                     @default(0) @map("average_rating")
+  reviewCount                         Int                       @default(0) @map("review_count")
+  isVerified                          Boolean                   @default(false) @map("is_verified")
+  availabilityStatus                  String                    @default("available") @map("availability_status")
+  savedLocationsJson                  String?                   @map("saved_locations_json")
+  hiringNeedsJson                     String?                   @map("hiring_needs_json")
+  authProvider                        String                    @default("LOCAL") @map("auth_provider")
+  isActive                            Boolean                   @default(true) @map("is_active")
+  lastLoginAt                         DateTime?                 @map("last_login_at")
+  createdAt                           DateTime                  @default(now()) @map("created_at")
+  updatedAt                           DateTime                  @updatedAt @map("updated_at")
+  professionalLatitude                Float?                    @map("professional_latitude")
+  professionalLongitude               Float?                    @map("professional_longitude")
+  biometricEnabled                    Boolean                   @default(false) @map("biometric_enabled")
+  biometricType                       String?                   @map("biometric_type")
+  browserNotificationsEnabled         Boolean                   @default(true) @map("browser_notifications_enabled")
+  emailNotificationsEnabled           Boolean                   @default(true) @map("email_notifications_enabled")
+  emailVerifiedAt                     DateTime?                 @map("email_verified_at")
+  projectActivityNotificationsEnabled Boolean                   @default(true) @map("project_activity_notifications_enabled")
+  phoneVerifiedAt                     DateTime?                 @map("phone_verified_at")
   username                            String?                   @unique
   razorpayAccountId                   String?                   @unique @map("razorpay_account_id")
   razorpayContactId                   String?                   @map("razorpay_contact_id")
-  professionalState                   String?
-  professionalDistrict                String?
+  professionalState                   String?                   @map("professional_state")
+  professionalDistrict                String?                   @map("professional_district")
   professionalCategoryId              Int?                      @map("professional_category_id")
   clientJobs                          ClientJob[]
   clientProfiles                      ClientProfile?
@@ -200,19 +200,19 @@ model Session {
 
 model ClientProfile {
   id                 Int                  @id @default(autoincrement())
-  userId             Int                  @unique
-  fullName           String
+  userId             Int                  @unique @map("user_id")
+  fullName           String               @map("full_name")
   email              String
   phone              String
-  companyName        String?
-  companyWebsite     String?
+  companyName        String?              @map("company_name")
+  companyWebsite     String?              @map("company_website")
   industry           String?
-  teamSize           String?
-  companyDescription String?
+  teamSize           String?              @map("team_size")
+  companyDescription String?              @map("company_description")
   address            String
-  profilePhotoUrl    String?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  profilePhotoUrl    String?              @map("profile_photo_url")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
   hiringNeeds        ClientHiringNeed[]
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   savedLocations     ClientSavedLocation?
@@ -222,11 +222,11 @@ model ClientProfile {
 
 model ClientSavedLocation {
   id              Int           @id @default(autoincrement())
-  clientProfileId Int           @unique(map: "ClientSavedLocation_one_primary_idx", where: raw("(\"isPrimary\" = true)"))
+  clientProfileId Int           @unique(map: "ClientSavedLocation_one_primary_idx", where: raw("(\"isPrimary\" = true)")) @map("client_profile_id")
   label           String
   address         String
-  createdAt       DateTime      @default(now())
-  isPrimary       Boolean       @default(false)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  isPrimary       Boolean       @default(false) @map("is_primary")
   clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
 
   @@index([clientProfileId])
@@ -234,9 +234,9 @@ model ClientSavedLocation {
 
 model ClientHiringNeed {
   id              Int           @id @default(autoincrement())
-  clientProfileId Int
+  clientProfileId Int           @map("client_profile_id")
   value           String
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime      @default(now()) @map("created_at")
   clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
 
   @@index([clientProfileId])
@@ -244,29 +244,29 @@ model ClientHiringNeed {
 
 model ClientJob {
   id               Int                   @id @default(autoincrement())
-  userId           Int
+  userId           Int                   @map("user_id")
   category         String?
   title            String?
   description      String?
-  budgetMin        Int?
-  budgetMax        Int?
+  budgetMin        Int?                  @map("budget_min")
+  budgetMax        Int?                  @map("budget_max")
   urgency          JobUrgency            @default(MEDIUM)
-  jobDate          DateTime?
+  jobDate          DateTime?             @map("job_date")
   deadline         DateTime?
-  workMode         JobWorkMode           @default(BOTH)
-  locationLabel    String?
-  locationAddress  String?
-  locationLat      Float?
-  locationLng      Float?
+  workMode         JobWorkMode           @default(BOTH) @map("work_mode")
+  locationLabel    String?               @map("location_label")
+  locationAddress  String?               @map("location_address")
+  locationLat      Float?                @map("location_lat")
+  locationLng      Float?                @map("location_lng")
   status           JobStatus             @default(OPEN)
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  hourlyRate       Int?
-  totalJobHours    Int?
-  timingType       String                @default("FIXED")
-  paymentMethod    String                @default("WALLET")
-  locationState    String?
-  locationDistrict String?
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+  hourlyRate       Int?                  @map("hourly_rate")
+  totalJobHours    Int?                  @map("total_job_hours")
+  timingType       String                @default("FIXED") @map("timing_type")
+  paymentMethod    String                @default("WALLET") @map("payment_method")
+  locationState    String?               @map("location_state")
+  locationDistrict String?               @map("location_district")
   user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   attachments      ClientJobAttachment[]
   favoriteJobs     FavoriteJob[]
@@ -282,9 +282,9 @@ model ClientJob {
 
 model FavoriteJob {
   id        Int       @id @default(autoincrement())
-  userId    Int
-  jobId     Int
-  createdAt DateTime  @default(now())
+  userId    Int       @map("user_id")
+  jobId     Int       @map("job_id")
+  createdAt DateTime  @default(now()) @map("created_at")
   job       ClientJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -295,9 +295,9 @@ model FavoriteJob {
 
 model SavedProfessional {
   id             Int      @id @default(autoincrement())
-  userId         Int
-  professionalId Int
-  createdAt      DateTime @default(now())
+  userId         Int      @map("user_id")
+  professionalId Int      @map("professional_id")
+  createdAt      DateTime @default(now()) @map("created_at")
   user           User     @relation("ClientSavedProfessionals", fields: [userId], references: [id], onDelete: Cascade)
   professional   User     @relation("ProfessionalSavedByClients", fields: [professionalId], references: [id], onDelete: Cascade)
 
@@ -308,12 +308,12 @@ model SavedProfessional {
 
 model ClientJobAttachment {
   id         Int       @id @default(autoincrement())
-  jobId      Int
-  fileName   String
-  fileType   String?
-  fileSize   Int?
-  previewUrl String?
-  createdAt  DateTime  @default(now())
+  jobId      Int       @map("job_id")
+  fileName   String    @map("file_name")
+  fileType   String?   @map("file_type")
+  fileSize   Int?      @map("file_size")
+  previewUrl String?   @map("preview_url")
+  createdAt  DateTime  @default(now()) @map("created_at")
   job        ClientJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
@@ -321,15 +321,15 @@ model ClientJobAttachment {
 
 model ClientJobMilestone {
   id           Int       @id @default(autoincrement())
-  jobId        Int
+  jobId        Int       @map("job_id")
   title        String
   description  String?
   percentage   Int
   amount       Int?
   validityDays Int       @default(0) @map("validity_days")
-  sortOrder    Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  sortOrder    Int       @default(0) @map("sort_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
   job          ClientJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
@@ -338,18 +338,18 @@ model ClientJobMilestone {
 
 model ProjectTransaction {
   id             Int      @id @default(autoincrement())
-  trackingId     Int
-  milestoneId    Int?
-  completionId   Int?
-  clientId       Int
-  professionalId Int
+  trackingId     Int      @map("tracking_id")
+  milestoneId    Int?     @map("milestone_id")
+  completionId   Int?     @map("completion_id")
+  clientId       Int      @map("client_id")
+  professionalId Int      @map("professional_id")
   amount         Int
   currency       String   @default("INR")
   type           String
   status         String   @default("COMPLETED")
   description    String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
   @@index([clientId])
@@ -360,23 +360,23 @@ model ProjectTransaction {
 
 model ProjectNegotiation {
   id                    Int      @id @default(autoincrement())
-  requestId             Int
-  jobId                 Int
-  clientId              Int
-  professionalId        Int
-  senderId              Int
-  senderRole            String
-  bidAmount             Int?
-  hourlyRate            Int?
-  totalJobHours         Int?
+  requestId             Int      @map("request_id")
+  jobId                 Int      @map("job_id")
+  clientId              Int      @map("client_id")
+  professionalId        Int      @map("professional_id")
+  senderId              Int      @map("sender_id")
+  senderRole            String   @map("sender_role")
+  bidAmount             Int?     @map("bid_amount")
+  hourlyRate            Int?     @map("hourly_rate")
+  totalJobHours         Int?     @map("total_job_hours")
   duration              String?
   message               String
-  createdAt             DateTime @default(now())
-  previousBidAmount     Int?
-  previousHourlyRate    Int?
-  previousTotalJobHours Int?
-  previousDuration      String?
-  previousMessage       String?
+  createdAt             DateTime @default(now()) @map("created_at")
+  previousBidAmount     Int?     @map("previous_bid_amount")
+  previousHourlyRate    Int?     @map("previous_hourly_rate")
+  previousTotalJobHours Int?     @map("previous_total_job_hours")
+  previousDuration      String?  @map("previous_duration")
+  previousMessage       String?  @map("previous_message")
 
   @@index([requestId])
   @@index([clientId])
@@ -386,19 +386,19 @@ model ProjectNegotiation {
 
 model ProjectReview {
   id                     Int       @id @default(autoincrement())
-  trackingId             Int       @unique
-  clientId               Int
-  professionalId         Int
+  trackingId             Int       @unique @map("tracking_id")
+  clientId               Int       @map("client_id")
+  professionalId         Int       @map("professional_id")
   rating                 Int?
   comment                String?
-  clientReviewedAt       DateTime?
-  professionalRating     Int?
-  professionalComment    String?
-  professionalReviewedAt DateTime?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  professionalResponse   String?
-  professionalResponseAt DateTime?
+  clientReviewedAt       DateTime? @map("client_reviewed_at")
+  professionalRating     Int?      @map("professional_rating")
+  professionalComment    String?   @map("professional_comment")
+  professionalReviewedAt DateTime? @map("professional_reviewed_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  professionalResponse   String?   @map("professional_response")
+  professionalResponseAt DateTime? @map("professional_response_at")
 
   @@index([clientId])
   @@index([professionalId])
@@ -407,18 +407,18 @@ model ProjectReview {
 
 model ProjectRequest {
   id              Int              @id @default(autoincrement())
-  jobId           Int
-  clientId        Int
-  professionalId  Int
-  bidAmount       Int
-  hourlyRate      Int?
-  totalJobHours   Int?
+  jobId           Int              @map("job_id")
+  clientId        Int              @map("client_id")
+  professionalId  Int              @map("professional_id")
+  bidAmount       Int              @map("bid_amount")
+  hourlyRate      Int?             @map("hourly_rate")
+  totalJobHours   Int?             @map("total_job_hours")
   duration        String
-  coverLetter     String
+  coverLetter     String           @map("cover_letter")
   status          String           @default("PENDING")
-  attachmentsJson String?          @default("[]")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  attachmentsJson String?          @default("[]") @map("attachments_json")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
   origin          String           @default("CLIENT_HIRE")
   client          User             @relation("ProjectRequestClient", fields: [clientId], references: [id])
   job             ClientJob        @relation(fields: [jobId], references: [id])
@@ -433,18 +433,18 @@ model ProjectRequest {
 
 model ProjectTracking {
   id             Int                    @id @default(autoincrement())
-  requestId      Int                    @unique
-  jobId          Int
-  clientId       Int
-  professionalId Int
+  requestId      Int                    @unique @map("request_id")
+  jobId          Int                    @map("job_id")
+  clientId       Int                    @map("client_id")
+  professionalId Int                    @map("professional_id")
   status         String                 @default("READY_TO_START")
-  acceptedAt     DateTime               @default(now())
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
+  acceptedAt     DateTime               @default(now()) @map("accepted_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
   progress       Int                    @default(0)
-  currentStage   String?
-  startedAt      DateTime?
-  completedAt    DateTime?
+  currentStage   String?                @map("current_stage")
+  startedAt      DateTime?              @map("started_at")
+  completedAt    DateTime?              @map("completed_at")
   payments       Payment[]              @relation("PaymentProjectTracking")
   milestones     ProjectMilestone[]
   timelineEvents ProjectTimelineEvent[]
@@ -462,17 +462,17 @@ model ProjectTracking {
 
 model ProjectTimelineEvent {
   id             Int             @id @default(autoincrement())
-  trackingId     Int
-  milestoneId    Int?
-  actorId        Int
-  actorRole      String
+  trackingId     Int             @map("tracking_id")
+  milestoneId    Int?            @map("milestone_id")
+  actorId        Int             @map("actor_id")
+  actorRole      String          @map("actor_role")
   type           String
   title          String
   description    String?
   progress       Int?
   stage          String?
-  attachmentJson String?         @default("[]")
-  createdAt      DateTime        @default(now())
+  attachmentJson String?         @default("[]") @map("attachment_json")
+  createdAt      DateTime        @default(now()) @map("created_at")
   tracking       ProjectTracking @relation(fields: [trackingId], references: [id])
 
   @@index([trackingId, createdAt])
@@ -481,21 +481,21 @@ model ProjectTimelineEvent {
 
 model ProjectMilestone {
   id                Int                 @id @default(autoincrement())
-  trackingId        Int
-  clientId          Int
-  professionalId    Int
+  trackingId        Int                 @map("tracking_id")
+  clientId          Int                 @map("client_id")
+  professionalId    Int                 @map("professional_id")
   title             String
   description       String?
   amount            Int
-  dueDate           DateTime?
+  dueDate           DateTime?           @map("due_date")
   status            String              @default("UPCOMING")
   validityDays      Int                 @default(0) @map("validity_days")
   releaseAt         DateTime?           @map("release_at")
   autoReleaseStatus String?             @map("auto_release_status")
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  submittedAt       DateTime?
-  approvedAt        DateTime?
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  submittedAt       DateTime?           @map("submitted_at")
+  approvedAt        DateTime?           @map("approved_at")
   tracking          ProjectTracking     @relation(fields: [trackingId], references: [id])
   payment           Payment?
   workUploads       ProjectWorkUpload[]
@@ -506,15 +506,15 @@ model ProjectMilestone {
 
 model ProjectWorkUpload {
   id          Int               @id @default(autoincrement())
-  trackingId  Int
-  roundNumber Int               @default(1)
+  trackingId  Int               @map("tracking_id")
+  roundNumber Int               @default(1) @map("round_number")
   title       String
   note        String?
-  fileName    String?
-  fileUrl     String?
-  filesJson   String?           @default("[]")
-  createdAt   DateTime          @default(now())
-  milestoneId Int?
+  fileName    String?           @map("file_name")
+  fileUrl     String?           @map("file_url")
+  filesJson   String?           @default("[]") @map("files_json")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  milestoneId Int?              @map("milestone_id")
   status      String            @default("UPLOADED")
   milestone   ProjectMilestone? @relation(fields: [milestoneId], references: [id], onDelete: Restrict)
   tracking    ProjectTracking   @relation(fields: [trackingId], references: [id])
@@ -525,15 +525,15 @@ model ProjectWorkUpload {
 
 model SocketConversation {
   id             String                    @id
-  userAId        Int
-  userBId        Int
-  userAName      String
-  userBName      String
-  userAAvatarUrl String?
-  userBAvatarUrl String?
+  userAId        Int                       @map("user_a_id")
+  userBId        Int                       @map("user_b_id")
+  userAName      String                    @map("user_a_name")
+  userBName      String                    @map("user_b_name")
+  userAAvatarUrl String?                   @map("user_a_avatar_url")
+  userBAvatarUrl String?                   @map("user_b_avatar_url")
   job            String                    @default("Direct message")
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @updatedAt
+  createdAt      DateTime                  @default(now()) @map("created_at")
+  updatedAt      DateTime                  @updatedAt @map("updated_at")
   clears         SocketConversationClear[]
   messages       SocketMessage[]
 
@@ -543,13 +543,13 @@ model SocketConversation {
 
 model SocketMessage {
   id             String             @id
-  conversationId String
-  senderId       Int
-  receiverId     Int
+  conversationId String             @map("conversation_id")
+  senderId       Int                @map("sender_id")
+  receiverId     Int                @map("receiver_id")
   body           String
   kind           String             @default("text")
-  createdAt      DateTime           @default(now())
-  readAt         DateTime?
+  createdAt      DateTime           @default(now()) @map("created_at")
+  readAt         DateTime?          @map("read_at")
   conversation   SocketConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
@@ -558,34 +558,34 @@ model SocketMessage {
 }
 
 model SocketConversationClear {
-  conversationId String
-  userId         Int
-  clearedAt      DateTime           @default(now())
+  conversationId String             @map("conversation_id")
+  userId         Int                @map("user_id")
+  clearedAt      DateTime           @default(now()) @map("cleared_at")
   conversation   SocketConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
 }
 
 model CallSession {
-  conversationId String   @id
-  startedBy      Int
+  conversationId String   @id @map("conversation_id")
+  startedBy      Int      @map("started_by")
   mode           String
   status         String   @default("PENDING")
-  offerSdp       String?
-  answerSdp      String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  offerSdp       String?  @map("offer_sdp")
+  answerSdp      String?  @map("answer_sdp")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 }
 
 model MessageConversation {
   id             String    @id @default(cuid())
-  clientId       Int
-  professionalId Int
-  contractId     String?
-  jobTitle       String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  lastMessageAt  DateTime?
+  clientId       Int       @map("client_id")
+  professionalId Int       @map("professional_id")
+  contractId     String?   @map("contract_id")
+  jobTitle       String?   @map("job_title")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  lastMessageAt  DateTime? @map("last_message_at")
   messages       Message[]
 
   @@index([clientId])
@@ -594,11 +594,11 @@ model MessageConversation {
 
 model Message {
   id             String              @id @default(cuid())
-  conversationId String
-  senderId       Int
+  conversationId String              @map("conversation_id")
+  senderId       Int                 @map("sender_id")
   body           String
-  createdAt      DateTime            @default(now())
-  readAt         DateTime?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  readAt         DateTime?           @map("read_at")
   conversation   MessageConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
@@ -607,42 +607,42 @@ model Message {
 
 model UserNotification {
   id          Int       @id @default(autoincrement())
-  userId      Int
+  userId      Int       @map("user_id")
   type        String
   title       String
   description String?
   href        String?
-  createdAt   DateTime  @default(now())
-  readAt      DateTime?
-  clearedAt   DateTime?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  readAt      DateTime? @map("read_at")
+  clearedAt   DateTime? @map("cleared_at")
 
   @@index([userId])
   @@index([createdAt])
 }
 
 model UserNotificationState {
-  userId          Int
-  notificationKey String
-  readAt          DateTime?
-  clearedAt       DateTime?
+  userId          Int       @map("user_id")
+  notificationKey String    @map("notification_key")
+  readAt          DateTime? @map("read_at")
+  clearedAt       DateTime? @map("cleared_at")
 
   @@id([userId, notificationKey])
 }
 
 model Payment {
   id                       Int               @id @default(autoincrement())
-  clientId                 Int
-  professionalId           Int
-  jobId                    Int?
+  clientId                 Int               @map("client_id")
+  professionalId           Int               @map("professional_id")
+  jobId                    Int?              @map("job_id")
   amount                   Int
-  commissionAmount         Int               @default(0)
+  commissionAmount         Int               @default(0) @map("commission_amount")
   currency                 String            @default("INR")
   provider                 String
-  providerReference        String?
+  providerReference        String?           @map("provider_reference")
   status                   String            @default("PENDING")
-  idempotencyKey           String            @unique
-  createdAt                DateTime          @default(now())
-  updatedAt                DateTime          @updatedAt
+  idempotencyKey           String            @unique @map("idempotency_key")
+  createdAt                DateTime          @default(now()) @map("created_at")
+  updatedAt                DateTime          @updatedAt @map("updated_at")
   razorpayOrderId          String?           @unique @map("razorpay_order_id")
   razorpayPaymentId        String?           @unique @map("razorpay_payment_id")
   razorpaySignature        String?           @map("razorpay_signature")
@@ -683,24 +683,24 @@ model RazorpayWebhookEvent {
 
 model Wallet {
   id             Int                 @id @default(autoincrement())
-  userId         Int                 @unique
+  userId         Int                 @unique @map("user_id")
   currency       String              @default("INR")
   balance        Int                 @default(0)
-  pendingBalance Int                 @default(0)
-  updatedAt      DateTime            @updatedAt
+  pendingBalance Int                 @default(0) @map("pending_balance")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
   transactions   WalletTransaction[]
 }
 
 model WalletTransaction {
   id                Int      @id @default(autoincrement())
-  walletId          Int
-  paymentId         Int?
+  walletId          Int      @map("wallet_id")
+  paymentId         Int?     @map("payment_id")
   type              String
   amount            Int
   status            String
   description       String
-  metadataJson      String?
-  createdAt         DateTime @default(now())
+  metadataJson      String?  @map("metadata_json")
+  createdAt         DateTime @default(now()) @map("created_at")
   idempotencyKey    String   @unique @map("idempotency_key")
   providerReference String?  @unique(where: raw("(provider_reference IS NOT NULL)")) @map("provider_reference")
   wallet            Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
@@ -710,15 +710,15 @@ model WalletTransaction {
 
 model ProjectWithdrawal {
   id                 Int       @id @default(autoincrement())
-  professionalId     Int
+  professionalId     Int       @map("professional_id")
   amount             Int
   currency           String    @default("INR")
-  destinationType    String
-  destinationLabel   String?
+  destinationType    String    @map("destination_type")
+  destinationLabel   String?   @map("destination_label")
   status             String    @default("PENDING")
   note               String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
   paymentId          Int?      @map("payment_id")
   providerTransferId String?   @map("provider_transfer_id")
   failureReason      String?   @map("failure_reason")
@@ -755,15 +755,15 @@ model Invoice {
 
 model ProjectDispute {
   id                      Int       @id @default(autoincrement())
-  trackingId              Int
-  reporterId              Int
-  reporterRole            String
-  clientId                Int
-  professionalId          Int
-  issueType               String
+  trackingId              Int       @map("tracking_id")
+  reporterId              Int       @map("reporter_id")
+  reporterRole            String    @map("reporter_role")
+  clientId                Int       @map("client_id")
+  professionalId          Int       @map("professional_id")
+  issueType               String    @map("issue_type")
   priority                String    @default("MEDIUM")
   message                 String
-  attachmentsJson         String?   @default("[]")
+  attachmentsJson         String?   @default("[]") @map("attachments_json")
   status                  String    @default("OPEN")
   disputeRound            Int       @default(1) @map("dispute_round")
   milestoneId             Int?      @map("milestone_id")
@@ -777,8 +777,8 @@ model ProjectDispute {
   decidedBy               Int?      @map("decided_by")
   refundAmount            Int?      @default(0) @map("refund_amount")
   payoutAmount            Int?      @default(0) @map("payout_amount")
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
   @@index([trackingId])
   @@index([clientId])
@@ -801,62 +801,62 @@ model ProjectDisputeMessage {
 
 model ProjectCompletionRequest {
   id             Int      @id @default(autoincrement())
-  trackingId     Int
-  clientId       Int
-  professionalId Int
+  trackingId     Int      @map("tracking_id")
+  clientId       Int      @map("client_id")
+  professionalId Int      @map("professional_id")
   note           String?
   status         String   @default("PENDING")
-  submittedAt    DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  submittedAt    DateTime @default(now()) @map("submitted_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
 }
 
 model ProjectRevisionRequest {
   id             Int      @id @default(autoincrement())
-  trackingId     Int
-  clientId       Int
-  professionalId Int
+  trackingId     Int      @map("tracking_id")
+  clientId       Int      @map("client_id")
+  professionalId Int      @map("professional_id")
   note           String?
   status         String   @default("PENDING")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
 }
 
 model ProjectReviewRequest {
   id             Int      @id @default(autoincrement())
-  trackingId     Int
-  clientId       Int
-  professionalId Int
+  trackingId     Int      @map("tracking_id")
+  clientId       Int      @map("client_id")
+  professionalId Int      @map("professional_id")
   note           String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
 }
 
 model ProfessionalVerification {
-  userId             Int      @id
-  governmentIdUrl    String?
-  licenseUrl         String?
-  certificationsJson String?
-  insuranceUrl       String?
-  selfieUrl          String?
+  userId             Int      @id @map("user_id")
+  governmentIdUrl    String?  @map("government_id_url")
+  licenseUrl         String?  @map("license_url")
+  certificationsJson String?  @map("certifications_json")
+  insuranceUrl       String?  @map("insurance_url")
+  selfieUrl          String?  @map("selfie_url")
   status             String   @default("PENDING")
-  updatedAt          DateTime @updatedAt
+  updatedAt          DateTime @updatedAt @map("updated_at")
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationDocumentReview {
   id          Int       @id @default(autoincrement())
-  userId      Int
-  documentKey String
+  userId      Int       @map("user_id")
+  documentKey String    @map("document_key")
   status      String    @default("PENDING")
-  reviewedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  reviewedAt  DateTime? @map("reviewed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@unique([userId, documentKey])
   @@index([userId])
@@ -896,27 +896,27 @@ model PersonaWebhookEvent {
 
 model StoredFile {
   id         Int      @id @default(autoincrement())
-  ownerId    Int
+  ownerId    Int      @map("owner_id")
   purpose    String
-  fileName   String
-  mimeType   String
-  sizeBytes  Int
-  storageKey String   @unique
-  isPublic   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  sizeBytes  Int      @map("size_bytes")
+  storageKey String   @unique @map("storage_key")
+  isPublic   Boolean  @default(false) @map("is_public")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([ownerId])
 }
 
 model AuditLog {
   id         Int      @id @default(autoincrement())
-  actorId    Int?
+  actorId    Int?     @map("actor_id")
   action     String
-  entityType String
-  entityId   String
-  requestId  String?
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  requestId  String?  @map("request_id")
   metadata   Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
   actor      User?    @relation("AuditActor", fields: [actorId], references: [id])
 
   @@index([actorId, createdAt])
@@ -927,12 +927,12 @@ model AuditLog {
 
 model ApiToken {
   id        Int       @id @default(autoincrement())
-  userId    Int
-  tokenHash String    @unique
+  userId    Int       @map("user_id")
+  tokenHash String    @unique @map("token_hash")
   kind      String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   @@index([userId, kind])
   @@index([userId, kind, createdAt])
@@ -941,12 +941,12 @@ model ApiToken {
 model OtpCode {
   id         Int       @id @default(autoincrement())
   phone      String
-  codeHash   String
+  codeHash   String    @map("code_hash")
   role       String
   attempts   Int       @default(0)
-  expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime  @default(now())
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([phone, role, expiresAt])
   @@index([phone, role, consumedAt])
@@ -954,11 +954,11 @@ model OtpCode {
 
 model BrowserSubscription {
   id        Int      @id @default(autoincrement())
-  userId    Int
+  userId    Int      @map("user_id")
   endpoint  String   @unique
   p256dh    String
   auth      String
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
 }
@@ -967,11 +967,11 @@ model Faq {
   id           Int      @id @default(autoincrement())
   question     String
   answer       String
-  displayOrder Int      @default(0)
+  displayOrder Int      @default(0) @map("display_order")
   status       String   @default("PUBLISHED")
   category     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 }
 
 model ContactRequest {
@@ -981,21 +981,21 @@ model ContactRequest {
   subject   String
   message   String
   status    String   @default("OPEN")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model Service {
   id             Int             @id @default(autoincrement())
-  categoryId     Int
-  professionalId Int
+  categoryId     Int             @map("category_id")
+  professionalId Int             @map("professional_id")
   name           String
   description    String
   price          Int?
-  imageUrl       String?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  imageUrl       String?         @map("image_url")
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
   category       ServiceCategory @relation(fields: [categoryId], references: [id])
   professional   User            @relation("ProfessionalServices", fields: [professionalId], references: [id], onDelete: Cascade)
 
@@ -1004,13 +1004,13 @@ model Service {
 
 model PageConfiguration {
   id              Int       @id @default(autoincrement())
-  pageId          String
+  pageId          String    @map("page_id")
   config          String
-  publishedConfig String?
+  publishedConfig String?   @map("published_config")
   status          String    @default("DRAFT")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  publishedAt     DateTime?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  publishedAt     DateTime? @map("published_at")
 
   @@index([pageId])
   @@map("page_configurations")
@@ -1023,17 +1023,17 @@ model WebsitePageOverride {
   html      String?
   css       String?
   status    String   @default("DRAFT")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("website_page_overrides")
 }
 
 model PageTextOverride {
-  pagePath   String
-  elementKey String
+  pagePath   String   @map("page_path")
+  elementKey String   @map("element_key")
   text       String
-  updatedAt  DateTime
+  updatedAt  DateTime @map("updated_at")
 
   @@id([pagePath, elementKey])
   @@map("page_text_overrides")
@@ -1044,23 +1044,23 @@ model LegacyUser {
   role            String?
   email           String?
   phone           String?
-  passwordHash    String?
-  googleId        String?
-  isEmailVerified Boolean?
-  isPhoneVerified Boolean?
+  passwordHash    String?   @map("password_hash")
+  googleId        String?   @map("google_id")
+  isEmailVerified Boolean?  @map("is_email_verified")
+  isPhoneVerified Boolean?  @map("is_phone_verified")
   status          String?
-  createdAt       DateTime?
-  updatedAt       DateTime?
-  lastLogin       DateTime?
+  createdAt       DateTime? @map("created_at")
+  updatedAt       DateTime? @map("updated_at")
+  lastLogin       DateTime? @map("last_login")
 
   @@map("legacy_users")
 }
 
 model LegacyUserProfile {
-  userId       String  @id
-  fullName     String?
-  companyName  String?
-  profilePhoto String?
+  userId       String  @id @map("user_id")
+  fullName     String? @map("full_name")
+  companyName  String? @map("company_name")
+  profilePhoto String? @map("profile_photo")
   address      String?
   bio          String?
   timezone     String?
@@ -1070,43 +1070,43 @@ model LegacyUserProfile {
 }
 
 model LegacyProfessionalDetail {
-  userId             String   @id
-  hourlyRate         Int?
-  fixedRate          Int?
-  experienceYears    Int?
+  userId             String   @id @map("user_id")
+  hourlyRate         Int?     @map("hourly_rate")
+  fixedRate          Int?     @map("fixed_rate")
+  experienceYears    Int?     @map("experience_years")
   skills             String?
-  serviceType        String?
-  serviceRadiusKm    Int?
-  availabilityStatus String?
-  portfolioUrl       String?
-  isVerified         Boolean?
+  serviceType        String?  @map("service_type")
+  serviceRadiusKm    Int?     @map("service_radius_km")
+  availabilityStatus String?  @map("availability_status")
+  portfolioUrl       String?  @map("portfolio_url")
+  isVerified         Boolean? @map("is_verified")
 
   @@map("legacy_professional_details")
 }
 
 model LegacyLocation {
   id              String   @id
-  userId          String?
+  userId          String?  @map("user_id")
   lat             Float?
   lng             Float?
   city            String?
   state           String?
   country         String?
-  addressApprox   String?
-  serviceRadiusKm Int?
-  isBaseLocation  Boolean?
+  addressApprox   String?  @map("address_approx")
+  serviceRadiusKm Int?     @map("service_radius_km")
+  isBaseLocation  Boolean? @map("is_base_location")
 
   @@map("legacy_locations")
 }
 
 model LegacyVerification {
   id             String    @id
-  professionalId String?
-  documentType   String?
-  documentUrl    String?
+  professionalId String?   @map("professional_id")
+  documentType   String?   @map("document_type")
+  documentUrl    String?   @map("document_url")
   status         String?
-  reviewedBy     String?
-  reviewedAt     DateTime?
+  reviewedBy     String?   @map("reviewed_by")
+  reviewedAt     DateTime? @map("reviewed_at")
   notes          String?
 
   @@map("legacy_verifications")
@@ -1158,11 +1158,11 @@ model EmailTemplate {
   category     String        @default("General")
   subject      String
   heading      String
-  bodyText     String
-  actionText   String?
-  actionUrl    String?
-  isActive     Boolean       @default(true)
-  isCustomized Boolean       @default(false)
+  bodyText     String        @map("body_text")
+  actionText   String?       @map("action_text")
+  actionUrl    String?       @map("action_url")
+  isActive     Boolean       @default(true) @map("is_active")
+  isCustomized Boolean       @default(false) @map("is_customized")
   updatedBy    Int?          @map("updated_by")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
@@ -1192,11 +1192,11 @@ model SmsTemplate {
   description   String        @default("")
   audience      EmailAudience @default(CLIENT)
   category      String        @default("General")
-  bodyText      String
+  bodyText      String        @map("body_text")
   dltTemplateId String?       @map("dlt_template_id")
   senderId      String?       @map("sender_id")
-  isActive      Boolean       @default(true)
-  isCustomized  Boolean       @default(false)
+  isActive      Boolean       @default(true) @map("is_active")
+  isCustomized  Boolean       @default(false) @map("is_customized")
   updatedBy     Int?          @map("updated_by")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
