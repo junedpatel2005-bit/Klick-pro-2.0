@@ -40,6 +40,20 @@ Whenever any schema change is requested:
 7. Verify migration status: `npx prisma migrate status`.
 8. Run TypeScript check: `npm run typecheck`.
 
+## Rule 3.1: Table & Column Naming Conventions (Strict Snake_Case for Columns)
+
+- **Table / Model Names**:
+  - In Prisma schema, models use PascalCase (e.g. `User`, `CmsPageVersion`, `ClientProfile`) with explicit `@@map("table_name")` where applicable.
+- **Column Names (STRICT & MANDATORY)**:
+  - All database columns MUST be strictly in lowercase (`small letters`).
+  - Any multi-word ("big") column name MUST use underscores `_` between words (`snake_case`).
+  - Example: `email verification date` → `email_verification_date`.
+  - In `prisma/schema.prisma`, use `@map("...")` if using camelCase in TypeScript:
+    `emailVerificationDate DateTime? @map("email_verification_date")`
+    or define the field directly in snake_case so the database column in PostgreSQL is always lowercase with underscores.
+  - In migration SQL DDL, column names must always be written in snake_case:
+    `ALTER TABLE "<TableName>" ADD COLUMN IF NOT EXISTS "email_verification_date" TIMESTAMP;`
+
 # Communication & Transparency Rules
 
 ## Rule 4: Always Explain What You Are Doing Before Execution
