@@ -212,7 +212,7 @@ export function AdminSidebar() {
           title="Klick-Pro Admin"
           className={`flex items-center gap-3 px-2 py-2 group ${collapsed ? "justify-center px-0" : ""}`}
         >
-          <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl overflow-hidden bg-white shadow-soft border border-slate-200/80 transition-transform group-hover:scale-105">
+          <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg overflow-hidden bg-white border border-slate-200">
             <img
               src="/logo-icon.png"
               alt="Klick-Pro"
@@ -222,30 +222,30 @@ export function AdminSidebar() {
           {!collapsed && (
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="font-display font-extrabold text-slate-900 tracking-tight">
+                <p className="font-semibold text-sm text-slate-900 tracking-tight">
                   Klick-Pro
                 </p>
-                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary border border-primary/20">
-                  PRO
+                <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600 border border-slate-200">
+                  Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">Enterprise Control Suite</p>
+              <p className="text-[11px] text-slate-500 font-normal">Platform Workspace</p>
             </div>
           )}
         </Link>
 
         {/* Grouped Navigation */}
-        <nav className={`mt-6 ${collapsed ? "space-y-4" : "space-y-6"}`}>
+        <nav className={`mt-5 ${collapsed ? "space-y-3" : "space-y-5"}`}>
           {linkGroups.map((group) => (
             <div key={group.group}>
               {!collapsed ? (
-                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                <p className="px-2.5 text-[11px] font-medium tracking-normal text-slate-400 mb-1.5">
                   {group.group}
                 </p>
               ) : (
-                <div className="h-px w-8 bg-slate-200/80 mx-auto my-2.5" />
+                <div className="h-px w-6 bg-slate-200 mx-auto my-2" />
               )}
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {group.items.map((link) => {
                   const isThisReportLink = link.href === "/admin/reports";
                   const active = isThisReportLink
@@ -254,48 +254,42 @@ export function AdminSidebar() {
                   const badgeCount = link.badge ? (counts[link.badge] ?? 0) : 0;
 
                   return (
-                    <div key={link.href} className="space-y-1">
+                    <div key={link.href} className="space-y-0.5">
                       <Link
                         href={link.href}
                         prefetch={false}
                         title={link.label}
-                        className={`group relative flex items-center rounded-xl transition-all duration-150 ${
+                        className={`group relative flex items-center rounded-lg transition-colors duration-150 ${
                           collapsed
-                            ? "h-11 w-11 justify-center mx-auto"
-                            : "gap-3 px-3 py-2.5 text-sm font-medium"
+                            ? "h-9 w-9 justify-center mx-auto"
+                            : "gap-2.5 px-2.5 py-1.5 text-xs font-medium"
                         } ${
                           active
-                            ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/80 shadow-2xs"
+                            ? "bg-slate-100 text-slate-900 font-semibold"
                             : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                         }`}
                       >
-                        <div
-                          className={`grid h-7 w-7 place-items-center rounded-lg transition ${
-                            active
-                              ? "bg-indigo-600 text-white shadow-2xs"
-                              : "text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/60"
+                        <link.icon
+                          className={`h-4 w-4 shrink-0 ${
+                            active ? "text-slate-900" : "text-slate-400 group-hover:text-slate-700"
                           }`}
-                        >
-                          <link.icon className="h-4 w-4" />
-                        </div>
+                        />
                         {!collapsed && <span className="truncate">{link.label}</span>}
                         {badgeCount > 0 &&
                           (collapsed ? (
                             <span
-                              className={`absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[9px] font-bold text-white shadow-xs ${
-                                link.badge === "payouts" ? "bg-amber-500" : "bg-indigo-600"
+                              className={`absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-medium text-white ${
+                                link.badge === "payouts" ? "bg-amber-600" : "bg-slate-800"
                               }`}
                             >
                               {badgeCount > 99 ? "99+" : badgeCount}
                             </span>
                           ) : (
                             <span
-                              className={`ml-auto grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold ${
+                              className={`ml-auto grid h-4.5 min-w-4.5 place-items-center rounded-full px-1.5 text-[10px] font-medium border ${
                                 link.badge === "payouts"
-                                  ? "bg-amber-500 text-white shadow-xs"
-                                  : active
-                                    ? "bg-indigo-600 text-white shadow-2xs"
-                                    : "bg-indigo-100 text-indigo-700"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : "bg-slate-100 text-slate-600 border-slate-200/80"
                               }`}
                             >
                               {badgeCount > 99 ? "99+" : badgeCount}
@@ -310,24 +304,24 @@ export function AdminSidebar() {
                                 e.stopPropagation();
                                 setReportsSubmenuOpen((prev) => !prev);
                               }}
-                              className="ml-auto p-1 rounded-md hover:bg-indigo-100/60 text-indigo-600 transition"
+                              className="ml-auto p-0.5 rounded text-slate-500 hover:text-slate-900 transition"
                               aria-label={reportsSubmenuOpen ? "Collapse reports submenu" : "Expand reports submenu"}
                             >
                               {reportsSubmenuOpen ? (
-                                <ChevronDown className="h-4 w-4" />
+                                <ChevronDown className="h-3.5 w-3.5" />
                               ) : (
-                                <ChevronRight className="h-4 w-4" />
+                                <ChevronRight className="h-3.5 w-3.5" />
                               )}
                             </button>
                           ) : (
-                            <ChevronRight className="ml-auto h-4 w-4 text-indigo-500" />
+                            <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-900" />
                           )
                         )}
                       </Link>
 
                       {/* 3 Menus Sub-menu under Reports & Exports */}
                       {isThisReportLink && isReportsPage && reportsSubmenuOpen && !collapsed && (
-                        <div className="ml-4 pl-3.5 border-l-2 border-indigo-200 dark:border-slate-800 space-y-1 py-1">
+                        <div className="ml-4 pl-3 border-l border-slate-200 space-y-0.5 py-0.5">
                           {REPORT_SUB_TABS.map((sub) => {
                             const SubIcon = sub.icon;
                             const currentTabParam = searchParams?.get("tab") || "users";
@@ -343,16 +337,16 @@ export function AdminSidebar() {
                                 href={`/admin/reports?tab=${sub.id}`}
                                 prefetch={false}
                                 title={sub.label}
-                                className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                className={`group flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
                                   isSubActive
-                                    ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200/60 shadow-2xs"
-                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
+                                    ? "bg-slate-100 text-slate-900 font-semibold"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
                                 }`}
                               >
                                 <SubIcon
                                   className={`h-3.5 w-3.5 shrink-0 ${
                                     isSubActive
-                                      ? "text-indigo-600 font-bold"
+                                      ? "text-slate-900"
                                       : "text-slate-400 group-hover:text-slate-600"
                                   }`}
                                 />
@@ -373,42 +367,37 @@ export function AdminSidebar() {
 
       {/* System Status Footer */}
       {!collapsed ? (
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/80 p-3.5 shadow-2xs">
+        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold text-slate-700">System Environment</p>
-            <span className="rounded-md bg-white border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
+            <p className="text-[11px] font-semibold text-slate-700">Environment</p>
+            <span className="rounded bg-white border border-slate-200 px-1 py-0.2 text-[9px] font-medium text-slate-500">
               v2.4.0
             </span>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              {dbStatus === "connected" && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              )}
-              <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  dbStatus === "connected"
-                    ? "bg-emerald-500"
-                    : dbStatus === "disconnected"
-                      ? "bg-rose-500"
-                      : "bg-slate-400"
-                }`}
-              />
-            </span>
+          <div className="mt-1.5 flex items-center gap-2">
             <span
-              className={`text-xs font-semibold ${
+              className={`h-2 w-2 rounded-full ${
                 dbStatus === "connected"
-                  ? "text-emerald-700"
+                  ? "bg-emerald-500"
+                  : dbStatus === "disconnected"
+                    ? "bg-rose-500"
+                    : "bg-slate-400"
+              }`}
+            />
+            <span
+              className={`text-xs font-medium ${
+                dbStatus === "connected"
+                  ? "text-slate-700"
                   : dbStatus === "disconnected"
                     ? "text-rose-700"
                     : "text-slate-500"
               }`}
             >
               {dbStatus === "connected"
-                ? "All services operational"
+                ? "Operational"
                 : dbStatus === "disconnected"
-                  ? "System Server Offline"
-                  : "Checking health…"}
+                  ? "Offline"
+                  : "Checking…"}
             </span>
           </div>
         </div>
@@ -423,20 +412,15 @@ export function AdminSidebar() {
           }
           className="my-3 flex justify-center"
         >
-          <span className="relative flex h-3 w-3">
-            {dbStatus === "connected" && (
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            )}
-            <span
-              className={`relative inline-flex rounded-full h-3 w-3 ${
-                dbStatus === "connected"
-                  ? "bg-emerald-500"
-                  : dbStatus === "disconnected"
-                    ? "bg-rose-500"
-                    : "bg-slate-400"
-              }`}
-            />
-          </span>
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              dbStatus === "connected"
+                ? "bg-emerald-500"
+                : dbStatus === "disconnected"
+                  ? "bg-rose-500"
+                  : "bg-slate-400"
+            }`}
+          />
         </div>
       )}
     </aside>

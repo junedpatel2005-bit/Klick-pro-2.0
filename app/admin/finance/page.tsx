@@ -973,9 +973,9 @@ export default function AdminFinancePage() {
       {/* KPI Cards Grid */}
       <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {/* Card 1: Gross Platform Volume */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-semibold text-slate-500">
               Gross Volume
             </span>
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
@@ -985,7 +985,7 @@ export default function AdminFinancePage() {
           {loading ? (
             <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
           ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900">
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
               {formatMoney(metrics.grossVolume)}
             </p>
           )}
@@ -994,9 +994,9 @@ export default function AdminFinancePage() {
 
         {/* Card 2: Platform Net (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
         {isCommissionOn && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+              <span className="text-[11px] font-semibold text-emerald-800">
                 Platform Net
               </span>
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
@@ -1006,7 +1006,7 @@ export default function AdminFinancePage() {
             {loading ? (
               <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-emerald-200/70" />
             ) : (
-              <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-700">
+              <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-emerald-700 tabular-nums">
                 +{formatMoney(metrics.platformCommission)}
               </p>
             )}
@@ -1015,19 +1015,19 @@ export default function AdminFinancePage() {
         )}
 
         {/* Card 3: Professional Disbursements */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-semibold text-slate-500">
               Disbursed to Pros
             </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-blue-50 text-blue-600">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
               <ArrowUpRight className="h-3.5 w-3.5" />
             </span>
           </div>
           {loading ? (
             <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
           ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900">
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
               {formatMoney(metrics.proDisbursements)}
             </p>
           )}
@@ -1039,24 +1039,24 @@ export default function AdminFinancePage() {
         {/* Card 4: Escrow In-Transit */}
         <div
           onClick={() => setActiveTab("escrow")}
-          className={`cursor-pointer rounded-2xl border p-4 shadow-xs transition ${
+          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
             activeTab === "escrow"
-              ? "border-amber-400 bg-amber-50/80 ring-2 ring-amber-200"
-              : "border-slate-200 bg-white hover:border-amber-300"
+              ? "border-amber-400 bg-amber-50/60"
+              : "border-slate-200/90 bg-white hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+            <span className="text-[11px] font-semibold text-slate-700">
               Held in Escrow
             </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 text-amber-700">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100/70 text-amber-700">
               <Clock className="h-3.5 w-3.5" />
             </span>
           </div>
           {loading ? (
             <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-amber-200/70" />
           ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-black text-amber-900">
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-amber-900 tabular-nums">
               {formatMoney(metrics.inEscrow)}
             </p>
           )}
@@ -1072,28 +1072,28 @@ export default function AdminFinancePage() {
         {/* Card 5: Treasury Wallet */}
         <div
           onClick={() => setActiveTab("ledger")}
-          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-2xl border p-4 shadow-xs transition ${
+          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
             activeTab === "ledger"
-              ? "border-indigo-500 bg-indigo-50/80 ring-2 ring-indigo-200"
-              : "border-slate-200 bg-white hover:border-indigo-300"
+              ? "border-slate-400 bg-slate-50"
+              : "border-slate-200/90 bg-white hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800">
+            <span className="text-[11px] font-semibold text-slate-700">
               Admin Treasury
             </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-100 text-indigo-700">
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
               <WalletCards className="h-3.5 w-3.5" />
             </span>
           </div>
           {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-indigo-200/70" />
+            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
           ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-black text-indigo-950">
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
               {formatMoney(metrics.adminBalance)}
             </p>
           )}
-          <p className="mt-0.5 text-[11px] text-indigo-700 font-medium">Platform wallet balance</p>
+          <p className="mt-0.5 text-[11px] text-slate-500 font-medium">Platform wallet balance</p>
         </div>
       </div>
 

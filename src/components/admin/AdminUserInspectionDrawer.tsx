@@ -193,25 +193,25 @@ export function AdminUserInspectionDrawer({
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-2xl bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col">
           {/* Drawer Header */}
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80">
+          <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-indigo-100 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-base shadow-2xs">
+              <div className="h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-200 font-semibold text-sm">
                 {user?.firstName ? (user.firstName[0]?.toUpperCase() || "U") : "U"}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">
                     {user ? capitalizeWords(`${user.firstName || ""} ${user.lastName || ""}`.trim()) : "User Profile Details"}
                   </h2>
                   {user?.isVerified && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300/60">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <ShieldCheck className="h-3 w-3" />
                       Verified
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                  <span className="font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
                     {user?.role || "USER"}
                   </span>
                   <span>•</span>
@@ -226,11 +226,11 @@ export function AdminUserInspectionDrawer({
               <Link
                 href={`/admin/users/${userId}`}
                 prefetch={false}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-900 dark:bg-indigo-950/50 dark:text-indigo-300 text-xs font-semibold shadow-2xs transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-medium shadow-2xs transition"
                 title="Open full editable user management profile dossier"
               >
                 <span>Full Page</span>
-                <ExternalLink className="h-3.5 w-3.5" />
+                <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
               </Link>
               <button
                 onClick={onClose}
@@ -243,12 +243,12 @@ export function AdminUserInspectionDrawer({
           </div>
 
           {/* Sub Navigation Tabs */}
-          <div className="flex items-center gap-1 px-6 pt-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex items-center gap-1 px-6 pt-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-3 py-2 text-xs font-bold border-b-2 transition ${
+              className={`px-3 py-2 text-xs font-medium border-b-2 transition ${
                 activeTab === "overview"
-                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
                   : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -256,27 +256,27 @@ export function AdminUserInspectionDrawer({
             </button>
             <button
               onClick={() => setActiveTab("work")}
-              className={`px-3 py-2 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
                 activeTab === "work"
-                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
                   : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span>{isClient ? "Client Job Postings" : "Proposals & Bids"}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-bold">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-medium">
                 {isClient ? clientJobs.length : projectRequests.length}
               </span>
             </button>
             <button
               onClick={() => setActiveTab("milestones")}
-              className={`px-3 py-2 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
                 activeTab === "milestones"
-                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
                   : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span>Milestones & Settlement</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-bold">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-medium">
                 {allMilestones.length}
               </span>
             </button>

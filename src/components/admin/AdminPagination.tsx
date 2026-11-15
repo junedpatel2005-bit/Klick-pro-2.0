@@ -45,11 +45,11 @@ export function AdminPagination({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/70 rounded-b-2xl text-xs text-slate-600",
+        "flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50/60 rounded-b-xl text-xs text-slate-600",
         className,
       )}
     >
-      <div>
+      <div className="tabular-nums">
         Showing <span className="font-semibold text-slate-900">{startItem}</span> to{" "}
         <span className="font-semibold text-slate-900">{endItem}</span> of{" "}
         <span className="font-semibold text-slate-900">{totalItems}</span> entries
@@ -60,7 +60,7 @@ export function AdminPagination({
           type="button"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage <= 1}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous page"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -75,9 +75,9 @@ export function AdminPagination({
                 type="button"
                 onClick={() => onPageChange(p)}
                 className={cn(
-                  "h-7 min-w-7 px-2 rounded-lg text-xs font-semibold transition",
+                  "h-7 min-w-7 px-2 rounded-md text-xs font-medium transition-colors tabular-nums",
                   currentPage === p
-                    ? "bg-indigo-600 text-white shadow-2xs"
+                    ? "bg-slate-900 text-white"
                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
                 )}
               >
@@ -95,7 +95,7 @@ export function AdminPagination({
           type="button"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage >= totalPages}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
         >
           <span>Next</span>

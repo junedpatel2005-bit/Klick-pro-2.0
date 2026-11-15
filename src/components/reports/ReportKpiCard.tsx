@@ -14,7 +14,7 @@ export type ReportKpiCardProps = {
   value: React.ReactNode;
   subtitle?: React.ReactNode;
   icon: React.ComponentType<{ className?: string }>;
-  iconBgColor?: string; // e.g. "bg-blue-500/10 text-blue-600"
+  iconBgColor?: string;
   definition?: string;
   description?: string;
   formula?: string;
@@ -29,20 +29,20 @@ export function ReportKpiCard({
   value,
   subtitle,
   icon: Icon,
-  iconBgColor = "bg-blue-500/10 text-blue-600",
+  iconBgColor = "text-slate-500",
   definition,
   description,
   formula,
   source,
   why,
-  valueClassName = "text-2xl font-bold mt-2 text-slate-900 dark:text-white",
+  valueClassName = "text-2xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums mt-3",
   cardClassName,
 }: ReportKpiCardProps) {
   const paragraph = description || definition || "";
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs hover:shadow-md transition-shadow relative group ${
+      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors relative ${
         cardClassName || ""
       }`}
     >
@@ -55,7 +55,7 @@ export function ReportKpiCard({
                 <button
                   type="button"
                   onClick={(e) => e.stopPropagation()}
-                  className="rounded-full p-0.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-hidden"
+                  className="rounded p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors focus:outline-hidden"
                   aria-label={`Metric information for ${title}`}
                 >
                   <Info className="w-3.5 h-3.5" />
@@ -64,13 +64,10 @@ export function ReportKpiCard({
               <TooltipContent
                 side="top"
                 align="center"
-                className="z-[9999] max-w-xs sm:max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-3.5 text-xs text-slate-100 shadow-2xl space-y-2"
+                className="z-[9999] max-w-xs sm:max-w-sm rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-100 shadow-xl space-y-1.5"
               >
-                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-                  <span className="grid h-4 w-4 place-items-center rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-bold">
-                    i
-                  </span>
-                  <span className="font-bold text-white text-xs">{title}</span>
+                <div className="flex items-center gap-1.5 border-b border-slate-800 pb-1">
+                  <span className="font-semibold text-white text-xs">{title}</span>
                 </div>
 
                 {paragraph && (
@@ -83,14 +80,14 @@ export function ReportKpiCard({
           </TooltipProvider>
         </div>
 
-        <div className={`p-2 rounded-xl shrink-0 ${iconBgColor}`}>
+        <div className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
           <Icon className="w-4 h-4" />
         </div>
       </div>
 
       <div className={valueClassName}>{value}</div>
 
-      {subtitle && <div className="mt-1">{subtitle}</div>}
+      {subtitle && <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{subtitle}</div>}
     </div>
   );
 }

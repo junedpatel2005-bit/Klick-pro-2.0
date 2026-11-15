@@ -25,23 +25,24 @@ export function AdminDataPage({
     : [];
   const columns = Object.keys(rows[0] ?? {}).slice(0, 6);
   return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-[.2em] text-indigo-600">Admin module</p>
-      <h1 className="mt-2 font-display text-3xl font-bold text-slate-900">{title}</h1>
-      <p className="mt-2 text-slate-500">{description}</p>
-      <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
-        <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-4 text-sm font-semibold text-slate-800">
-          Verified platform records · {rows.length}
+    <div className="space-y-6">
+      <div className="border-b border-slate-200/80 pb-5">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+        <p className="mt-1 text-xs sm:text-sm text-slate-500">{description}</p>
+      </div>
+      <section className="overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-2xs">
+        <div className="border-b border-slate-200 bg-slate-50/70 px-4 py-3 text-xs font-medium text-slate-700">
+          Total records · <span className="tabular-nums font-semibold">{rows.length}</span>
         </div>
         {!data ? (
-          <div className="h-52 animate-pulse bg-slate-100" />
+          <div className="h-44 animate-pulse bg-slate-100" />
         ) : rows.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wider font-semibold text-slate-500">
+            <table className="w-full min-w-[700px] text-left text-xs">
+              <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200">
                 <tr>
                   {columns.map((k) => (
-                    <th key={k} className="px-5 py-3.5">
+                    <th key={k} className="px-4 py-3">
                       {k}
                     </th>
                   ))}
@@ -49,9 +50,9 @@ export function AdminDataPage({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {rows.map((row, i) => (
-                  <tr key={i} className="text-slate-700 hover:bg-slate-50/70 transition">
+                  <tr key={i} className="text-slate-700 hover:bg-slate-50/70 transition-colors">
                     {columns.map((k) => (
-                      <td key={k} className="max-w-56 truncate px-5 py-4">
+                      <td key={k} className="max-w-56 truncate px-4 py-3">
                         {typeof row[k] === "object"
                           ? JSON.stringify(row[k])
                           : String(row[k] ?? "—")}
@@ -63,7 +64,7 @@ export function AdminDataPage({
             </table>
           </div>
         ) : (
-          <p className="p-8 text-sm text-slate-500">No records found.</p>
+          <p className="p-8 text-xs text-slate-500 text-center">No records found.</p>
         )}
       </section>
     </div>

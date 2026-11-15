@@ -262,26 +262,26 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
   return (
     <div className="space-y-5">
       {/* Search & Filter Toolbar */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
+      <div className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Role Group Selector */}
-          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
             <button
               onClick={() => { setActiveGroup("clients"); setPage(1); }}
-              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-md px-3.5 py-1 text-xs transition cursor-pointer ${
                 activeGroup === "clients"
-                  ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium"
               }`}
             >
               Clients ({users.filter((u) => u.role === "CLIENT").length})
             </button>
             <button
               onClick={() => { setActiveGroup("professionals"); setPage(1); }}
-              className={`rounded-lg px-4 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-md px-3.5 py-1 text-xs transition cursor-pointer ${
                 activeGroup === "professionals"
-                  ? "bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium"
               }`}
             >
               Professionals ({users.filter((u) => u.role === "PROFESSIONAL").length})
@@ -290,13 +290,13 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
 
           {/* Search Bar */}
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-2 h-4 w-4 text-slate-400" />
             <input
               type="text"
               placeholder={`Search ${activeGroup} by name, email, phone, company...`}
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2 pl-9 pr-4 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800 py-1.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
           </div>
         </div>
@@ -411,17 +411,17 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
               <div
                 key={user.id}
                 onClick={() => onInspectUser?.(user.id)}
-                className="group relative rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-800 transition-all cursor-pointer flex flex-col justify-between"
+                className="group relative rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-sm shadow-2xs">
+                      <div className="h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-semibold text-xs">
                         {user.firstName ? (user.firstName[0]?.toUpperCase() || "U") : "U"}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition truncate max-w-[150px]">
+                          <h3 className="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-slate-700 transition truncate max-w-[150px]">
                             {fullName}
                           </h3>
                           {user.isVerified && (
@@ -434,7 +434,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
                       </div>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border shrink-0 ${
                       user.isActive
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-rose-50 text-rose-700 border-rose-200"
@@ -485,7 +485,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
                   <Button
                     onClick={() => onInspectUser?.(user.id)}
                     variant="outline"
-                    className="h-7 px-2.5 text-[11px] font-semibold border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 shadow-2xs"
+                    className="h-7 px-2.5 text-[11px] font-medium border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs"
                   >
                     <Eye className="mr-1 h-3 w-3" />
                     Inspect

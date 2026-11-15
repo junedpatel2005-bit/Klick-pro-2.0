@@ -2,13 +2,13 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { invalidateCurrentUser } from "@/lib/current-user";
-import { ExternalLink, LogOut, ShieldCheck, Menu, Bell } from "lucide-react";
+import { ExternalLink, LogOut, Menu, Bell } from "lucide-react";
 import { useDatabaseStatus } from "@/hooks/use-database-status";
 import { useAdminSidebar } from "@/components/AdminSidebarContext";
 import { useAdminNotificationCount } from "@/lib/use-admin-notification-count";
 
 const pageTitles: Record<string, string> = {
-  "/admin": "Command Center",
+  "/admin": "Overview",
   "/admin/users": "Users & Accounts",
   "/admin/verifications": "Verification & Compliance",
   "/admin/operations": "Jobs & Disputes",
@@ -52,7 +52,7 @@ export function AdminHeader() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 sm:px-6 backdrop-blur-md sticky top-0 z-20">
+    <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6 sticky top-0 z-20">
       {/* 3 lines toggle & Breadcrumb / Title */}
       <div className="flex items-center gap-3">
         <button
@@ -60,29 +60,26 @@ export function AdminHeader() {
           onClick={toggleSidebar}
           aria-label="Toggle Sidebar"
           title={collapsed ? "Expand sidebar (show labels)" : "Collapse sidebar (icons only)"}
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition shadow-2xs"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
         >
           <Menu className="h-4 w-4" />
         </button>
 
-        <div className="flex items-center gap-2.5">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-            <ShieldCheck className="h-3.5 w-3.5 text-indigo-500" />
-            Admin
-          </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-400">Admin</span>
           <span className="text-slate-300">/</span>
-          <h2 className="text-sm font-bold text-slate-800 tracking-tight">{currentPageTitle}</h2>
+          <h2 className="text-sm font-semibold text-slate-900">{currentPageTitle}</h2>
         </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Marketplace Quick Link */}
         <a
           href="/"
           target="_blank"
           rel="noreferrer"
-          className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition shadow-2xs"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
         >
           <span>Marketplace</span>
           <ExternalLink className="h-3 w-3 text-slate-400" />
@@ -91,13 +88,7 @@ export function AdminHeader() {
         {/* System Server Status Indicator */}
         <div
           title={`Platform System Server: ${dbStatus === "connected" ? "Operational & Live" : dbStatus === "disconnected" ? "Offline" : "Checking"}`}
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${
-            dbStatus === "connected"
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : dbStatus === "disconnected"
-                ? "bg-rose-50 text-rose-700 border-rose-200"
-                : "bg-slate-50 text-slate-600 border-slate-200"
-          }`}
+          className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border bg-slate-50 text-slate-700 border-slate-200"
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
@@ -126,15 +117,15 @@ export function AdminHeader() {
               ? `${unreadCount} unread notification${unreadCount === 1 ? "" : "s"}`
               : "Notifications"
           }
-          className={`relative grid h-9 w-9 place-items-center rounded-xl border transition shadow-2xs ${
+          className={`relative grid h-8 w-8 place-items-center rounded-lg border transition ${
             onNotificationsPage
-              ? "border-indigo-200 bg-indigo-50 text-indigo-600"
-              : "border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+              ? "border-slate-300 bg-slate-100 text-slate-900"
+              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
           }`}
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-rose-500 px-1 text-[9.5px] font-bold text-white shadow-sm ring-2 ring-white">
+            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-semibold text-white">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -142,13 +133,13 @@ export function AdminHeader() {
 
         {/* Admin Avatar & Logout */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white font-bold text-xs shadow-2xs ring-2 ring-indigo-50">
+          <div className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-white font-medium text-xs">
             A
           </div>
           <button
             type="button"
             onClick={logout}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition shadow-2xs"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
             aria-label="Log out"
           >
             <LogOut className="h-3.5 w-3.5" />
