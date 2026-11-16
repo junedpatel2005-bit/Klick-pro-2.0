@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
 import {
@@ -84,6 +84,7 @@ function getAdminVisual(type = "", title = "") {
 
 export function AdminRealtime() {
   const router = useRouter();
+  const pathname = usePathname();
   const seenKeys = useRef(new Map<string, number>());
 
   const showNotification = useCallback(
@@ -186,6 +187,8 @@ export function AdminRealtime() {
   );
 
   useEffect(() => {
+    if (pathname?.startsWith("/admin/login")) return;
+
     const socket = io(window.location.origin, {
       path: "/api/realtime",
       transports: ["websocket", "polling"],
@@ -196,6 +199,10 @@ export function AdminRealtime() {
     });
 
     socket.on("connect_error", (error) => {
+      if (error.message.includes("Unauthorized")) {
+        socket.disconnect();
+        return;
+      }
       console.error("Admin realtime connection failed", error.message);
     });
 
@@ -271,7 +278,7 @@ export function AdminRealtime() {
       socket.off("project:updated", onProjectUpdate);
       socket.disconnect();
     };
-  }, [showNotification]);
+  }, [pathname, showNotification]);
 
   return null;
 }

@@ -59,6 +59,7 @@ import {
 import { useEffect, useState } from "react";
 import { AboutFeatureCard } from "@/components/AboutFeatureCard";
 import { AboutHero } from "@/components/AboutHero";
+import About from "@/routes/about";
 import type { CmsCard, CmsContent } from "@/lib/cms-file";
 import Landing from "@/routes/index";
 import ProfessionalHome from "@/routes/professional-home";
@@ -429,77 +430,7 @@ export default function CmsEditor() {
           }`}
         >
           {/* Editable Canvas Sections */}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            modifiers={[restrictToWindowEdges]}
-            onDragEnd={(event) => {
-              if (event.active.id === event.over?.id) return;
-              const from = sectionOrder.indexOf(String(event.active.id) as "hero" | "features");
-              const to = sectionOrder.indexOf(String(event.over?.id) as "hero" | "features");
-              if (from >= 0 && to >= 0) {
-                setSectionOrder(arrayMove(sectionOrder, from, to));
-                setStatus("ready");
-                setMessage("");
-              } else onDragEnd(event);
-            }}
-          >
-            <SortableContext items={sectionOrder} strategy={rectSortingStrategy}>
-              {sectionOrder.map((section) =>
-                section === "hero" ? (
-                  <SortableSection key={section} id={section}>
-                    <AboutHero
-                      {...draft.hero}
-                      editable
-                      onChange={(field, value) =>
-                        update({ ...draft, hero: { ...draft.hero, [field]: value } })
-                      }
-                    />
-                  </SortableSection>
-                ) : (
-                  <SortableSection key={section} id={section}>
-                    <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        modifiers={[restrictToWindowEdges]}
-                        onDragEnd={onDragEnd}
-                      >
-                        <SortableContext
-                          items={draft.cards.map((card) => card.id)}
-                          strategy={rectSortingStrategy}
-                        >
-                          <div
-                            className={`mx-auto grid w-full gap-6 ${
-                              draft.cards.length === 1
-                                ? "max-w-md"
-                                : draft.cards.length === 2
-                                  ? "md:grid-cols-2"
-                                  : draft.cards.length === 3
-                                    ? "md:grid-cols-3"
-                                    : "sm:grid-cols-2 lg:grid-cols-3"
-                            }`}
-                          >
-                            {draft.cards.map((card) => (
-                              <SortableVisualCard
-                                key={card.id}
-                                card={card}
-                                selected={selectedId === card.id}
-                                onSelect={() => setSelectedId(card.id)}
-                                onChange={(changes) => updateCard(card.id, changes)}
-                                onDelete={() => deleteCard(card.id)}
-                                onDuplicate={() => duplicateCard(card)}
-                              />
-                            ))}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
-                    </section>
-                  </SortableSection>
-                ),
-              )}
-            </SortableContext>
-          </DndContext>
+          <About cmsMode />
         </div>
       </div>
 

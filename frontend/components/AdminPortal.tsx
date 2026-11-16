@@ -10,7 +10,7 @@ function AdminPortalContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { collapsed } = useAdminSidebar();
 
-  if (pathname === "/admin/login") return <>{children}</>;
+  if (pathname?.startsWith("/admin/login")) return <>{children}</>;
 
   const isFullWidth =
     pathname?.startsWith("/admin/finance") || pathname?.startsWith("/admin/templates");

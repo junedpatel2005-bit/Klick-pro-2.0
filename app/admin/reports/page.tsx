@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -762,6 +763,7 @@ function AdminReportsContent() {
         body: JSON.stringify({
           scope: ids && ids.length > 0 ? "selected" : "all",
           ids: ids ? ids.map(String) : [],
+          role: roleFilter,
           pageSize: "A4",
           orientation: "landscape",
         }),
@@ -813,6 +815,7 @@ function AdminReportsContent() {
           scope: "selected",
           ids: [String(recordId)],
           format,
+          role: roleFilter,
           pageSize: "A4",
           orientation: "landscape",
         }),
@@ -2138,6 +2141,18 @@ function AdminReportsContent() {
                       {/* Row Action Column */}
                       <td className="py-3 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
+                          {activeTab === "posting-growth" && typeof row.id === "number" && (
+                            <Link
+                              href={`/project/${row.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="View full project details on marketplace"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View Job</span>
+                            </Link>
+                          )}
                           {masterGroup === "users" && typeof row.id === "number" && (
                             <button
                               type="button"

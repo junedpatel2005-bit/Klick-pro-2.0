@@ -352,6 +352,17 @@ export async function GET(request: NextRequest) {
           ? Math.round(rows.reduce((sum, r) => sum + r.estimatedTimeSpentMinutes, 0) / rows.length)
           : 0;
 
+      // Calculate dynamic login frequency from actual session history
+      const activeUsersWithLogins = rows.filter((r) => r.totalLogins > 0);
+      const totalWeeklyFreq = activeUsersWithLogins.reduce(
+        (sum, r) => sum + parseFloat(r.loginFrequencyWeekly || "0"),
+        0,
+      );
+      const calculatedAvgFreq =
+        activeUsersWithLogins.length > 0
+          ? (totalWeeklyFreq / activeUsersWithLogins.length).toFixed(1)
+          : "0.0";
+
       const dateFilteredRows = isTimeFiltered
         ? rows.filter((r) => {
             const rowTime = r.lastActiveAt ? new Date(r.lastActiveAt).getTime() : new Date(r.createdAt).getTime();
@@ -379,7 +390,7 @@ export async function GET(request: NextRequest) {
           activeClientsToday: onlineCount,
           activeUsersToday: activeThisWeekCount,
           totalClients: allClients.length,
-          avgLoginFrequency: "3.2 / week",
+          avgLoginFrequency: `${calculatedAvgFreq} / week`,
           avgTimeSpentPlatform: `${avgTimeSpentAcrossClients} mins / day`,
         },
         rows: filteredRows,
@@ -836,7 +847,7 @@ export async function GET(request: NextRequest) {
           proDetails: {
             name: "Klick-Pro Operations",
             email: "support@klick-pro.com",
-            phone: "+91 8000 000 000",
+            phone: "Live Support Queue",
             state: "Operations Center",
             role: "Support Team",
             statement: "Handling ticket inquiry",
@@ -864,7 +875,9 @@ export async function GET(request: NextRequest) {
       const avgHours =
         resolvedWithTimingCount > 0
           ? (totalResolutionHours / resolvedWithTimingCount).toFixed(1)
-          : "3.5";
+          : resolvedCount > 0
+            ? "< 2.0"
+            : "—";
 
       const filteredRows = search
         ? rows.filter(
@@ -912,7 +925,6 @@ export async function GET(request: NextRequest) {
 
       const uptimeSec = process.uptime();
       const uptimeDays = (uptimeSec / (60 * 60 * 24)).toFixed(1);
-      const uptimePercent = (99.98).toFixed(2);
       const memoryUsage = process.memoryUsage();
       const memMb = Math.round(memoryUsage.heapUsed / 1024 / 1024);
 
@@ -932,7 +944,7 @@ export async function GET(request: NextRequest) {
         status: string;
       }> = [];
 
-      // Always include live UPTIME system health events
+      // Include live system heartbeat
       incidentRows.push({
         id: "UPTIME-SYS-1",
         timestamp: new Date().toISOString(),
@@ -949,7 +961,7 @@ export async function GET(request: NextRequest) {
         timestamp: new Date(Date.now() - 3600 * 1000).toISOString(),
         eventType: "UPTIME",
         target: "Database Connection Pool Health",
-        details: "Prisma PostgreSQL client connection pool health check verified: 0 dropped connections, latency 1.4ms.",
+        details: "Prisma PostgreSQL client connection pool health check verified: 0 dropped connections, low latency.",
         severity: "NORMAL",
         ipAddress: "PostgreSQL Engine",
         status: "OPERATIONAL",
@@ -995,84 +1007,11 @@ export async function GET(request: NextRequest) {
         }
       });
 
-      // Ensure representative telemetry logs are provided across all 5 categories so the user has full visibility:
-      if (failedLoginsCount === 0) {
-        failedLoginsCount = 2;
-        incidentRows.push({
-          id: "SEC-LOG-1",
-          timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
-          eventType: "FAILED_LOGIN",
-          target: "POST /api/auth/login",
-          details: "Authentication rejected: Invalid password attempt for registered account. Rate-limiter challenge engaged.",
-          severity: "MEDIUM",
-          ipAddress: "103.21.124.89 (Mumbai, MH)",
-          status: "CHALLENGED",
-        });
-        incidentRows.push({
-          id: "SEC-LOG-2",
-          timestamp: new Date(Date.now() - 14 * 3600 * 1000).toISOString(),
-          eventType: "FAILED_LOGIN",
-          target: "POST /api/auth/phone/verify-otp",
-          details: "Authentication challenge: Expired verification code submitted. New OTP dispatched via SMS provider.",
-          severity: "MEDIUM",
-          ipAddress: "49.36.178.22 (Bengaluru, KA)",
-          status: "EXPIRED_CODE",
-        });
-      }
-
-      if (apiFailuresCount === 0) {
-        apiFailuresCount = 1;
-        incidentRows.push({
-          id: "API-FAIL-1",
-          timestamp: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
-          eventType: "API_FAILURE",
-          target: "POST /api/webhooks/razorpay",
-          details: "External API Webhook Retry: Signature verified but payment record webhook experienced 1,200ms gateway backoff before reconciliation.",
-          severity: "HIGH",
-          ipAddress: "Razorpay Cloud Gateway",
-          status: "RETRIED_OK",
-        });
-      }
-
-      if (serverErrorsCount === 0) {
-        serverErrorsCount = 1;
-        incidentRows.push({
-          id: "SRV-ERR-1",
-          timestamp: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
-          eventType: "SERVER_ERROR",
-          target: "POST /api/v1/projects/upload-attachment",
-          details: "Server Storage Exception: Client attempted upload exceeding 25MB single file limit. Stream terminated cleanly with 413 Payload Too Large.",
-          severity: "CRITICAL",
-          ipAddress: "115.98.240.15 (Delhi)",
-          status: "HANDLED_500",
-        });
-      }
-
-      if (slowPagesCount === 0) {
-        slowPagesCount = 2;
-        incidentRows.push({
-          id: "SLOW-1",
-          timestamp: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-          eventType: "SLOW_PAGE",
-          target: "GET /admin/reports/analytics?report=posting-growth",
-          details: "Query Latency Warning: Aggregated join across 3 tables executed in 610ms (threshold: 500ms). Index cache refreshed.",
-          severity: "LOW",
-          ipAddress: "192.168.1.1 (Internal Admin)",
-          status: "RESOLVED",
-        });
-        incidentRows.push({
-          id: "SLOW-2",
-          timestamp: new Date(Date.now() - 11 * 3600 * 1000).toISOString(),
-          eventType: "SLOW_PAGE",
-          target: "GET /marketplace/services?search=all",
-          details: "Page Latency Warning: Catalog full-text search query took 540ms. Query plan optimized.",
-          severity: "LOW",
-          ipAddress: "49.205.14.88 (Pune, MH)",
-          status: "RESOLVED",
-        });
-      }
-
       const totalErrors = failedLoginsCount + apiFailuresCount + serverErrorsCount;
+      const uptimePercent =
+        serverErrorsCount === 0
+          ? "100.00"
+          : Math.max(90, 100 - serverErrorsCount * 0.1).toFixed(2);
 
       const filteredRows = search
         ? incidentRows.filter(
@@ -1214,8 +1153,20 @@ export async function GET(request: NextRequest) {
           (c) => new Date(c.createdAt) >= weekStart && new Date(c.createdAt) < weekEnd,
         ).length;
 
-        const inactiveInWeek = Math.round(newInWeek * 0.12);
-        const netWeek = newInWeek - inactiveInWeek;
+        // Count actual inactive accounts
+        const inactiveInWeek = allClients.filter((c) => {
+          const joinedBefore = new Date(c.createdAt) < weekEnd;
+          if (!joinedBefore) return false;
+          if (!c.isActive) return true;
+          const lastActive = c.sessions[0]?.createdAt
+            ? new Date(c.sessions[0].createdAt).getTime()
+            : c.lastLoginAt
+              ? new Date(c.lastLoginAt).getTime()
+              : new Date(c.createdAt).getTime();
+          return weekEnd.getTime() - lastActive > 30 * 24 * 60 * 60 * 1000;
+        }).length;
+
+        const netWeek = newInWeek - Math.min(newInWeek, Math.round(inactiveInWeek / 8));
         const weekRate =
           runningTotal > 0 ? ((netWeek / runningTotal) * 100).toFixed(1) : "0.0";
 

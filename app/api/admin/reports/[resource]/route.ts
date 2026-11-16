@@ -402,6 +402,13 @@ export async function POST(
     const template = (rawBody as { template?: string } | null)?.template;
 
     const format = ((rawBody as { format?: string } | null)?.format || "").toLowerCase();
+    const roleParam = ((rawBody as { role?: string } | null)?.role || "CLIENT").toUpperCase();
+    const roleWhere =
+      roleParam === "PROFESSIONAL"
+        ? { role: "PROFESSIONAL" as const }
+        : roleParam === "ALL"
+          ? { role: { in: ["CLIENT" as const, "PROFESSIONAL" as const] } }
+          : { role: "CLIENT" as const };
 
     // =========================================================================
     // JOBS RESOURCE: Complete Project Dossier Statement & Marketplace Audit
@@ -973,7 +980,7 @@ export async function POST(
           }
         }
         const clients = await db.user.findMany({
-          where: selectedOnly ? { id: { in: numericIds } } : { role: "CLIENT" },
+          where: selectedOnly ? { id: { in: numericIds } } : roleWhere,
           include: {
             clientProfiles: true,
             clientJobs: {
@@ -1158,7 +1165,7 @@ export async function POST(
         }
 
         const clients = await db.user.findMany({
-          where: isSingle ? { id: singleUserId } : (selectedOnly ? { id: { in: numericIds } } : { role: "CLIENT" }),
+          where: isSingle ? { id: singleUserId } : (selectedOnly ? { id: { in: numericIds } } : roleWhere),
           select: {
             id: true,
             firstName: true,
@@ -1330,7 +1337,7 @@ export async function POST(
         const isSingle = selectedOnly && numericIds.length === 1 && typeof singleUserId === "number";
 
         const clients = await db.user.findMany({
-          where: isSingle ? { id: singleUserId } : (selectedOnly ? { id: { in: numericIds } } : { role: "CLIENT" }),
+          where: isSingle ? { id: singleUserId } : (selectedOnly ? { id: { in: numericIds } } : roleWhere),
           select: {
             id: true,
             firstName: true,
@@ -1551,8 +1558,111 @@ export async function POST(
           pageSize: reportRequest.pageSize,
         }) as unknown as Parameters<typeof renderReportPdf>[0];
       } else if (resource === "support-complaints") {
+        const rawId = ids[0] ? String(ids[0]) : "";
+        const isContactTicket = rawId.startsWith("SUP-");
         const singleDisputeId = numericIds[0];
         const isSingle = selectedOnly && numericIds.length === 1 && typeof singleDisputeId === "number";
+
+        if (isSingle && isContactTicket) {
+          const contactReq = await db.contactRequest.findUnique({
+            where: { id: singleDisputeId },
+          });
+          if (contactReq) {
+            if (format === "csv") {
+              const sanitize = (val: unknown) => {
+                if (val === null || val === undefined) return '""';
+                const str = String(val).replace(/\r\n/g, " ").replace(/[\r\n]/g, " ").trim();
+                return `"${str.replace(/"/g, '""')}"`;
+              };
+              const headers = [
+                "Ticket ID",
+                "Reporter Full Name",
+                "Email Address",
+                "Subject",
+                "Current Status",
+                "Logged At",
+                "Inquiry / Statement Details",
+              ];
+              const row = [
+                `SUP-${contactReq.id}`,
+                contactReq.name,
+                contactReq.email,
+                contactReq.subject,
+                contactReq.status,
+                contactReq.createdAt.toISOString(),
+                contactReq.message,
+              ];
+              const csvContent = headers.map(sanitize).join(",") + "\r\n" + row.map(sanitize).join(",");
+              return new NextResponse("\uFEFF" + csvContent, {
+                status: 200,
+                headers: {
+                  "Content-Type": "text/csv; charset=utf-8",
+                  "Content-Disposition": `attachment; filename="klick-pro-support-ticket-${contactReq.id}-dossier.csv"`,
+                },
+              });
+            }
+
+            const cases: SupportComplaintDetailedRow[] = [
+              {
+                id: `SUP-${contactReq.id}`,
+                source: "Support Ticket",
+                priority: "NORMAL",
+                status: (contactReq.status || "OPEN").toUpperCase(),
+                turnaroundTime: contactReq.status === "RESOLVED" ? "Resolved" : "In Progress",
+                createdAt: contactReq.createdAt,
+                resolvedAt: contactReq.updatedAt,
+                totalExposure: "₹0",
+                project: {
+                  jobId: "N/A",
+                  title: capitalizeFirst(contactReq.subject || "Support Inquiry"),
+                  category: "Platform Support",
+                  budget: "INR 0",
+                  milestoneTitle: "N/A",
+                  milestoneAmount: "INR 0",
+                },
+                client: {
+                  name: capitalizeWords(contactReq.name || "User"),
+                  email: contactReq.email || "—",
+                  phone: "—",
+                  state: "Pan-India",
+                  statement: contactReq.message || "General platform inquiry",
+                  claimAmount: 0,
+                },
+                professional: {
+                  name: "Klick-Pro Operations",
+                  email: "support@klick-pro.com",
+                  phone: "Live Support Queue",
+                  state: "Operations Center",
+                  statement: "Inquiry assigned to operations team",
+                  claimAmount: 0,
+                },
+                arbitration: {
+                  stage: "Customer Support Queue",
+                  decision: contactReq.status === "RESOLVED" ? "Resolved by Support Team" : "Under Support Review",
+                  clientSplit: 0,
+                  proSplit: 0,
+                },
+              },
+            ];
+
+            const summaryStats: ReportSummaryStat[] = [
+              { label: "Ticket ID", value: `SUP-${contactReq.id}` },
+              { label: "Current Status", value: (contactReq.status || "OPEN").toUpperCase() },
+              { label: "Topic / Subject", value: contactReq.subject || "Inquiry" },
+              { label: "Source", value: "Web Contact Portal" },
+            ];
+
+            const buffer = await renderReportPdf(
+              createElement(SupportComplaintsDetailedDocument, {
+                cases,
+                summaryStats,
+                filterSummary: "Support Ticket Dossier",
+                pageSize: reportRequest.pageSize,
+              }) as unknown as Parameters<typeof renderReportPdf>[0],
+            );
+            return pdfResponse(buffer, `klick-pro-support-ticket-${contactReq.id}-dossier.pdf`);
+          }
+        }
 
         const disputes = await db.projectDispute.findMany({
           where: isSingle ? { id: singleDisputeId } : (selectedOnly ? { id: { in: numericIds } } : {}),
@@ -1826,56 +1936,6 @@ export async function POST(
           });
         });
 
-        // Ensure all 5 categories are shown if logs were sparse
-        if (!incidents.some((r) => r.eventType === "FAILED_LOGIN")) {
-          incidents.push({
-            id: "SEC-AUTH-1",
-            timestamp: new Date(Date.now() - 3600 * 4000).toLocaleString("en-IN"),
-            eventType: "FAILED_LOGIN",
-            target: "POST /api/auth/login",
-            details: "Authentication rejected: Invalid password credentials submitted. Rate-limiting engaged.",
-            severity: "MEDIUM",
-            ipAddress: "103.21.124.89",
-            status: "CHALLENGED",
-          });
-        }
-        if (!incidents.some((r) => r.eventType === "API_FAILURE")) {
-          incidents.push({
-            id: "API-EV-1",
-            timestamp: new Date(Date.now() - 3600 * 8000).toLocaleString("en-IN"),
-            eventType: "API_FAILURE",
-            target: "POST /api/webhooks/razorpay",
-            details: "Payment webhook gateway retry. Payload signature reconciled successfully on retry.",
-            severity: "HIGH",
-            ipAddress: "Razorpay Cloud",
-            status: "RETRIED_OK",
-          });
-        }
-        if (!incidents.some((r) => r.eventType === "SERVER_ERROR")) {
-          incidents.push({
-            id: "SRV-EV-1",
-            timestamp: new Date(Date.now() - 3600 * 18000).toLocaleString("en-IN"),
-            eventType: "SERVER_ERROR",
-            target: "POST /api/v1/projects/upload",
-            details: "Payload Too Large: File upload exceeded 25MB maximum limit. Handled safely without cluster restart.",
-            severity: "CRITICAL",
-            ipAddress: "115.98.240.15",
-            status: "HANDLED_500",
-          });
-        }
-        if (!incidents.some((r) => r.eventType === "SLOW_PAGE")) {
-          incidents.push({
-            id: "SLOW-EV-1",
-            timestamp: new Date(Date.now() - 3600 * 2000).toLocaleString("en-IN"),
-            eventType: "SLOW_PAGE",
-            target: "GET /admin/reports/analytics",
-            details: "Query latency warning: Aggregated reports query took 610ms. Index cache refreshed.",
-            severity: "LOW",
-            ipAddress: "Internal Admin",
-            status: "RESOLVED",
-          });
-        }
-
         if (format === "csv") {
           const csvContent = generateSystemReliabilityDossierCsv(incidents);
           return new NextResponse("\uFEFF" + csvContent, {
@@ -1887,8 +1947,11 @@ export async function POST(
           });
         }
 
+        const serverErrorsCount = incidents.filter((r) => r.eventType === "SERVER_ERROR").length;
+        const uptimePercent = serverErrorsCount === 0 ? "100.00%" : `${Math.max(90, 100 - serverErrorsCount * 0.1).toFixed(2)}%`;
+
         const summaryStats: ReportSummaryStat[] = [
-          { label: "System Uptime", value: "99.98%" },
+          { label: "System Uptime", value: uptimePercent },
           { label: "Failed Logins", value: String(incidents.filter((r) => r.eventType === "FAILED_LOGIN").length) },
           { label: "API Failures", value: String(incidents.filter((r) => r.eventType === "API_FAILURE").length) },
           { label: "Slow Pages", value: String(incidents.filter((r) => r.eventType === "SLOW_PAGE").length) },
@@ -1929,7 +1992,7 @@ export async function POST(
 
         const hasValidNumericIds = selectedOnly && numericIds.length > 0;
         const allClients = await db.user.findMany({
-          where: hasValidNumericIds ? { id: { in: numericIds }, role: "CLIENT" } : { role: "CLIENT" },
+          where: hasValidNumericIds ? { id: { in: numericIds }, ...roleWhere } : roleWhere,
           select: {
             id: true,
             firstName: true,

@@ -137,7 +137,7 @@ io.use(async (socket, nextSocket) => {
         !sessionRow ||
         sessionRow.revoked_at ||
         new Date(sessionRow.expires_at) <= new Date() ||
-        !sessionRow.isActive
+        !(sessionRow.isActive ?? sessionRow.is_active)
       ) {
         throw new Error("Revoked or inactive session");
       }
@@ -146,7 +146,10 @@ io.use(async (socket, nextSocket) => {
     socket.data.userId = userId;
     socket.data.role = payload.role;
     nextSocket();
-  } catch {
+  } catch (err) {
+    if (dev) {
+      console.error("[Realtime Handshake Error]", err?.message || err);
+    }
     nextSocket(new Error("Unauthorized realtime connection"));
   }
 });
