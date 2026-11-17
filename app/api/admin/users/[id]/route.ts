@@ -81,6 +81,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         isActive: true,
         isVerified: true,
         createdAt: true,
+        lastLoginAt: true,
         professionalCategory: true,
         professionalCity: true,
         hourlyRate: true,
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
     const userRoleFilter =
       user.role === "CLIENT" ? { clientId: userId } : { professionalId: userId };
-    const [jobsPosted, proposals, allProjects, completedPayments, userJobs, userRequests] = await Promise.all([
+    const [jobsPosted, proposals, allProjects, completedPayments, userJobs, userRequests, latestSession, sessionCount] = await Promise.all([
       db.clientJob.count({ where: { userId } }),
       db.projectRequest.count({ where: userRoleFilter }),
       db.projectTracking.findMany({
@@ -177,6 +178,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             take: 20,
           })
         : Promise.resolve([]),
+      db.session.findFirst({
+        where: { userId, revokedAt: null },
+        orderBy: { createdAt: "desc" },
+      }),
+      db.session.count({ where: { userId } }),
     ]);
     const completedProjects = allProjects.filter(
       (p) => p.status === "COMPLETED" || p.status.toUpperCase().includes("COMPLETED"),
@@ -187,8 +193,50 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         p.status.toUpperCase().includes("CLOSED") ||
         p.status.toUpperCase().includes("CANCELLED"),
     ).length;
+
+    const now = Date.now();
+    const thirtyMinsAgo = now - 30 * 60 * 1000;
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const lastSessionMs = latestSession?.createdAt ? new Date(latestSession.createdAt).getTime() : 0;
+    const lastLoginMs = user.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0;
+    const actualLastActiveMs = Math.max(lastLoginMs, lastSessionMs);
+    const isOnline = Boolean(
+      user.isActive && (
+        (lastLoginMs > 0 && lastLoginMs >= thirtyMinsAgo) ||
+        (latestSession && latestSession.expiresAt > new Date() && lastSessionMs >= thirtyMinsAgo)
+      ),
+    );
+
+    let accountState: "ONLINE" | "ACTIVE" | "IDLE" | "NEVER_LOGGED_IN" | "DISABLED" = "NEVER_LOGGED_IN";
+    let accountStateLabel = "Never Logged In";
+
+    if (!user.isActive) {
+      accountState = "DISABLED";
+      accountStateLabel = "Disabled";
+    } else if (isOnline) {
+      accountState = "ONLINE";
+      accountStateLabel = "Online Now";
+    } else if (actualLastActiveMs >= sevenDaysAgo && actualLastActiveMs > 0) {
+      accountState = "ACTIVE";
+      const daysAgo = Math.floor((now - actualLastActiveMs) / (1000 * 60 * 60 * 24));
+      accountStateLabel = daysAgo === 0 ? "Active Today" : `Active (${daysAgo}d ago)`;
+    } else if (actualLastActiveMs > 0) {
+      accountState = "IDLE";
+      const daysAgo = Math.floor((now - actualLastActiveMs) / (1000 * 60 * 60 * 24));
+      accountStateLabel = `Idle (${daysAgo}d ago)`;
+    }
+
+    const enrichedUser = {
+      ...user,
+      accountState,
+      accountStateLabel,
+      isOnline,
+      lastActiveAt: actualLastActiveMs > 0 ? new Date(actualLastActiveMs).toISOString() : null,
+      totalLogins: Math.max(sessionCount, user.lastLoginAt ? 1 : 0),
+    };
+
     return NextResponse.json({
-      user,
+      user: enrichedUser,
       stats: {
         jobsPosted,
         proposals,

@@ -40,6 +40,12 @@ type InspectedUser = {
   isActive: boolean;
   isVerified: boolean;
   createdAt: string;
+  lastLoginAt?: string | null;
+  lastActiveAt?: string | null;
+  accountState?: "ONLINE" | "ACTIVE" | "IDLE" | "NEVER_LOGGED_IN" | "DISABLED";
+  accountStateLabel?: string;
+  isOnline?: boolean;
+  totalLogins?: number;
   location?: string | null;
   address?: string | null;
   professionalCity?: string | null;
@@ -332,12 +338,28 @@ export function AdminUserInspectionDrawer({
                       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3 shadow-2xs">
                         <span className="text-[11px] font-medium text-slate-500">Account State</span>
                         <div className="mt-1 flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-rose-500"}`} />
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              !user.isActive
+                                ? "bg-rose-500"
+                                : user.isOnline || user.accountState === "ONLINE"
+                                  ? "bg-emerald-500 animate-pulse"
+                                  : user.accountState === "ACTIVE"
+                                    ? "bg-blue-500"
+                                    : user.accountState === "IDLE"
+                                      ? "bg-amber-500"
+                                      : "bg-slate-400"
+                            }`}
+                          />
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
-                            {user.isActive ? "Active" : "Disabled"}
+                            {user.accountStateLabel || (user.isActive ? "Active" : "Disabled")}
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-400">{user.authProvider || "LOCAL"}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {user.lastActiveAt
+                            ? `Last seen ${new Date(user.lastActiveAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`
+                            : user.authProvider || "LOCAL"}
+                        </span>
                       </div>
                     </div>
 

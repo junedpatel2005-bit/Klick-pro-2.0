@@ -65,6 +65,13 @@ import Landing from "@/routes/index";
 import ProfessionalHome from "@/routes/professional-home";
 import type { HomeContent, HomeFeature } from "@/lib/home-cms-file";
 import MarketingVisualPage from "@/components/MarketingVisualPage";
+import HowItWorks from "@/routes/how-it-works";
+import ForClients from "@/routes/for-clients";
+import ForPros from "@/routes/for-professionals";
+import FAQ from "@/routes/faq";
+import Contact from "@/routes/contact";
+import Pricing from "@/routes/pricing";
+import ServicesCatalog from "@/components/ServicesCatalog";
 import {
   marketingPageIds,
   type MarketingItem,
@@ -1608,6 +1615,20 @@ function MarketingCmsEditor({
               onDelete={deleteItem}
               onDuplicate={duplicateItem}
             />
+          ) : page === "how-it-works" ? (
+            <HowItWorks cmsMode />
+          ) : page === "for-clients" ? (
+            <ForClients cmsMode />
+          ) : page === "for-professionals" ? (
+            <ForPros cmsMode />
+          ) : page === "faq" ? (
+            <FAQ />
+          ) : page === "contact" ? (
+            <Contact />
+          ) : page === "pricing" ? (
+            <Pricing cmsMode />
+          ) : page === "services" ? (
+            <ServicesCatalog data={{ parents: [], categories: [], subcategories: [], totalCounts: { parents: 0, categories: 0, subcategories: 0 } }} />
           ) : (
             <MarketingVisualPage
               page={page}

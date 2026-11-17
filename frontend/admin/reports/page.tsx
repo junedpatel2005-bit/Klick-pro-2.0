@@ -555,7 +555,7 @@ export default function AdminReportsPage() {
           capitalizeWords(c.category || c.industry || "General Services"),
           c.isVerified ? "Verified Identity" : "Pending Verification",
           c.jobsCount ?? 0,
-          c.status || "Active",
+          c.status || "Never Logged In",
           formatDateSafely(c.createdAt),
           c.cohortWindow || "Current Period",
         ]);

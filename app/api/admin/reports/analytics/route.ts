@@ -249,6 +249,12 @@ export async function GET(request: NextRequest) {
       recentLogs.forEach((l) => {
         if (l.actorId && clientIdsSet.has(l.actorId)) onlineClientUserIds.add(l.actorId);
       });
+      allClients.forEach((c) => {
+        const lastLoginMs = c.lastLoginAt ? new Date(c.lastLoginAt).getTime() : 0;
+        if (lastLoginMs >= nowTime - 30 * 60 * 1000) {
+          onlineClientUserIds.add(c.id);
+        }
+      });
 
       let onlineCount = 0;
       let activeThisWeekCount = 0;
@@ -1122,7 +1128,13 @@ export async function GET(request: NextRequest) {
           category: capitalizeWords(industry),
           isVerified: c.isVerified,
           jobsCount: c.clientJobs.length,
-          status: c.isActive ? "Active Account" : "Inactive",
+          status: !c.isActive
+            ? "Disabled"
+            : (c.lastLoginAt && (nowTime - new Date(c.lastLoginAt).getTime() < 7 * 24 * 60 * 60 * 1000))
+              ? "Active Account"
+              : c.lastLoginAt
+                ? "Idle Account"
+                : "Never Logged In",
           createdAt: c.createdAt.toISOString(),
         };
       });

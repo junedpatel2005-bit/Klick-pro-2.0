@@ -71,6 +71,8 @@ export type AdminDirectoryUser = {
   isVerified: boolean;
   emailVerifiedAt: string | null;
   createdAt: string;
+  lastLoginAt?: string | null;
+  totalLogins?: number;
   averageRating: number;
   reviewCount: number;
   completedProjects: number;
@@ -79,6 +81,68 @@ export type AdminDirectoryUser = {
   location: string;
   companyName: string | null;
 };
+
+export type AccountStateType = "ONLINE" | "ACTIVE" | "IDLE" | "NEVER_LOGGED_IN" | "DISABLED";
+
+export function getUserAccountState(user: {
+  isActive: boolean;
+  lastLoginAt?: string | null;
+  totalLogins?: number;
+}): {
+  state: AccountStateType;
+  label: string;
+  badgeClass: string;
+  dotClass: string;
+} {
+  if (!user.isActive) {
+    return {
+      state: "DISABLED",
+      label: "Disabled",
+      badgeClass: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900",
+      dotClass: "bg-rose-500",
+    };
+  }
+
+  const lastLoginMs = user.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0;
+  const now = Date.now();
+  const thirtyMinsAgo = now - 30 * 60 * 1000;
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+  if (lastLoginMs > 0 && lastLoginMs >= thirtyMinsAgo) {
+    return {
+      state: "ONLINE",
+      label: "Online Now",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900",
+      dotClass: "bg-emerald-500 animate-pulse",
+    };
+  }
+
+  if (lastLoginMs > 0 && lastLoginMs >= sevenDaysAgo) {
+    return {
+      state: "ACTIVE",
+      label: "Active",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900",
+      dotClass: "bg-blue-500",
+    };
+  }
+
+  if (lastLoginMs > 0) {
+    const daysAgo = Math.floor((now - lastLoginMs) / (1000 * 60 * 60 * 24));
+    return {
+      state: "IDLE",
+      label: daysAgo === 1 ? "Idle (1d ago)" : `Idle (${daysAgo}d ago)`,
+      badgeClass: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900",
+      dotClass: "bg-amber-500",
+    };
+  }
+
+  return {
+    state: "NEVER_LOGGED_IN",
+    label: "Never Logged In",
+    badgeClass: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+    dotClass: "bg-slate-400",
+  };
+}
 
 type UserManagementViewProps = {
   onInspectUser?: (userId: number) => void;
@@ -91,7 +155,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<"clients" | "professionals">("clients");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | AccountStateType>("ALL");
   const [verifiedFilter, setVerifiedFilter] = useState<"ALL" | "VERIFIED" | "UNVERIFIED">("ALL");
   const [selectedLocation, setSelectedLocation] = useState<string>("ALL");
   const [minRating, setMinRating] = useState<number>(0);
@@ -195,8 +259,14 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
   const clients = useMemo(() => {
     return users.filter((u) => {
       if (u.role !== "CLIENT") return false;
-      if (statusFilter === "ACTIVE" && !u.isActive) return false;
-      if (statusFilter === "INACTIVE" && u.isActive) return false;
+      if (statusFilter !== "ALL") {
+        const userState = getUserAccountState(u).state;
+        if (statusFilter === "ACTIVE" && userState !== "ACTIVE" && userState !== "ONLINE") return false;
+        if (statusFilter === "ONLINE" && userState !== "ONLINE") return false;
+        if (statusFilter === "IDLE" && userState !== "IDLE") return false;
+        if (statusFilter === "NEVER_LOGGED_IN" && userState !== "NEVER_LOGGED_IN") return false;
+        if (statusFilter === "DISABLED" && userState !== "DISABLED") return false;
+      }
       if (verifiedFilter === "VERIFIED" && !u.isVerified) return false;
       if (verifiedFilter === "UNVERIFIED" && u.isVerified) return false;
       if (!isDateWithinRange(u.createdAt, timeRange)) return false;
@@ -220,8 +290,14 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
   const professionals = useMemo(() => {
     return users.filter((u) => {
       if (u.role !== "PROFESSIONAL") return false;
-      if (statusFilter === "ACTIVE" && !u.isActive) return false;
-      if (statusFilter === "INACTIVE" && u.isActive) return false;
+      if (statusFilter !== "ALL") {
+        const userState = getUserAccountState(u).state;
+        if (statusFilter === "ACTIVE" && userState !== "ACTIVE" && userState !== "ONLINE") return false;
+        if (statusFilter === "ONLINE" && userState !== "ONLINE") return false;
+        if (statusFilter === "IDLE" && userState !== "IDLE") return false;
+        if (statusFilter === "NEVER_LOGGED_IN" && userState !== "NEVER_LOGGED_IN") return false;
+        if (statusFilter === "DISABLED" && userState !== "DISABLED") return false;
+      }
       if (verifiedFilter === "VERIFIED" && !u.isVerified) return false;
       if (verifiedFilter === "UNVERIFIED" && u.isVerified) return false;
       if (!isDateWithinRange(u.createdAt, timeRange)) return false;
@@ -305,13 +381,16 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/80">
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as "ALL" | "ACTIVE" | "INACTIVE"); setPage(1); }}
-            aria-label="Filter directory users by status"
+            onChange={(e) => { setStatusFilter(e.target.value as "ALL" | AccountStateType); setPage(1); }}
+            aria-label="Filter directory users by account status"
             className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 font-medium"
           >
             <option value="ALL">All Account Status</option>
-            <option value="ACTIVE">Active Accounts</option>
-            <option value="INACTIVE">Disabled Accounts</option>
+            <option value="ONLINE">Online Now</option>
+            <option value="ACTIVE">Active (This Week)</option>
+            <option value="IDLE">Idle Accounts</option>
+            <option value="NEVER_LOGGED_IN">Never Logged In</option>
+            <option value="DISABLED">Disabled Accounts</option>
           </select>
 
           <select
@@ -434,13 +513,15 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
                       </div>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border shrink-0 ${
-                      user.isActive
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-rose-50 text-rose-700 border-rose-200"
-                    }`}>
-                      {user.isActive ? "Active" : "Disabled"}
-                    </span>
+                    {(() => {
+                      const accountState = getUserAccountState(user);
+                      return (
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border shrink-0 inline-flex items-center gap-1.5 ${accountState.badgeClass}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${accountState.dotClass}`} />
+                          {accountState.label}
+                        </span>
+                      );
+                    })()}
                   </div>
 
                   <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-[11px]">

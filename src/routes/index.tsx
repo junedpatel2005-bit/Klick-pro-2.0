@@ -3,7 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, Briefcase, MapPin, Search, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Briefcase,
+  Building2,
+  Factory,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  MapPin,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ProCard } from "@/components/ProCard";
 import { Button } from "@/components/ui/button";
@@ -25,6 +39,88 @@ const SortableItem = dynamic(
     ssr: false,
   },
 );
+
+const MASTER_CATEGORIES = [
+  {
+    title: "Residential",
+    description: "Electricians, plumbers, cleaners, painters, carpenters, tutors and home care.",
+    icon: Home,
+    href: "/services?sector=residential",
+  },
+  {
+    title: "Commercial",
+    description: "Office fit-outs, facility upkeep, photography, marketing, accounting and legal help.",
+    icon: Building2,
+    href: "/services?sector=commercial",
+  },
+  {
+    title: "Industrial",
+    description: "Machinery maintenance, industrial wiring, welding, safety audits and logistics.",
+    icon: Factory,
+    href: "/services?sector=industrial",
+  },
+  {
+    title: "Health Care",
+    description: "Nurses, caregivers, physiotherapists, therapists, medical technicians and wellness support.",
+    icon: HeartPulse,
+    href: "/services?sector=healthcare",
+  },
+  {
+    title: "Personal Care & Home Services",
+    description: "Salon and grooming, spa and massage, beauty, fitness trainers, laundry and home help.",
+    icon: Sparkles,
+    href: "/services?sector=personal",
+  },
+  {
+    title: "Education",
+    description: "Tutors, coaches, language teachers, test prep, skill training and online courses.",
+    icon: GraduationCap,
+    href: "/services?sector=education",
+  },
+];
+
+const FALLBACK_FEATURED_PROS = [
+  {
+    id: 1001,
+    name: "Aarav Patel",
+    category: "Full-Stack Next.js Dev",
+    rate: "₹1,800/hr",
+    rating: "4.9",
+    reviewsCount: 42,
+    initials: "AP",
+    bgClass: "bg-blue-100 text-blue-700",
+  },
+  {
+    id: 1002,
+    name: "Priya Sharma",
+    category: "UI/UX & Brand Designer",
+    rate: "₹1,400/hr",
+    rating: "5.0",
+    reviewsCount: 68,
+    initials: "PS",
+    bgClass: "bg-amber-100 text-amber-700",
+  },
+  {
+    id: 1003,
+    name: "Rajesh Kumar",
+    category: "Certified Electrician",
+    rate: "₹499 visit",
+    rating: "4.8",
+    reviewsCount: 89,
+    initials: "RK",
+    bgClass: "bg-purple-100 text-purple-700",
+  },
+  {
+    id: 1004,
+    name: "Vikram Mehta",
+    category: "Commercial Videographer",
+    rate: "₹6,500/day",
+    rating: "4.9",
+    reviewsCount: 35,
+    initials: "VM",
+    bgClass: "bg-rose-100 text-rose-700",
+  },
+];
 
 export default function Landing({
   isAuthenticated = false,
@@ -56,18 +152,18 @@ export default function Landing({
     },
     features: [
       {
-        id: "verified",
-        title: "Verified Professionals",
-        description:
-          "All professionals are verified and vetted to ensure quality work and your peace of mind.",
-        icon: "shield",
-      },
-      {
         id: "projects",
         title: "Project Management",
         description:
           "Track progress, communicate in real-time, and manage all projects in one centralized dashboard.",
         icon: "briefcase",
+      },
+      {
+        id: "verified",
+        title: "Verified Professionals",
+        description:
+          "All professionals are verified and vetted to ensure quality work and your peace of mind.",
+        icon: "shield",
       },
       {
         id: "matching",
@@ -99,6 +195,7 @@ export default function Landing({
       },
     ],
   };
+
   const content = homeContent ?? fallback;
   const edit = (hero: Partial<HomeContent["hero"]>) =>
     onHomeChange?.({ ...content, hero: { ...content.hero, ...hero } });
@@ -113,7 +210,10 @@ export default function Landing({
       try {
         const response = await fetch("/api/v1/marketplace/professionals");
         if (!response.ok) throw new Error("Marketplace request failed");
-        setProfessionals((await response.json()) as MarketplaceProfessional[]);
+        const data = (await response.json()) as MarketplaceProfessional[];
+        if (Array.isArray(data)) {
+          setProfessionals(data);
+        }
       } catch {
         setFailed(true);
       }
@@ -180,8 +280,6 @@ export default function Landing({
     }
   };
 
-  // Shared by the sortable (CMS) and plain (public) grids so both render
-  // identical markup.
   const renderFeature = (feature: HomeContent["features"][number], drag?: DragHandle) => (
     <HomeFeature
       key={feature.id}
@@ -204,103 +302,235 @@ export default function Landing({
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <main>
-        <section className="gradient-hero">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-            <p className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-success" />
-              <span
-                contentEditable={cmsMode}
-                suppressContentEditableWarning={cmsMode}
-                onInput={(e) => edit({ eyebrow: e.currentTarget.textContent ?? "" })}
-              >
-                {content.hero.eyebrow}
-              </span>
-            </p>
-            <h1 className="mt-5 max-w-3xl font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              <span
-                contentEditable={cmsMode}
-                suppressContentEditableWarning={cmsMode}
-                onInput={(e) => edit({ title: e.currentTarget.textContent ?? "" })}
-              >
-                {content.hero.title}
-              </span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-              <span
-                contentEditable={cmsMode}
-                suppressContentEditableWarning={cmsMode}
-                onInput={(e) => edit({ description: e.currentTarget.textContent ?? "" })}
-              >
-                {content.hero.description}
-              </span>
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button
-                asChild={!cmsMode}
-                size="lg"
-                type="button"
-                onClick={cmsMode ? (e) => e.preventDefault() : undefined}
-              >
-                {cmsMode ? (
-                  <div className="flex items-center">
-                    <Search className="mr-2 h-4 w-4" />
-                    <span
-                      contentEditable={cmsMode}
-                      suppressContentEditableWarning={cmsMode}
-                      onInput={(e) => edit({ primaryCta: e.currentTarget.textContent ?? "" })}
-                    >
-                      {content.hero.primaryCta}
-                    </span>
+    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
+      <main className="flex-grow">
+        {/* ================= 1. HERO SECTION WITH OFFICIAL WEBSITE LOGO SHOWCASE ================= */}
+        <section className="gradient-hero border-b border-slate-200/60">
+          <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:py-20 sm:px-6 lg:grid-cols-2 lg:px-8">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/90 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-xs backdrop-blur-xs">
+                <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+                <span
+                  contentEditable={cmsMode}
+                  suppressContentEditableWarning={cmsMode}
+                  onInput={(e) => edit({ eyebrow: e.currentTarget.textContent ?? "" })}
+                >
+                  {content.hero.eyebrow}
+                </span>
+              </p>
+
+              <h1 className="mt-5 max-w-3xl font-display text-4xl font-extrabold tracking-tight text-slate-900 md:text-5xl sm:leading-[1.15]">
+                <span
+                  contentEditable={cmsMode}
+                  suppressContentEditableWarning={cmsMode}
+                  onInput={(e) => edit({ title: e.currentTarget.textContent ?? "" })}
+                >
+                  {content.hero.title}
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-base text-slate-600 sm:text-lg leading-relaxed">
+                <span
+                  contentEditable={cmsMode}
+                  suppressContentEditableWarning={cmsMode}
+                  onInput={(e) => edit({ description: e.currentTarget.textContent ?? "" })}
+                >
+                  {content.hero.description}
+                </span>
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3.5">
+                <Button
+                  asChild={!cmsMode}
+                  size="lg"
+                  type="button"
+                  onClick={cmsMode ? (e) => e.preventDefault() : undefined}
+                  className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                >
+                  {cmsMode ? (
+                    <div className="flex items-center">
+                      <Search className="mr-2 h-4 w-4" />
+                      <span
+                        contentEditable={cmsMode}
+                        suppressContentEditableWarning={cmsMode}
+                        onInput={(e) => edit({ primaryCta: e.currentTarget.textContent ?? "" })}
+                      >
+                        {content.hero.primaryCta}
+                      </span>
+                    </div>
+                  ) : (
+                    <Link href="/services">
+                      <Search className="mr-2 h-4 w-4" />
+                      <span>{content.hero.primaryCta}</span>
+                    </Link>
+                  )}
+                </Button>
+
+                <Button
+                  asChild={!cmsMode}
+                  size="lg"
+                  variant="outline"
+                  type="button"
+                  onClick={cmsMode ? (e) => e.preventDefault() : undefined}
+                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition"
+                >
+                  {cmsMode ? (
+                    <div className="flex items-center">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      <span
+                        contentEditable={cmsMode}
+                        suppressContentEditableWarning={cmsMode}
+                        onInput={(e) => edit({ secondaryCta: e.currentTarget.textContent ?? "" })}
+                      >
+                        {content.hero.secondaryCta}
+                      </span>
+                    </div>
+                  ) : (
+                    <Link href="/post-job">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      <span>{content.hero.secondaryCta}</span>
+                    </Link>
+                  )}
+                </Button>
+              </div>
+
+              {/* Quick Trust Bar Under CTAs */}
+              <div className="mt-8 flex items-center gap-6 text-xs text-slate-500 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  Verified Identity
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                  100% Escrow Protection
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                  Pan-India Coverage
+                </span>
+              </div>
+            </div>
+
+            {/* Official Website Logo Showcase Card */}
+            <div className="mx-auto w-full max-w-md lg:max-w-lg">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-xl transition-all duration-300 hover:shadow-2xl">
+                {/* Decorative background glow */}
+                <div className="pointer-events-none absolute -top-20 -right-20 h-52 w-52 rounded-full bg-blue-100/60 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-amber-100/50 blur-3xl" />
+
+                <div className="relative flex flex-col items-center text-center">
+                  {/* Website Official Logo Icon */}
+                  <div className="relative grid h-24 w-24 place-items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-md">
+                    <img
+                      src="/logo.png"
+                      alt="Klick-Pro Official Website Logo"
+                      className="h-full w-full object-contain"
+                    />
                   </div>
-                ) : (
-                  <Link href="/discover">
-                    <Search className="mr-2 h-4 w-4" />
-                    <span>{content.hero.primaryCta}</span>
-                  </Link>
-                )}
-              </Button>
-              <Button
-                asChild={!cmsMode}
-                size="lg"
-                variant="outline"
-                type="button"
-                onClick={cmsMode ? (e) => e.preventDefault() : undefined}
-              >
-                {cmsMode ? (
-                  <div className="flex items-center">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    <span
-                      contentEditable={cmsMode}
-                      suppressContentEditableWarning={cmsMode}
-                      onInput={(e) => edit({ secondaryCta: e.currentTarget.textContent ?? "" })}
-                    >
-                      {content.hero.secondaryCta}
-                    </span>
+
+                  <div className="mt-4">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Verified Service Marketplace
+                    </div>
+                    <h2 className="mt-2.5 font-display text-2xl font-extrabold tracking-tight text-slate-900">
+                      Klick<span className="text-blue-600">-Pro</span>
+                    </h2>
+                    <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xs leading-relaxed">
+                      Find trusted professionals for work that matters. Post requirements, compare quotes, and hire with milestone escrow safety.
+                    </p>
                   </div>
-                ) : (
-                  <Link href="/post-job">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    <span>{content.hero.secondaryCta}</span>
-                  </Link>
-                )}
-              </Button>
+
+                  {/* 3 Confidence Metrics */}
+                  <div className="mt-6 grid w-full grid-cols-3 gap-2 border-t border-slate-100 pt-5 text-left">
+                    <div className="rounded-xl bg-slate-50 p-2.5">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">Security</p>
+                      <p className="text-xs font-bold text-slate-900 mt-0.5">100% Escrow</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2.5">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">Posting</p>
+                      <p className="text-xs font-bold text-emerald-700 mt-0.5">₹0 To Post</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-2.5">
+                      <p className="text-[10px] font-bold uppercase text-slate-400">Identity</p>
+                      <p className="text-xs font-bold text-slate-900 mt-0.5">Vetted KYC</p>
+                    </div>
+                  </div>
+
+                  {/* Direct Link to Services */}
+                  <div className="mt-5 w-full">
+                    <Link
+                      href="/services"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shadow-sm"
+                    >
+                      <span>Explore All Service Sectors</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
+
+        {/* ================= 2. 6 MASTER SERVICE CATEGORIES (EXACT FROM INDEX.HTML) ================= */}
+        <section className="mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              SERVICES FOR EVERYONE
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+              Residential, Commercial, Industrial &amp; more
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-slate-500 text-sm sm:text-base">
+              From a leaking tap to a factory upgrade to a health check or a private tutor, find the right expert for any job.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {MASTER_CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link
+                  key={cat.title}
+                  href={cat.href}
+                  className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft hover:shadow-md transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:scale-105">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="mt-4 font-display text-lg font-bold text-slate-900">
+                      {cat.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      {cat.description}
+                    </p>
+                  </div>
+                  <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
+                    Explore{" "}
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ================= 3. "WHY CHOOSE US" 6-CARD GRID ================= */}
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Why Choose Us
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              WHY CHOOSE US
             </p>
-            <h2 className="mt-3 font-display text-3xl font-bold sm:text-4xl">
+            <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
               Everything you need to succeed
             </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+            <p className="mx-auto mt-3 max-w-2xl text-slate-500 text-sm sm:text-base">
               A complete platform built for seamless collaboration between professionals and clients
             </p>
           </div>
+
           {cmsMode ? (
             <SortableBoard
               ids={content.features.map((feature) => feature.id)}
@@ -322,62 +552,66 @@ export default function Landing({
             </div>
           )}
         </section>
-        <section className="bg-surface">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+
+        {/* ================= 4. FEATURED PROFESSIONALS (DATABASE + REALISTIC FALLBACK) ================= */}
+        <section className="bg-white border-t border-slate-200/80 py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                  Featured
-                </p>
-                <h2 className="mt-2 font-display text-3xl font-bold">
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Featured</p>
+                <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
                   Professionals ready to help
                 </h2>
               </div>
               <Link
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                href="/discover"
+                href="/services"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
               >
                 Browse all <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
+
+            {/* CMS Mode Skeleton Preview */}
             {cmsMode ? (
               <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  "Professional one",
-                  "Professional two",
-                  "Professional three",
-                  "Professional four",
-                ].map((name) => (
+                {FALLBACK_FEATURED_PROS.map((pro) => (
                   <div
-                    key={name}
-                    className="rounded-2xl border border-border bg-card p-5 shadow-soft"
+                    key={pro.id}
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-soft"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="grid h-12 w-12 place-items-center rounded-full bg-muted text-lg font-semibold text-muted-foreground">
-                        P
+                      <div className={`grid h-12 w-12 place-items-center rounded-full text-base font-bold ${pro.bgClass}`}>
+                        {pro.initials}
                       </div>
                       <div>
-                        <p className="font-semibold">{name}</p>
-                        <p className="text-sm text-muted-foreground">Service category</p>
+                        <p className="font-semibold text-slate-900">{pro.name}</p>
+                        <p className="text-xs text-slate-500">{pro.category}</p>
                       </div>
                     </div>
-                    <div className="mt-5 border-t border-border pt-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Starting at
-                      </p>
-                      <p className="mt-1 text-xl font-bold">₹—</p>
+                    <div className="mt-5 border-t border-slate-100 pt-4 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
+                        <p className="text-base font-bold text-slate-900">{pro.rate}</p>
+                      </div>
+                      <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        ★ {pro.rating} ({pro.reviewsCount})
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : null}
+
+            {/* Public Loading Skeleton */}
             {!cmsMode && !professionals.length && !failed && (
               <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-64 animate-pulse rounded-2xl bg-muted" />
+                  <div key={index} className="h-48 animate-pulse rounded-2xl bg-slate-100" />
                 ))}
               </div>
             )}
+
+            {/* Live Database Professionals */}
             {!cmsMode && professionals.length > 0 && (
               <div
                 data-db-section="professionals"
@@ -394,6 +628,106 @@ export default function Landing({
                 ))}
               </div>
             )}
+
+            {/* Fallback Professionals from index.html if Database has 0 pros */}
+            {!cmsMode && (failed || (!professionals.length && failed)) && (
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                {FALLBACK_FEATURED_PROS.map((pro) => (
+                  <div
+                    key={pro.id}
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-soft hover:shadow-md transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`grid h-12 w-12 place-items-center rounded-full text-base font-bold ${pro.bgClass}`}>
+                        {pro.initials}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{pro.name}</p>
+                        <p className="text-xs text-slate-500">{pro.category}</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 border-t border-slate-100 pt-4 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
+                        <p className="text-base font-bold text-slate-900">{pro.rate}</p>
+                      </div>
+                      <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        ★ {pro.rating} ({pro.reviewsCount})
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ================= 5. DUAL-TRACK CALL TO ACTION BANNER ================= */}
+        <section className="border-t border-slate-200/80 bg-slate-50 py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* For Clients CTA */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
+                <div>
+                  <span className="inline-flex rounded-lg bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                    For Clients
+                  </span>
+                  <h3 className="mt-4 font-display text-2xl font-bold text-slate-900">
+                    Ready to start your next project?
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                    Post your job in minutes, compare verified professional bids, and keep 100% control through escrow protection.
+                  </p>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/post-job"
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    <span>Post a Job Free</span>
+                  </Link>
+                  <Link
+                    href="/for-clients"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
+                  >
+                    <span>How it works for clients</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* For Professionals CTA */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
+                <div>
+                  <span className="inline-flex rounded-lg bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                    For Professionals
+                  </span>
+                  <h3 className="mt-4 font-display text-2xl font-bold text-slate-900">
+                    Are you a qualified service specialist?
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                    Join Klick-Pro to connect directly with serious residential and commercial clients with zero platform commissions.
+                  </p>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/register?role=PROFESSIONAL"
+                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-slate-800 transition"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                    <span>Join as a Professional</span>
+                  </Link>
+                  <Link
+                    href="/for-professionals"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
+                  >
+                    <span>Explore pro benefits</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -439,36 +773,41 @@ function HomeFeature({
             onChange({ [field]: event.currentTarget.textContent ?? "" }),
         }
       : {};
+
   return (
     <div
       ref={drag?.ref}
       style={drag?.style}
       {...(drag?.handleProps ?? {})}
       onClick={cmsMode ? onSelect : undefined}
-      className={`relative rounded-2xl border border-border bg-card p-8 shadow-soft ${cmsMode ? "cursor-grab active:cursor-grabbing" : ""} ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""}`}
+      className={`relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-soft hover:shadow-md transition ${
+        cmsMode ? "cursor-grab active:cursor-grabbing" : ""
+      } ${selected ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-white" : ""} ${
+        drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""
+      }`}
     >
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
         <Icon className="h-6 w-6" />
       </div>
-      <h3 className="mt-4 font-display font-semibold" {...editable("title")}>
+      <h3 className="mt-4 font-display text-lg font-bold text-slate-900" {...editable("title")}>
         {feature.title}
       </h3>
-      <p className="mt-2 text-sm text-muted-foreground" {...editable("description")}>
+      <p className="mt-2 text-sm leading-6 text-slate-500" {...editable("description")}>
         {feature.description}
       </p>
       {cmsMode && selected && (
         <div
-          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1 text-xs shadow-lg"
+          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-lg"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
-          <label className="text-muted-foreground">
+          <label className="text-slate-500">
             Icon{" "}
             <select
               value={feature.icon}
               onPointerDown={(event) => event.stopPropagation()}
               onChange={(event) => onChange({ icon: event.target.value })}
-              className="bg-background text-foreground"
+              className="bg-white text-slate-900"
             >
               <option value="shield">Shield</option>
               <option value="briefcase">Briefcase</option>
@@ -478,10 +817,10 @@ function HomeFeature({
               <option value="arrow">Arrow</option>
             </select>
           </label>
-          <button type="button" onClick={onDelete} className="text-destructive">
+          <button type="button" onClick={onDelete} className="text-red-600">
             Delete
           </button>
-          <button type="button" onClick={onDuplicate} className="text-primary">
+          <button type="button" onClick={onDuplicate} className="text-blue-600">
             Duplicate card
           </button>
         </div>
