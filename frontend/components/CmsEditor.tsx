@@ -90,18 +90,16 @@ type Draft = Omit<CmsContent, "updatedAt" | "sectionOrder">;
 const newId = () => `card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const cmsPages = [
-  { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
-  { label: "Professional Home", href: "/professional-home" },
-  ...marketingPageIds
-    .filter((page) => page !== "professional-home")
-    .map((page) => ({
-      label:
-        page === "faq"
-          ? "FAQ"
-          : page.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()),
-      href: `/${page}`,
-    })),
+  { label: "Home / Index (index.html)", href: "/" },
+  { label: "About Us (about.html)", href: "/about" },
+  { label: "Professional Home (professional-home.html)", href: "/professional-home" },
+  { label: "Services (services.html)", href: "/services" },
+  { label: "How It Works (how-it-works.html)", href: "/how-it-works" },
+  { label: "For Clients (for-clients.html)", href: "/for-clients" },
+  { label: "For Professionals (for-professionals.html)", href: "/for-professionals" },
+  { label: "Pricing (pricing.html)", href: "/pricing" },
+  { label: "FAQ (faq.html)", href: "/faq" },
+  { label: "Contact (contact.html)", href: "/contact" },
 ];
 
 export default function CmsEditor() {
@@ -111,7 +109,7 @@ export default function CmsEditor() {
     "loading",
   );
   const [message, setMessage] = useState("");
-  const [selectedPage, setSelectedPage] = useState("/about");
+  const [selectedPage, setSelectedPage] = useState<string>("/");
   const [pendingPage, setPendingPage] = useState<string | null>(null);
   const [sectionOrder, setSectionOrder] = useState<Array<"hero" | "features">>([
     "hero",
@@ -253,14 +251,20 @@ export default function CmsEditor() {
     }
   };
 
-  if (selectedPage === "/") {
+  if (
+    selectedPage === "/" ||
+    selectedPage === "/index" ||
+    selectedPage === "/index.html" ||
+    selectedPage === "/home"
+  ) {
     return <HomeCmsEditor selectedPage={selectedPage} onPageChange={setSelectedPage} />;
   }
 
   if (selectedPage !== "/about") {
+    const rawPage = selectedPage.replace(/^\//, "").replace(/\.html$/, "");
     return (
       <MarketingCmsEditor
-        page={selectedPage.slice(1) as MarketingPageId}
+        page={rawPage as MarketingPageId}
         onPageChange={setSelectedPage}
       />
     );
@@ -849,6 +853,61 @@ function RichFormattingToolbar() {
   );
 }
 
+const defaultHomeContent: HomeContent = {
+  hero: {
+    eyebrow: "VERIFIED MARKETPLACE PROFESSIONALS",
+    title: "Find trusted professionals for work that matters.",
+    description:
+      "Post work, compare qualified professionals, and manage every project in one place.",
+    primaryCta: "Browse professionals",
+    secondaryCta: "Post a job",
+  },
+  features: [
+    {
+      id: "projects",
+      title: "Project Management",
+      description:
+        "Track progress, communicate in real-time, and manage all projects in one centralized dashboard.",
+      icon: "briefcase",
+    },
+    {
+      id: "verified",
+      title: "Verified Professionals",
+      description:
+        "All professionals are verified and vetted to ensure quality work and your peace of mind.",
+      icon: "shield",
+    },
+    {
+      id: "matching",
+      title: "Expert Matching",
+      description:
+        "Get matched with professionals that best fit your project needs and budget requirements.",
+      icon: "users",
+    },
+    {
+      id: "local",
+      title: "Local & Remote",
+      description:
+        "Work with professionals near you or globally - choose what works best for your project.",
+      icon: "map",
+    },
+    {
+      id: "discovery",
+      title: "Easy Discovery",
+      description:
+        "Browse portfolios, reviews, and rates to find the right fit. Make data-driven decisions.",
+      icon: "search",
+    },
+    {
+      id: "growth",
+      title: "Seamless Growth",
+      description:
+        "Build long-term relationships with reliable partners and scale your business together.",
+      icon: "arrow",
+    },
+  ],
+};
+
 function HomeCmsEditor({
   selectedPage,
   onPageChange,
@@ -856,13 +915,12 @@ function HomeCmsEditor({
   selectedPage: string;
   onPageChange: (page: string) => void;
 }) {
-  const [content, setContent] = useState<HomeContent | null>(null);
+  const [content, setContent] = useState<HomeContent>(defaultHomeContent);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
   const [pendingPage, setPendingPage] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const [loadError, setLoadError] = useState("");
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [seoOpen, setSeoOpen] = useState(false);
   const [addBlockOpen, setAddBlockOpen] = useState(false);
@@ -879,14 +937,16 @@ function HomeCmsEditor({
   useEffect(() => {
     void fetch("/api/admin/cms?page=home", { cache: "no-store" })
       .then(async (response) => {
-        if (!response.ok) throw new Error();
-        setContent((await response.json()) as HomeContent);
+        if (!response.ok) return;
+        const data = (await response.json()) as HomeContent;
+        if (data && data.hero && Array.isArray(data.features) && data.features.length > 0) {
+          setContent(data);
+        }
       })
-      .catch(() => setLoadError("Unable to load the Home page. Please refresh and try again."));
+      .catch(() => {
+        // Fallback default is safely active
+      });
   }, []);
-
-  if (loadError) return <p className="text-rose-600 font-medium">{loadError}</p>;
-  if (!content) return <p className="text-slate-400 font-medium">Loading Home page…</p>;
 
   const update = (next: HomeContent) => {
     setContent(next);
@@ -940,14 +1000,16 @@ function HomeCmsEditor({
   };
 
   const requestPageChange = (page: string) => {
-    if (!cmsPages.some((item) => item.href === page)) {
+    const normalized =
+      page === "/index" || page === "/index.html" || page === "/home" ? "/" : page;
+    if (!cmsPages.some((item) => item.href === normalized)) {
       setNotice("This page is not editable yet.");
       return;
     }
     setNotice("");
-    if (page === selectedPage) return;
-    if (dirty) setPendingPage(page);
-    else onPageChange(page);
+    if (normalized === selectedPage) return;
+    if (dirty) setPendingPage(normalized);
+    else onPageChange(normalized);
   };
 
   const saveHome = async () => {
@@ -1000,7 +1062,13 @@ function HomeCmsEditor({
               Page:
             </label>
             <select
-              value={selectedPage}
+              value={
+                selectedPage === "/index" ||
+                selectedPage === "/index.html" ||
+                selectedPage === "/home"
+                  ? "/"
+                  : selectedPage
+              }
               onChange={(event) => requestPageChange(event.target.value)}
               className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-800 shadow-2xs outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100 transition"
             >
@@ -1605,7 +1673,9 @@ function MarketingCmsEditor({
                 : "max-w-full"
           }`}
         >
-          {page === "professional-home" ? (
+          {(page as string) === "index" || (page as string) === "home" || (page as string) === "" ? (
+            <Landing cmsMode isAuthenticated />
+          ) : page === "professional-home" ? (
             <ProfessionalHome
               cmsMode
               cmsContent={content}

@@ -196,7 +196,19 @@ export default function Landing({
     ],
   };
 
-  const content = homeContent ?? fallback;
+  const content: HomeContent = {
+    hero: {
+      eyebrow: homeContent?.hero?.eyebrow || fallback.hero.eyebrow,
+      title: homeContent?.hero?.title || fallback.hero.title,
+      description: homeContent?.hero?.description || fallback.hero.description,
+      primaryCta: homeContent?.hero?.primaryCta || fallback.hero.primaryCta,
+      secondaryCta: homeContent?.hero?.secondaryCta || fallback.hero.secondaryCta,
+    },
+    features:
+      homeContent?.features && homeContent.features.length > 0
+        ? homeContent.features
+        : fallback.features,
+  };
   const edit = (hero: Partial<HomeContent["hero"]>) =>
     onHomeChange?.({ ...content, hero: { ...content.hero, ...hero } });
   const router = useRouter();
