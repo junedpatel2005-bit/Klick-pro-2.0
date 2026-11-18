@@ -292,26 +292,46 @@ export default function Landing({
     }
   };
 
-  const renderFeature = (feature: HomeContent["features"][number], drag?: DragHandle) => (
-    <HomeFeature
-      key={feature.id}
-      feature={feature}
-      cmsMode={cmsMode}
-      drag={drag}
-      selected={selectedFeatureId === feature.id}
-      onSelect={() => onFeatureSelect?.(feature.id)}
-      onDelete={() => onFeatureDelete?.(feature.id)}
-      onDuplicate={() => onFeatureDuplicate?.(feature.id)}
-      onChange={(changes) =>
-        onHomeChange?.({
-          ...content,
-          features: content.features.map((item) =>
-            item.id === feature.id ? { ...item, ...changes } : item,
-          ),
-        })
-      }
-    />
-  );
+  const renderFeature = (
+    feature: HomeContent["features"][number],
+    drag?: DragHandle,
+    index?: number,
+  ) => {
+    const idx =
+      index !== undefined ? index : content.features.findIndex((f) => f.id === feature.id);
+    return (
+      <HomeFeature
+        key={feature.id}
+        feature={feature}
+        cmsMode={cmsMode}
+        drag={drag}
+        selected={selectedFeatureId === feature.id}
+        onSelect={() => onFeatureSelect?.(feature.id)}
+        onDelete={() => onFeatureDelete?.(feature.id)}
+        onDuplicate={() => onFeatureDuplicate?.(feature.id)}
+        onMoveLeft={
+          idx > 0
+            ? () =>
+                onHomeChange?.({ ...content, features: moveItem(content.features, idx, idx - 1) })
+            : undefined
+        }
+        onMoveRight={
+          idx < content.features.length - 1
+            ? () =>
+                onHomeChange?.({ ...content, features: moveItem(content.features, idx, idx + 1) })
+            : undefined
+        }
+        onChange={(changes) =>
+          onHomeChange?.({
+            ...content,
+            features: content.features.map((item) =>
+              item.id === feature.id ? { ...item, ...changes } : item,
+            ),
+          })
+        }
+      />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
@@ -551,9 +571,9 @@ export default function Landing({
               }
             >
               <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {content.features.map((feature) => (
+                {content.features.map((feature, index) => (
                   <SortableItem key={feature.id} id={feature.id}>
-                    {(drag) => renderFeature(feature, drag)}
+                    {(drag) => renderFeature(feature, drag, index)}
                   </SortableItem>
                 ))}
               </div>
@@ -756,6 +776,8 @@ function HomeFeature({
   onDelete,
   onDuplicate,
   onChange,
+  onMoveLeft,
+  onMoveRight,
 }: {
   feature: HomeContent["features"][number];
   cmsMode: boolean;
@@ -765,6 +787,8 @@ function HomeFeature({
   onDelete: () => void;
   onDuplicate: () => void;
   onChange: (changes: Partial<HomeContent["features"][number]>) => void;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
 }) {
   const icons = {
     shield: ShieldCheck,
@@ -809,10 +833,30 @@ function HomeFeature({
       </p>
       {cmsMode && selected && (
         <div
-          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-lg"
+          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
+          {onMoveLeft && (
+            <button
+              type="button"
+              onClick={onMoveLeft}
+              className="text-blue-600 font-bold hover:underline"
+              title="Move box earlier"
+            >
+              &larr; Move
+            </button>
+          )}
+          {onMoveRight && (
+            <button
+              type="button"
+              onClick={onMoveRight}
+              className="text-blue-600 font-bold hover:underline"
+              title="Move box later"
+            >
+              Move &rarr;
+            </button>
+          )}
           <label className="text-slate-500">
             Icon{" "}
             <select
@@ -829,11 +873,11 @@ function HomeFeature({
               <option value="arrow">Arrow</option>
             </select>
           </label>
-          <button type="button" onClick={onDelete} className="text-red-600">
+          <button type="button" onClick={onDelete} className="text-red-600 font-bold">
             Delete
           </button>
-          <button type="button" onClick={onDuplicate} className="text-blue-600">
-            Duplicate card
+          <button type="button" onClick={onDuplicate} className="text-blue-600 font-bold">
+            Duplicate
           </button>
         </div>
       )}

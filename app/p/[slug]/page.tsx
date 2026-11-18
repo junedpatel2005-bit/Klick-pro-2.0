@@ -1,6 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Landing from "@/routes/index";
+import About from "@/routes/about";
+import MarketingVisualPage from "@/components/MarketingVisualPage";
+import { readHomeContent } from "@/lib/home-cms-file";
+import { readCmsContent } from "@/lib/cms-file";
+import {
+  readMarketingContent,
+  marketingPageIds,
+  type MarketingPageId,
+} from "@/lib/marketing-cms";
 import { getCmsPage } from "@/lib/cms-unified";
 import {
   Award,
@@ -73,6 +83,39 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function StandaloneCmsPage({ params }: Props) {
   const { slug } = await params;
+
+  // 1. HOME PAGE (renders authentic website home page without header and footer)
+  if (slug === "home" || slug === "index") {
+    const homeContent = await readHomeContent();
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+        <Landing homeContent={homeContent} isAuthenticated={false} />
+      </div>
+    );
+  }
+
+  // 2. ABOUT US (renders authentic website about page without header and footer)
+  if (slug === "about") {
+    const aboutContent = await readCmsContent();
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+        <About cmsContent={aboutContent} />
+      </div>
+    );
+  }
+
+  // 3. MARKETING PAGES (renders authentic website marketing page without header and footer)
+  if (marketingPageIds.includes(slug as MarketingPageId)) {
+    const pageId = slug as MarketingPageId;
+    const content = await readMarketingContent(pageId);
+    return (
+      <div className="min-h-screen bg-background">
+        <MarketingVisualPage page={pageId} content={content} />
+      </div>
+    );
+  }
+
+  // 4. CUSTOM CMS DYNAMIC PAGES
   let page;
   try {
     page = await getCmsPage(slug);

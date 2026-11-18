@@ -108,26 +108,39 @@ export default function MarketingVisualPage({
   };
   const gridClassName = `grid gap-6 ${content.items.length === 1 ? "mx-auto max-w-md" : content.items.length === 2 ? "md:grid-cols-2" : "md:grid-cols-2 lg:grid-cols-3"}`;
   // Shared by the sortable (CMS) and plain (public) grids.
-  const renderItem = (item: MarketingItem, drag?: DragHandle) => (
-    <MarketingItemCard
-      key={item.id}
-      item={item}
-      cmsMode={cmsMode}
-      drag={drag}
-      selected={selectedId === item.id}
-      onSelect={() => onSelect?.(item.id)}
-      onChange={(changes) =>
-        onChange?.({
-          ...content,
-          items: content.items.map((current) =>
-            current.id === item.id ? { ...current, ...changes } : current,
-          ),
-        })
-      }
-      onDelete={() => onDelete?.(item.id)}
-      onDuplicate={() => onDuplicate?.(item.id)}
-    />
-  );
+  const renderItem = (item: MarketingItem, drag?: DragHandle, index?: number) => {
+    const idx = index !== undefined ? index : content.items.findIndex((i) => i.id === item.id);
+    return (
+      <MarketingItemCard
+        key={item.id}
+        item={item}
+        cmsMode={cmsMode}
+        drag={drag}
+        selected={selectedId === item.id}
+        onSelect={() => onSelect?.(item.id)}
+        onMoveLeft={
+          idx > 0
+            ? () => onChange?.({ ...content, items: moveItem(content.items, idx, idx - 1) })
+            : undefined
+        }
+        onMoveRight={
+          idx < content.items.length - 1
+            ? () => onChange?.({ ...content, items: moveItem(content.items, idx, idx + 1) })
+            : undefined
+        }
+        onChange={(changes) =>
+          onChange?.({
+            ...content,
+            items: content.items.map((current) =>
+              current.id === item.id ? { ...current, ...changes } : current,
+            ),
+          })
+        }
+        onDelete={() => onDelete?.(item.id)}
+        onDuplicate={() => onDuplicate?.(item.id)}
+      />
+    );
+  };
   const text = (value: string, field: keyof MarketingPageContent["hero"], className: string) => (
     <span
       className={className}
@@ -169,9 +182,9 @@ export default function MarketingVisualPage({
               }
             >
               <div className={gridClassName}>
-                {content.items.map((item) => (
+                {content.items.map((item, index) => (
                   <SortableItem key={item.id} id={item.id}>
-                    {(drag) => renderItem(item, drag)}
+                    {(drag) => renderItem(item, drag, index)}
                   </SortableItem>
                 ))}
               </div>
@@ -631,6 +644,8 @@ function MarketingItemCard({
   onChange,
   onDelete,
   onDuplicate,
+  onMoveLeft,
+  onMoveRight,
 }: {
   item: MarketingItem;
   cmsMode: boolean;
@@ -640,6 +655,8 @@ function MarketingItemCard({
   onChange: (changes: Partial<MarketingItem>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onMoveLeft?: () => void;
+  onMoveRight?: () => void;
 }) {
   const Icon = iconMap[item.icon as keyof typeof iconMap] ?? ShieldCheck;
   const editable = (field: "title" | "description") =>
@@ -669,16 +686,36 @@ function MarketingItemCard({
       </p>
       {cmsMode && selected && (
         <div
-          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1 text-xs shadow-lg"
+          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs shadow-lg"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
+          {onMoveLeft && (
+            <button
+              type="button"
+              onClick={onMoveLeft}
+              className="text-primary font-bold hover:underline"
+              title="Move box earlier"
+            >
+              &larr; Move
+            </button>
+          )}
+          {onMoveRight && (
+            <button
+              type="button"
+              onClick={onMoveRight}
+              className="text-primary font-bold hover:underline"
+              title="Move box later"
+            >
+              Move &rarr;
+            </button>
+          )}
           <label>
             Icon{" "}
             <select
               value={item.icon}
               onChange={(e) => onChange({ icon: e.target.value })}
-              className="bg-background"
+              className="bg-background font-medium"
             >
               <option value="shield">Shield</option>
               <option value="briefcase">Briefcase</option>
@@ -687,12 +724,17 @@ function MarketingItemCard({
               <option value="search">Search</option>
               <option value="wallet">Wallet</option>
               <option value="check">Check</option>
+              <option value="star">Star</option>
+              <option value="clock">Clock</option>
+              <option value="trend">Trend</option>
+              <option value="message">Message</option>
+              <option value="mail">Mail</option>
             </select>
           </label>
-          <button type="button" onClick={onDelete} className="text-destructive">
+          <button type="button" onClick={onDelete} className="text-destructive font-bold">
             Delete
           </button>
-          <button type="button" onClick={onDuplicate} className="text-primary">
+          <button type="button" onClick={onDuplicate} className="text-primary font-bold">
             Duplicate
           </button>
         </div>
