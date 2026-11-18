@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchCurrentUser, type CurrentUser } from "@/lib/current-user";
+import type { MarketingPageContent } from "@/lib/marketing-cms-shared";
 import {
   Sparkles,
   ClipboardCheck,
@@ -24,8 +25,10 @@ import {
 
 export default function HowItWorks({
   cmsMode = false,
+  cmsContent,
 }: {
   cmsMode?: boolean;
+  cmsContent?: MarketingPageContent;
 } = {}) {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -42,13 +45,14 @@ export default function HowItWorks({
       <section className="gradient-hero border-b border-slate-200/60">
         <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
           <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
-            <Sparkles className="h-3.5 w-3.5" /> How It Works
+            <Sparkles className="h-3.5 w-3.5" /> {cmsContent?.hero?.label || "How It Works"}
           </p>
           <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
-            A Simpler Way to Hire &amp; Get Hired
+            {cmsContent?.hero?.title || "A Simpler Way to Hire & Get Hired"}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
-            Klick-Pro handles the busywork &mdash; discovery, vetting, milestone escrow payments and tracking &mdash; for home, business and industrial services, online or on-site.
+            {cmsContent?.hero?.description ||
+              "Klick-Pro handles the busywork \u2014 discovery, vetting, milestone escrow payments and tracking \u2014 for home, business and industrial services, online or on-site."}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {user?.role === "CLIENT" ? (

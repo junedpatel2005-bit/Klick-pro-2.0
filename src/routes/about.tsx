@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchCurrentUser, type CurrentUser } from "@/lib/current-user";
+import type { CmsContent } from "@/lib/cms-file";
 import {
   Sparkles,
   Target,
@@ -28,8 +29,10 @@ import {
 
 export default function About({
   cmsMode = false,
+  cmsContent,
 }: {
   cmsMode?: boolean;
+  cmsContent?: CmsContent;
 } = {}) {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
@@ -47,13 +50,18 @@ export default function About({
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-24">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
-              <Sparkles className="h-3.5 w-3.5" /> Welcome to Klick-Pro
+              <Sparkles className="h-3.5 w-3.5" /> {cmsContent?.hero?.label || "Welcome to Klick-Pro"}
             </p>
             <h1 className="mt-5 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
-              Klick to <span className="text-[#1748b5]">Konnect</span>.
+              {cmsContent?.hero?.title || (
+                <>
+                  Klick to <span className="text-[#1748b5]">Konnect</span>.
+                </>
+              )}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-500 sm:text-lg">
-              Finding the right professional for a job shouldn't be difficult. Whether you need an electrician for your home, a plumber for a repair, a technician for your business, or a skilled professional for an industrial project, you should find someone reliable, qualified, available and trustworthy.
+              {cmsContent?.hero?.description ||
+                "Finding the right professional for a job shouldn't be difficult. Whether you need an electrician for your home, a plumber for a repair, a technician for your business, or a skilled professional for an industrial project, you should find someone reliable, qualified, available and trustworthy."}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {user?.role === "CLIENT" ? (

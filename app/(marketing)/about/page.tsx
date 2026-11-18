@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import About from "@/routes/about";
+import { readCmsContent } from "@/lib/cms-file";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -7,4 +8,7 @@ export const metadata: Metadata = {
     "Learn how Klick-Pro connects customers with verified professionals across residential, commercial, and industrial services.",
 };
 
-export default About;
+export default async function AboutPage() {
+  const content = await readCmsContent();
+  return <About cmsContent={content} />;
+}
