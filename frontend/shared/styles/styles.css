@@ -345,6 +345,9 @@ body:has(.cms-live-editable) button {
   --color-ink-foreground: var(--ink-foreground);
   --color-cta: var(--cta);
   --color-cta-foreground: var(--cta-foreground);
+  --color-brand: #1748b5;
+  --color-brand-hover: #133b94;
+  --color-brand-foreground: #ffffff;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

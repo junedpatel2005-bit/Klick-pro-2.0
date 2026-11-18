@@ -76,7 +76,7 @@ export default function HowItWorks({
               <>
                 <Link
                   href="/services"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                 >
                   <Search className="h-4 w-4" />
                   Browse Available Jobs
@@ -93,7 +93,7 @@ export default function HowItWorks({
               <>
                 <Link
                   href="/admin"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                 >
                   <ShieldAlert className="h-4 w-4" />
                   Admin Console
@@ -109,7 +109,7 @@ export default function HowItWorks({
               <>
                 <a
                   href="#clients"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                 >
                   I Want to Hire
                 </a>

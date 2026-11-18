@@ -96,7 +96,7 @@ export default function ForClients({
                 <>
                   <Link
                     href="/post-job"
-                    className="inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-cta/90"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                   >
                     <PlusCircle className="h-4 w-4" />
                     Post a Job &mdash; It&apos;s Free
@@ -113,7 +113,7 @@ export default function ForClients({
                 <>
                   <Link
                     href="/services"
-                    className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                   >
                     <Search className="h-4 w-4" />
                     Browse Available Jobs
@@ -130,7 +130,7 @@ export default function ForClients({
                 <>
                   <Link
                     href="/admin"
-                    className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                   >
                     <ShieldAlert className="h-4 w-4" />
                     Admin Console
@@ -146,7 +146,7 @@ export default function ForClients({
                 <>
                   <Link
                     href="/post-job"
-                    className="inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-cta/90"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
                   >
                     <PlusCircle className="h-4 w-4" />
                     Post a Job &mdash; It&apos;s Free
@@ -505,7 +505,7 @@ export default function ForClients({
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/post-job"
-              className="inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-cta/90"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1748b5] px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-900/20 transition hover:bg-[#133b94]"
             >
               <PlusCircle className="h-4 w-4" />
               Post a Job &mdash; It&apos;s Free
