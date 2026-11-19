@@ -5,6 +5,7 @@ import {
   interpolateVariables,
   renderEmailHtml,
 } from "@/lib/email-templates/engine";
+import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 
 let emailConfigurationWarningShown = false;
 
@@ -501,6 +502,7 @@ export async function sendCustomEmail(input: {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }) {
   if (!isEmailConfigured()) {
     return { success: false, reason: "SMTP not configured" };
@@ -509,9 +511,324 @@ export async function sendCustomEmail(input: {
   await transporter.sendMail({
     from: klickProSender(),
     to: input.to,
+    replyTo: input.replyTo,
     subject: input.subject,
     html: input.html,
     text: input.text || input.subject,
   });
+  return { success: true };
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0] || "U";
+  const last = parts[parts.length - 1] || first;
+  if (parts.length <= 1) {
+    return first.slice(0, 2).toUpperCase();
+  }
+  return ((first[0] || "") + (last[0] || "")).toUpperCase();
+}
+
+function renderContactInquiryHtml(data: {
+  contactId?: number | string;
+  name: string;
+  email: string;
+  phone?: string;
+  role?: string;
+  topic?: string;
+  subject: string;
+  message: string;
+  origin: string;
+  adminEmail: string;
+}): string {
+  const safeName = escapeHtml(data.name);
+  const safeEmail = escapeHtml(data.email);
+  const safePhone = data.phone ? escapeHtml(data.phone.trim()) : "";
+  const safeRole = escapeHtml(data.role || "Client looking to hire");
+  const safeTopic = escapeHtml(data.topic || "General Question");
+  const safeSubject = escapeHtml(data.subject);
+  const safeRef = data.contactId ? `#CR-${data.contactId}` : "#CR-NEW";
+  const initials = getInitials(data.name);
+  const safeOrigin = escapeHtml(data.origin);
+  const supportUrl = `${data.origin.replace(/\/$/, "")}/admin/support`;
+  const mailtoReply = `mailto:${encodeURIComponent(data.email)}?subject=Re:%20${encodeURIComponent(data.subject)}`;
+  const telUrl = data.phone ? `tel:${data.phone.replace(/[^0-9+]/g, "")}` : "";
+
+  const formattedTime = new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
+  const messageHtml = data.message
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map(
+      (p) =>
+        `<p style="margin: 0 0 14px 0; color: #1e293b; font-size: 15px; line-height: 1.65;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`,
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>New Contact Lead: ${safeSubject}</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; }
+    @media screen and (max-width: 600px) {
+      .email-shell { width: 100% !important; border-radius: 0 !important; }
+      .content-cell { padding: 20px 16px !important; }
+      .header-cell { padding: 24px 20px !important; }
+      .grid-stack { display: block !important; width: 100% !important; padding: 6px 0 !important; }
+      .button-stack { display: block !important; width: 100% !important; margin-bottom: 10px !important; text-align: center !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; font-size: 1px; color: #ffffff;">
+    New inquiry from ${safeName} (${safeEmail}) • Phone: ${safePhone || "Not provided"} • Topic: ${safeTopic}
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9; width: 100%; margin: 0; padding: 32px 12px;">
+    <tr>
+      <td align="center" valign="top">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 620px; width: 100%; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);" class="email-shell">
+          
+          <!-- BRAND & HEADER BANNER -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0b1f4d 0%, #1748b5 60%, #2563eb 100%); padding: 32px 36px;" class="header-cell">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td>
+                    <span style="font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">Klick<span style="color: #93c5fd;">-Pro</span></span>
+                  </td>
+                  <td align="right">
+                    <span style="background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; padding: 5px 12px; border-radius: 9999px;">
+                      NEW CONTACT LEAD
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 22px;">
+                    <h1 style="margin: 0; font-size: 23px; font-weight: 700; color: #ffffff; line-height: 1.3;">
+                      New Customer Inquiry Received
+                    </h1>
+                    <p style="margin: 6px 0 0 0; font-size: 14px; color: #bfdbfe; line-height: 1.5;">
+                      A user submitted a message through the Klick-Pro website Contact Us form.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- TIMESTAMP & REFERENCE BAR -->
+          <tr>
+            <td style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 36px;" class="content-cell">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="font-size: 12px; font-weight: 600; color: #64748b;">
+                    📅 ${formattedTime}
+                  </td>
+                  <td align="right" style="font-size: 12px; font-weight: 700; color: #1e40af;">
+                    REF: ${safeRef}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- MAIN BODY -->
+          <tr>
+            <td style="padding: 28px 36px 20px;" class="content-cell">
+              
+              <!-- SENDER PROFILE CARD (FULL DETAILS) -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 20px 22px;">
+                    
+                    <!-- User Avatar & Badges Header -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 14px;">
+                      <tr>
+                        <td width="48" valign="middle">
+                          <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #1748b5 0%, #2563eb 100%); color: #ffffff; font-size: 16px; font-weight: 700; text-align: center; line-height: 44px; box-shadow: 0 2px 4px rgba(23, 72, 181, 0.25);">
+                            ${initials}
+                          </div>
+                        </td>
+                        <td valign="middle" style="padding-left: 14px;">
+                          <div style="font-size: 18px; font-weight: 700; color: #0f172a; line-height: 1.2;">
+                            ${safeName}
+                          </div>
+                          <div style="margin-top: 6px;">
+                            <span style="display: inline-block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-right: 6px;">
+                              ${safeRole}
+                            </span>
+                            <span style="display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                              ${safeTopic}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Divider -->
+                    <div style="height: 1px; background-color: #e2e8f0; margin: 12px 0 16px 0;"></div>
+
+                    <!-- Contact Details 2-Column Grid -->
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td width="50%" valign="top" style="padding-right: 12px;" class="grid-stack">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                            ✉️ Email Address
+                          </div>
+                          <a href="mailto:${safeEmail}" style="font-size: 14px; font-weight: 600; color: #1748b5; text-decoration: none; word-break: break-all;">
+                            ${safeEmail}
+                          </a>
+                        </td>
+                        <td width="50%" valign="top" style="padding-left: 12px;" class="grid-stack">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                            📞 Phone Number
+                          </div>
+                          ${
+                            safePhone
+                              ? `<a href="${telUrl}" style="font-size: 14px; font-weight: 700; color: #059669; text-decoration: none;">${safePhone}</a>`
+                              : `<span style="font-size: 14px; color: #94a3b8; font-style: italic;">Not provided</span>`
+                          }
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- MESSAGE CONTENT CARD -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 28px;">
+                <!-- Subject Header -->
+                <tr>
+                  <td style="background-color: #f1f5f9; padding: 12px 22px; border-bottom: 1px solid #e2e8f0;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">SUBJECT:</span>
+                    <span style="font-size: 14px; font-weight: 700; color: #0f172a; margin-left: 6px;">${safeSubject}</span>
+                  </td>
+                </tr>
+                <!-- Message Body -->
+                <tr>
+                  <td style="padding: 22px 22px 10px; background-color: #ffffff; border-left: 4px solid #1748b5;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                      MESSAGE CONTENT:
+                    </div>
+                    ${messageHtml}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- QUICK ACTION BUTTONS -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="padding: 6px 8px;" class="button-stack">
+                          <a href="${mailtoReply}" target="_blank" style="display: inline-block; background-color: #1748b5; color: #ffffff; font-size: 14px; font-weight: 700; padding: 13px 22px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(23, 72, 181, 0.3);">
+                            ✉️ Reply to ${safeName.split(" ")[0]}
+                          </a>
+                        </td>
+                        ${
+                          safePhone
+                            ? `
+                        <td style="padding: 6px 8px;" class="button-stack">
+                          <a href="${telUrl}" style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 14px; font-weight: 700; padding: 13px 20px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.3);">
+                            📞 Call ${safePhone}
+                          </a>
+                        </td>`
+                            : ""
+                        }
+                        <td style="padding: 6px 8px;" class="button-stack">
+                          <a href="${supportUrl}" target="_blank" style="display: inline-block; background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; font-size: 14px; font-weight: 600; padding: 13px 18px; border-radius: 8px; text-decoration: none;">
+                            Support Dashboard &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px 36px; text-align: center;" class="content-cell">
+              <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748b; line-height: 1.5;">
+                This notification was sent to <strong>${escapeHtml(data.adminEmail)}</strong> via the Klick-Pro Support System.
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                Confidential • Contains customer inquiry data • <a href="${safeOrigin}" style="color: #64748b; text-decoration: underline;">Klick-Pro Portal</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendContactInquiryNotification(input: {
+  contactId?: number | string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  phone?: string;
+  role?: string;
+  topic?: string;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim() || "junedpatel2005@gmail.com";
+  if (!isEmailConfigured()) {
+    console.warn("[Contact] Email notifications disabled or SMTP not configured.");
+    return { success: false, reason: "SMTP not configured" };
+  }
+
+  const transporter = mailTransporter();
+  const origin = publicAppOrigin() || "https://klick-pro.com";
+  const formattedName = capitalizeWords(input.name) || input.name;
+  const formattedSubject = capitalizeFirst(input.subject) || input.subject;
+
+  const emailSubject = `New Contact Lead: ${formattedName} - ${formattedSubject}`;
+
+  const html = renderContactInquiryHtml({
+    contactId: input.contactId,
+    name: formattedName,
+    email: input.email,
+    phone: input.phone,
+    role: input.role,
+    topic: input.topic,
+    subject: formattedSubject,
+    message: input.message,
+    origin,
+    adminEmail,
+  });
+
+  const text = `New Contact Form Lead\n\nReference: #CR-${input.contactId || "NEW"}\nSender Name: ${formattedName}\nRole: ${input.role || "Client"}\nTopic: ${input.topic || "General"}\nEmail: ${input.email}\nPhone: ${input.phone || "Not provided"}\nSubject: ${formattedSubject}\n\nMessage:\n${input.message}\n\nManage in Admin Support: ${origin}/admin/support`;
+
+  await transporter.sendMail({
+    from: klickProSender(),
+    to: adminEmail,
+    replyTo: `"${formattedName.replace(/"/g, "")}" <${input.email}>`,
+    subject: emailSubject.startsWith("Klick-Pro") ? emailSubject : `Klick-Pro | ${emailSubject}`,
+    text,
+    html,
+  });
+
   return { success: true };
 }

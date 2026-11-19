@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Sparkles,
   Briefcase,
@@ -32,6 +32,22 @@ export default function Contact() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          const u = data.user;
+          const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ");
+          if (fullName) setName(fullName);
+          if (u.email) setEmail(u.email);
+          if (u.role === "CLIENT") setRole("Client looking to hire");
+          else if (u.role === "PROFESSIONAL") setRole("Professional offering services");
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -39,11 +55,9 @@ export default function Contact() {
     setSuccess(false);
 
     try {
-      const fullSubject = subject.trim()
-        ? `[${topic}] ${subject.trim()}`
-        : `[${topic}] Inquiry from ${name.trim()}`;
-
-      const fullMessage = `Role: ${role}\nPhone: ${phone.trim() || "Not provided"}\n\nMessage:\n${message.trim()}`;
+      const cleanSubject = subject.trim()
+        ? subject.trim()
+        : `Inquiry regarding ${topic} from ${name.trim()}`;
 
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -51,8 +65,11 @@ export default function Contact() {
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
-          subject: fullSubject,
-          message: fullMessage,
+          phone: phone.trim() || undefined,
+          role,
+          topic,
+          subject: cleanSubject,
+          message: message.trim(),
         }),
       });
 
@@ -164,7 +181,12 @@ export default function Contact() {
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 For account, project, or payment inquiries, email our support team directly.
               </p>
-              <p className="mt-4 text-sm font-bold text-brand">support@klick-pro.com</p>
+              <a
+                href="mailto:it@klick-pro.com"
+                className="mt-4 inline-block text-sm font-bold text-brand hover:underline"
+              >
+                it@klick-pro.com
+              </a>
             </div>
 
             <div className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm">
