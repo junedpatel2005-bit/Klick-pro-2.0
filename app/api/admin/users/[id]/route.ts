@@ -125,14 +125,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
     const userRoleFilter =
       user.role === "CLIENT" ? { clientId: userId } : { professionalId: userId };
-    const [jobsPosted, proposals, allProjects, completedPayments, userJobs, userRequests, latestSession, sessionCount] = await Promise.all([
+    const [jobsPosted, proposals, allProjects, completedPayments, userJobs, userRequests, latestSession, sessionCount, userDisputes] = await Promise.all([
       db.clientJob.count({ where: { userId } }),
       db.projectRequest.count({ where: userRoleFilter }),
       db.projectTracking.findMany({
         where: userRoleFilter,
         include: {
           job: { select: { id: true, title: true, category: true } },
-          milestones: { select: { id: true, title: true, amount: true, status: true } },
+          milestones: { select: { id: true, title: true, amount: true, status: true, description: true, dueDate: true } },
         },
         orderBy: { updatedAt: "desc" },
         take: 30,
@@ -183,6 +183,36 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         orderBy: { createdAt: "desc" },
       }),
       db.session.count({ where: { userId } }),
+      db.projectDispute
+        .findMany({
+          where: {
+            OR: [
+              { clientId: userId },
+              { professionalId: userId },
+              { reporterId: userId },
+            ],
+          },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        })
+        .catch(() => [] as Array<{
+          id: number;
+          trackingId: number;
+          reporterId: number;
+          reporterRole: string;
+          clientId: number;
+          professionalId: number;
+          issueType: string;
+          priority: string;
+          message: string;
+          status: string;
+          decision: string | null;
+          decisionReason: string | null;
+          refundAmount: number | null;
+          payoutAmount: number | null;
+          createdAt: Date;
+          updatedAt: Date;
+        }>),
     ]);
     const completedProjects = allProjects.filter(
       (p) => p.status === "COMPLETED" || p.status.toUpperCase().includes("COMPLETED"),
@@ -272,6 +302,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
       })),
+      disputes: (userDisputes || []).map((d) => {
+        const trackingObj = allProjects.find((p) => p.id === d.trackingId);
+        return {
+          id: d.id,
+          trackingId: d.trackingId,
+          projectTitle: trackingObj?.job?.title || (d.trackingId ? `Project #${d.trackingId}` : "Contract Issue"),
+          reporterRole: d.reporterRole,
+          issueType: d.issueType,
+          priority: d.priority || "MEDIUM",
+          status: d.status || "OPEN",
+          message: d.message,
+          decision: d.decision || null,
+          decisionReason: d.decisionReason || null,
+          refundAmount: d.refundAmount || 0,
+          payoutAmount: d.payoutAmount || 0,
+          createdAt: d.createdAt.toISOString(),
+          updatedAt: d.updatedAt.toISOString(),
+        };
+      }),
     });
   } catch {
     return NextResponse.json({ error: "Unable to load user details." }, { status: 500 });

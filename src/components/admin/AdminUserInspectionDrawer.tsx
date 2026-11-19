@@ -6,6 +6,7 @@ import {
   X,
   User,
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   XCircle,
   Mail,
@@ -22,8 +23,11 @@ import {
   Clock,
   ChevronRight,
   RefreshCw,
+  AlertTriangle,
+  FileText,
+  Check,
 } from "lucide-react";
-import { capitalizeWords, capitalizeFirst, formatReadableLabel } from "@/lib/utils";
+import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 
 type UserInspectionDrawerProps = {
   userId: number | null;
@@ -63,12 +67,6 @@ type InspectedUser = {
   hourlyRate?: number | null;
   experienceYears?: number | null;
   workMode?: string | null;
-  professionalProfile?: {
-    hourlyRate?: number | null;
-    experienceYears?: number | null;
-    overview?: string | null;
-    serviceCategory?: string | null;
-  } | null;
 };
 
 type InspectedJob = {
@@ -99,24 +97,48 @@ type InspectedMilestone = {
   status: string;
   percentage?: number | null;
   description?: string | null;
+  dueDate?: string | null;
   projectTitle: string;
   projectId: number;
   trackingStatus?: string;
-  deliverables?: Array<{ fileUrl: string; fileName?: string }>;
 };
 
-type InspectedTracking = {
+type InspectedProject = {
   id: number;
+  jobId: number;
+  title: string;
+  category: string;
   status: string;
-  job?: { title?: string };
+  progress?: number;
   milestones?: Array<{
     id: number;
     title: string;
     amount: number;
     status: string;
     description?: string | null;
-    deliverables?: Array<{ fileUrl: string; fileName?: string }>;
+    dueDate?: string | null;
   }>;
+  totalMilestones: number;
+  completedMilestones: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type InspectedDispute = {
+  id: number;
+  trackingId: number;
+  projectTitle: string;
+  reporterRole: string;
+  issueType: string;
+  priority: string;
+  status: string;
+  message: string;
+  decision?: string | null;
+  decisionReason?: string | null;
+  refundAmount?: number | null;
+  payoutAmount?: number | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type UserInspectionData = {
@@ -129,8 +151,11 @@ type UserInspectionData = {
   };
   jobs?: InspectedJob[];
   projectRequests?: InspectedProposal[];
-  trackings?: InspectedTracking[];
+  projects?: InspectedProject[];
+  disputes?: InspectedDispute[];
 };
+
+export type DrawerTabKey = "overview" | "projects" | "milestones" | "complaints";
 
 export function AdminUserInspectionDrawer({
   userId,
@@ -139,7 +164,7 @@ export function AdminUserInspectionDrawer({
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<UserInspectionData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "work" | "milestones">("overview");
+  const [activeTab, setActiveTab] = useState<DrawerTabKey>("overview");
 
   useEffect(() => {
     if (!userId) {
@@ -178,21 +203,25 @@ export function AdminUserInspectionDrawer({
   const isClient = user?.role === "CLIENT";
   const clientJobs = data?.jobs || [];
   const projectRequests = data?.projectRequests || [];
-  const trackings = data?.trackings || [];
+  const activeContracts = data?.projects || [];
+  const userDisputes = data?.disputes || [];
 
-  // Extract all milestones across active projects
+  // Extract all milestones across active contract projects
   const allMilestones: InspectedMilestone[] = [];
-  trackings.forEach((t) => {
-    const projectTitle = t.job?.title || `Project #${t.id}`;
-    (t.milestones || []).forEach((m) => {
+  activeContracts.forEach((p) => {
+    const projectTitle = p.title || `Project #${p.id}`;
+    (p.milestones || []).forEach((m) => {
       allMilestones.push({
         ...m,
         projectTitle,
-        projectId: t.id,
-        trackingStatus: t.status,
+        projectId: p.id,
+        trackingStatus: p.status,
       });
     });
   });
+
+  const totalProjectsCount = (isClient ? clientJobs.length : projectRequests.length) + activeContracts.length;
+  const totalMilestoneValue = allMilestones.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
@@ -217,8 +246,8 @@ export function AdminUserInspectionDrawer({
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                  <span className="font-medium text-slate-700 dark:text-slate-300">
-                    {user?.role || "USER"}
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {user?.role === "PROFESSIONAL" ? "Professional" : "Client"}
                   </span>
                   <span>•</span>
                   <span>ID #{userId}</span>
@@ -240,7 +269,7 @@ export function AdminUserInspectionDrawer({
               </Link>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 aria-label="Close user inspection sheet"
               >
                 <X className="h-5 w-5" />
@@ -248,42 +277,72 @@ export function AdminUserInspectionDrawer({
             </div>
           </div>
 
-          {/* Sub Navigation Tabs */}
-          <div className="flex items-center gap-1 px-6 pt-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          {/* 4 Clean Separated Navigation Tabs */}
+          <div className="flex items-center gap-1 px-6 pt-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+            {/* Tab 1: Overview */}
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-3 py-2 text-xs font-medium border-b-2 transition ${
+              className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 activeTab === "overview"
-                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                  : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
-              Account Overview
+              <User className="w-3.5 h-3.5" />
+              <span>Overview</span>
             </button>
+
+            {/* Tab 2: Projects */}
             <button
-              onClick={() => setActiveTab("work")}
-              className={`px-3 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
-                activeTab === "work"
-                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                  : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              onClick={() => setActiveTab("projects")}
+              className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                activeTab === "projects"
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
-              <span>{isClient ? "Client Job Postings" : "Proposals & Bids"}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-medium">
-                {isClient ? clientJobs.length : projectRequests.length}
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Projects</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">
+                {totalProjectsCount}
               </span>
             </button>
+
+            {/* Tab 3: Milestones */}
             <button
               onClick={() => setActiveTab("milestones")}
-              className={`px-3 py-2 text-xs font-medium border-b-2 transition flex items-center gap-1.5 ${
+              className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
                 activeTab === "milestones"
-                  ? "border-slate-900 text-slate-900 dark:border-white dark:text-white font-semibold"
-                  : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
-              <span>Milestones & Settlement</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 font-medium">
+              <Layers className="w-3.5 h-3.5" />
+              <span>Milestones</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">
                 {allMilestones.length}
+              </span>
+            </button>
+
+            {/* Tab 4: Complaints & Disputes */}
+            <button
+              onClick={() => setActiveTab("complaints")}
+              className={`px-3 py-2 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                activeTab === "complaints"
+                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Complaints & Disputes</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  userDisputes.length > 0
+                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                {userDisputes.length}
               </span>
             </button>
           </div>
@@ -293,7 +352,7 @@ export function AdminUserInspectionDrawer({
             {loading ? (
               <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
                 <RefreshCw className="h-6 w-6 animate-spin text-indigo-600" />
-                <p className="text-xs font-medium">Loading user details & website work...</p>
+                <p className="text-xs font-medium">Loading user details & records...</p>
               </div>
             ) : error ? (
               <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-sm">
@@ -301,7 +360,9 @@ export function AdminUserInspectionDrawer({
               </div>
             ) : user ? (
               <>
-                {/* Tab 1: Account Overview */}
+                {/* ------------------------------------------------------------- */}
+                {/* TAB 1: ACCOUNT OVERVIEW                                       */}
+                {/* ------------------------------------------------------------- */}
                 {activeTab === "overview" && (
                   <div className="space-y-5">
                     {/* Key Stats Cards */}
@@ -332,11 +393,11 @@ export function AdminUserInspectionDrawer({
                         <p className="text-base font-bold text-slate-900 dark:text-white mt-1">
                           ₹{Number(isClient ? metrics.totalSpent || 0 : metrics.totalEarnings || 0).toLocaleString("en-IN")}
                         </p>
-                        <span className="text-[10px] text-slate-400">Escrow released</span>
+                        <span className="text-[10px] text-slate-400">Settled deliverables</span>
                       </div>
 
                       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3 shadow-2xs">
-                        <span className="text-[11px] font-medium text-slate-500">Account State</span>
+                        <span className="text-[11px] font-medium text-slate-500">Presence State</span>
                         <div className="mt-1 flex items-center gap-1.5">
                           <span
                             className={`w-2 h-2 rounded-full ${
@@ -352,7 +413,7 @@ export function AdminUserInspectionDrawer({
                             }`}
                           />
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
-                            {user.accountStateLabel || (user.isActive ? "Active" : "Disabled")}
+                            {user.isOnline ? "Online Now" : user.accountStateLabel || (user.isActive ? "Active (Offline)" : "Disabled")}
                           </span>
                         </div>
                         <span className="text-[10px] text-slate-400">
@@ -392,7 +453,7 @@ export function AdminUserInspectionDrawer({
                       </div>
                     </div>
 
-                    {/* Role Specific Details Card */}
+                    {/* Role Specific Practice Details */}
                     {!isClient && (
                       <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-white dark:bg-slate-900 shadow-2xs">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -429,69 +490,144 @@ export function AdminUserInspectionDrawer({
                   </div>
                 )}
 
-                {/* Tab 2: Website Work (Job Postings & Proposals) */}
-                {activeTab === "work" && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                        {isClient ? "Client's Job Postings on Website" : "Submitted Bids & Proposals"}
-                      </h3>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {isClient ? `${clientJobs.length} postings recorded` : `${projectRequests.length} proposals recorded`}
-                      </span>
-                    </div>
+                {/* ------------------------------------------------------------- */}
+                {/* TAB 2: PROJECTS & WORK (CONTRACTS + POSTINGS / PROPOSALS)    */}
+                {/* ------------------------------------------------------------- */}
+                {activeTab === "projects" && (
+                  <div className="space-y-6">
+                    {/* Section 1: Active & Awarded Contracts */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Briefcase className="w-4 h-4 text-indigo-600" />
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                            Active & Awarded Contracts
+                          </h3>
+                        </div>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {activeContracts.length} contracts
+                        </span>
+                      </div>
 
-                    {isClient ? (
-                      clientJobs.length === 0 ? (
-                        <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
-                          This client has not posted any jobs on the platform yet.
+                      {activeContracts.length === 0 ? (
+                        <div className="p-5 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
+                          No awarded contract projects found for this account.
                         </div>
                       ) : (
                         <div className="space-y-2.5">
-                          {clientJobs.map((j) => (
+                          {activeContracts.map((p) => (
                             <div
-                              key={j.id}
-                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-indigo-200 transition"
+                              key={p.id}
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-indigo-300 transition"
                             >
-                              <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <span className="text-xs font-bold text-slate-900 dark:text-white hover:text-indigo-600">
-                                    {capitalizeWords(j.title || `Job #${j.id}`)}
+                                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                    {capitalizeWords(p.title || `Contract #${p.id}`)}
                                   </span>
                                   <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
-                                    <span>#{j.id}</span>
+                                    <span>Contract #{p.id}</span>
                                     <span>•</span>
-                                    <span>{capitalizeWords(j.category || "General")}</span>
+                                    <span>{capitalizeWords(p.category || "General")}</span>
                                     <span>•</span>
-                                    <span>{j.createdAt ? new Date(j.createdAt).toLocaleDateString("en-IN") : "—"}</span>
+                                    <span>Started {new Date(p.createdAt).toLocaleDateString("en-IN")}</span>
                                   </div>
                                 </div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
-                                  j.status === "COMPLETED"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : j.status === "IN_PROGRESS"
-                                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                                      : "bg-slate-100 text-slate-700 border-slate-200"
-                                }`}>
-                                  {j.status || "OPEN"}
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                                    p.status === "COMPLETED"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : p.status === "IN_PROGRESS"
+                                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                  }`}
+                                >
+                                  {p.status || "ACTIVE"}
                                 </span>
                               </div>
 
-                              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
                                 <span className="text-slate-500">
-                                  Budget: <strong className="text-slate-900 dark:text-white">₹{Number(j.budget || 0).toLocaleString("en-IN")}</strong>
+                                  Milestones: <strong className="text-slate-900 dark:text-white">{p.completedMilestones} / {p.totalMilestones} Completed</strong>
                                 </span>
-                                <span className="text-slate-500">
-                                  Applicants: <strong className="text-indigo-600">{j.proposalsCount ?? (j.projectRequests?.length || 0)}</strong>
-                                </span>
+                                {p.progress !== undefined && (
+                                  <span className="font-semibold text-indigo-600">
+                                    {p.progress}% Progress
+                                  </span>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
-                      )
-                    ) : (
-                      projectRequests.length === 0 ? (
-                        <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                      )}
+                    </div>
+
+                    {/* Section 2: Published Job Postings (Clients) OR Submitted Proposals (Professionals) */}
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-purple-600" />
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                            {isClient ? "Published Marketplace Job Postings" : "Submitted Bids & Proposals"}
+                          </h3>
+                        </div>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {isClient ? `${clientJobs.length} postings` : `${projectRequests.length} proposals`}
+                        </span>
+                      </div>
+
+                      {isClient ? (
+                        clientJobs.length === 0 ? (
+                          <div className="p-5 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
+                            This client has not published any job postings yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {clientJobs.map((j) => (
+                              <div
+                                key={j.id}
+                                className="rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-indigo-300 transition"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                      {capitalizeWords(j.title || `Job #${j.id}`)}
+                                    </span>
+                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                                      <span>#{j.id}</span>
+                                      <span>•</span>
+                                      <span>{capitalizeWords(j.category || "General")}</span>
+                                      <span>•</span>
+                                      <span>{j.createdAt ? new Date(j.createdAt).toLocaleDateString("en-IN") : "—"}</span>
+                                    </div>
+                                  </div>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                                      j.status === "COMPLETED"
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : j.status === "IN_PROGRESS"
+                                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                    }`}
+                                  >
+                                    {j.status || "OPEN"}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                                  <span className="text-slate-500">
+                                    Budget: <strong className="text-slate-900 dark:text-white">₹{Number(j.budget || 0).toLocaleString("en-IN")}</strong>
+                                  </span>
+                                  <span className="text-slate-500">
+                                    Applicants: <strong className="text-indigo-600">{j.proposalsCount ?? (j.projectRequests?.length || 0)}</strong>
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      ) : projectRequests.length === 0 ? (
+                        <div className="p-5 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
                           This professional has not submitted any proposals yet.
                         </div>
                       ) : (
@@ -499,7 +635,7 @@ export function AdminUserInspectionDrawer({
                           {projectRequests.map((p) => (
                             <div
                               key={p.id}
-                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-indigo-200 transition"
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-indigo-300 transition"
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -514,18 +650,20 @@ export function AdminUserInspectionDrawer({
                                     <span>{p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-IN") : "—"}</span>
                                   </div>
                                 </div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
-                                  p.status === "ACCEPTED"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    : p.status === "REJECTED"
-                                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                                      : "bg-amber-50 text-amber-700 border-amber-200"
-                                }`}>
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                                    p.status === "ACCEPTED"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : p.status === "REJECTED"
+                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                        : "bg-amber-50 text-amber-700 border-amber-200"
+                                  }`}
+                                >
                                   {p.status || "PENDING"}
                                 </span>
                               </div>
 
-                              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100 dark:border-slate-800">
                                 <span className="text-slate-500">
                                   Bid Amount: <strong className="text-slate-900 dark:text-white">₹{Number(p.bidAmount || 0).toLocaleString("en-IN")}</strong>
                                 </span>
@@ -536,33 +674,38 @@ export function AdminUserInspectionDrawer({
                             </div>
                           ))}
                         </div>
-                      )
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
 
-                {/* Tab 3: Milestones & Settlements */}
+                {/* ------------------------------------------------------------- */}
+                {/* TAB 3: MILESTONES & DELIVERABLES                              */}
+                {/* ------------------------------------------------------------- */}
                 {activeTab === "milestones" && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                        Live Milestone Tracker & Deliverables
-                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-emerald-600" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                          Milestone Phases & Deliverables
+                        </h3>
+                      </div>
                       <span className="text-xs text-slate-500 font-medium">
-                        {allMilestones.length} milestones across projects
+                        Total Value: <strong className="text-slate-900 dark:text-white">₹{totalMilestoneValue.toLocaleString("en-IN")}</strong>
                       </span>
                     </div>
 
                     {allMilestones.length === 0 ? (
-                      <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
-                        No active project milestones recorded for this account.
+                      <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 bg-slate-50/50 dark:bg-slate-800/20">
+                        No project milestone records found for this account.
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {allMilestones.map((m, idx) => (
                           <div
                             key={m.id || idx}
-                            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2 shadow-2xs"
+                            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2 shadow-2xs hover:border-emerald-300 transition"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div>
@@ -570,30 +713,151 @@ export function AdminUserInspectionDrawer({
                                   {capitalizeWords(m.title || `Milestone Phase ${idx + 1}`)}
                                 </span>
                                 <p className="text-[11px] text-slate-400 mt-0.5">
-                                  Under: {capitalizeWords(m.projectTitle)} (Project #{m.projectId})
+                                  Under: <strong className="text-slate-600 dark:text-slate-300">{capitalizeWords(m.projectTitle)}</strong> (Project #{m.projectId})
                                 </p>
                               </div>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
-                                ["COMPLETED", "APPROVED", "RELEASED"].includes(m.status)
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : ["IN_PROGRESS", "SUBMITTED"].includes(m.status)
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-slate-100 text-slate-700 border-slate-200"
-                              }`}>
-                                {m.status || "PENDING"}
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                                  ["COMPLETED", "APPROVED", "RELEASED"].includes(m.status)
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : ["IN_PROGRESS", "SUBMITTED"].includes(m.status)
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-slate-100 text-slate-700 border-slate-200"
+                                }`}
+                              >
+                                {m.status || "UPCOMING"}
                               </span>
                             </div>
 
+                            {m.description && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2 mt-1">
+                                {capitalizeFirst(m.description)}
+                              </p>
+                            )}
+
                             <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800">
                               <span className="text-slate-500">
-                                Allocated Amount: <strong className="text-slate-900 dark:text-white">₹{Number(m.amount || 0).toLocaleString("en-IN")}</strong>
+                                Allocated Escrow: <strong className="text-slate-900 dark:text-white">₹{Number(m.amount || 0).toLocaleString("en-IN")}</strong>
                               </span>
-                              {m.percentage && (
-                                <span className="text-slate-400 text-[11px]">
-                                  Weight: {m.percentage}%
+                              {m.dueDate && (
+                                <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> Due {new Date(m.dueDate).toLocaleDateString("en-IN")}
                                 </span>
                               )}
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* TAB 4: COMPLAINTS & DISPUTES                                  */}
+                {/* ------------------------------------------------------------- */}
+                {activeTab === "complaints" && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldAlert className="w-4 h-4 text-rose-600" />
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                          Disputes & Grievance History
+                        </h3>
+                      </div>
+                      <span className="text-xs text-slate-500 font-medium">
+                        {userDisputes.length} records
+                      </span>
+                    </div>
+
+                    {userDisputes.length === 0 ? (
+                      <div className="p-8 text-center rounded-xl border border-dashed border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 text-xs text-emerald-800 dark:text-emerald-300 space-y-1.5">
+                        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-300">
+                          <Check className="w-4 h-4" />
+                        </div>
+                        <p className="font-semibold text-sm">Clean Arbitration Record</p>
+                        <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                          Zero complaints, dispute claims, or arbitration requests are on record for this account.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {userDisputes.map((d) => (
+                          <div
+                            key={d.id}
+                            className="rounded-xl border border-rose-200 dark:border-rose-900/60 p-4 bg-white dark:bg-slate-900 space-y-3 shadow-2xs hover:border-rose-400 transition"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                    Dispute #{d.id} · {capitalizeWords(d.issueType || "Contract Grievance")}
+                                  </span>
+                                  <span
+                                    className={`px-1.5 py-0.2 rounded text-[10px] font-bold border uppercase ${
+                                      d.priority === "CRITICAL"
+                                        ? "bg-rose-100 text-rose-700 border-rose-300"
+                                        : d.priority === "HIGH"
+                                          ? "bg-amber-100 text-amber-700 border-amber-300"
+                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                    }`}
+                                  >
+                                    {d.priority} Priority
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  Under: <strong className="text-slate-600 dark:text-slate-300">{capitalizeWords(d.projectTitle)}</strong> · Filed {new Date(d.createdAt).toLocaleDateString("en-IN")}
+                                </p>
+                              </div>
+
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase shrink-0 ${
+                                  d.status === "RESOLVED"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : d.status === "WAITING_RESPONSE"
+                                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                                      : "bg-rose-50 text-rose-700 border-rose-200"
+                                }`}
+                              >
+                                {d.status}
+                              </span>
+                            </div>
+
+                            {/* Complaint Message */}
+                            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-2.5 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                                Filed Statement
+                              </span>
+                              <p className="leading-relaxed">
+                                {capitalizeFirst(d.message || "No statement provided.")}
+                              </p>
+                            </div>
+
+                            {/* Arbitration Decision (if resolved or decided) */}
+                            {d.decision && (
+                              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-lg p-2.5 text-xs text-emerald-800 dark:text-emerald-200 space-y-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                                  Formal Arbitration Decision
+                                </span>
+                                <p className="font-medium">
+                                  {capitalizeFirst(d.decision)}
+                                </p>
+                                {d.decisionReason && (
+                                  <p className="text-[11px] text-emerald-600 dark:text-emerald-300 mt-1">
+                                    Reasoning: {capitalizeFirst(d.decisionReason)}
+                                  </p>
+                                )}
+                                {(Number(d.refundAmount || 0) > 0 || Number(d.payoutAmount || 0) > 0) && (
+                                  <div className="flex items-center gap-3 text-[11px] font-semibold pt-1 border-t border-emerald-200/60 dark:border-emerald-800">
+                                    {Number(d.refundAmount || 0) > 0 && (
+                                      <span>Refund: ₹{Number(d.refundAmount).toLocaleString("en-IN")}</span>
+                                    )}
+                                    {Number(d.payoutAmount || 0) > 0 && (
+                                      <span>Payout: ₹{Number(d.payoutAmount).toLocaleString("en-IN")}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
