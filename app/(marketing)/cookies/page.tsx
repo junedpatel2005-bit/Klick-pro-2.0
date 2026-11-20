@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  description:
+    "Understand how Klick-Pro uses essential and preference cookies to deliver a reliable, secure experience.",
+};
 
 export default function CookiesPage() {
   return (

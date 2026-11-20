@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession, sessionCookie } from "@/lib/auth";
 import Earnings from "@/routes/professional/earnings";
 import ClientEarnings from "@/routes/client/earnings";
+
+export const metadata: Metadata = {
+  title: "Wallet, Escrow & Earnings",
+  description:
+    "Track escrow deposits, milestone releases, wallet balances, and withdrawal history securely.",
+};
 
 async function getSessionTokenFromCookies() {
   return (await cookies()).get(sessionCookie)?.value;

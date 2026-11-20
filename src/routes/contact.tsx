@@ -8,6 +8,7 @@ import {
   UserPlus,
   Wallet,
   Mail,
+  Phone,
   Clock,
   HelpCircle,
   ShieldCheck,
@@ -182,10 +183,26 @@ export default function Contact() {
                 For account, project, or payment inquiries, email our support team directly.
               </p>
               <a
-                href="mailto:it@klick-pro.com"
+                href="mailto:support@klick-pro.com"
                 className="mt-4 inline-block text-sm font-bold text-brand hover:underline"
               >
-                it@klick-pro.com
+                support@klick-pro.com
+              </a>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm">
+              <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand">
+                <Phone className="h-6 w-6" />
+              </div>
+              <h2 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">Phone Support</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Direct phone assistance for priority questions, active projects, or payment verification.
+              </p>
+              <a
+                href="tel:+918000000000"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-brand hover:underline"
+              >
+                <Phone className="h-4 w-4" /> +91 80000 00000
               </a>
             </div>
 

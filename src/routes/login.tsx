@@ -93,16 +93,21 @@ export default function Login() {
     const password = passwordRef.current?.value ?? "";
     const nextFieldErrors = {
       email: !email
-        ? "Email is required."
+        ? "Please enter your email."
         : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
           ? "Enter a valid email."
           : "",
-      password: !password ? "Password is required." : "",
+      password: !password ? "Please enter your password." : "",
     };
 
     setFieldErrors(nextFieldErrors);
     if (nextFieldErrors.email || nextFieldErrors.password) {
-      setError("Please fix the highlighted fields before signing in.");
+      setError(null);
+      if (nextFieldErrors.email) {
+        emailRef.current?.focus();
+      } else if (nextFieldErrors.password) {
+        passwordRef.current?.focus();
+      }
       return;
     }
 
@@ -387,6 +392,10 @@ export default function Login() {
                 placeholder="you@example.com"
                 aria-invalid={Boolean(fieldErrors.email)}
                 className={cn("h-11", fieldErrors.email ? "border-destructive" : "")}
+                onChange={() => {
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: "" }));
+                  if (error) setError(null);
+                }}
               />
               {fieldErrors.email ? (
                 <p className="text-xs text-destructive">{fieldErrors.email}</p>
@@ -409,6 +418,10 @@ export default function Login() {
                 placeholder="••••••••"
                 aria-invalid={Boolean(fieldErrors.password)}
                 className={cn("h-11", fieldErrors.password ? "border-destructive" : "")}
+                onChange={() => {
+                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: "" }));
+                  if (error) setError(null);
+                }}
               />
               {fieldErrors.password ? (
                 <p className="text-xs text-destructive">{fieldErrors.password}</p>

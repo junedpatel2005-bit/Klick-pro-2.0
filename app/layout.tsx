@@ -1,7 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../src/styles.css";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Providers } from "@/components/providers";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#1748b5",
+};
 
 export const metadata: Metadata = {
   title: { default: "Klick-Pro — Hire trusted professionals near you", template: "%s | Klick-Pro" },
@@ -21,6 +28,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className="notranslate" translate="no">
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="preconnect" href="https://maps.googleapis.com" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
         <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
@@ -73,7 +83,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           }}
         />
       </head>
-      <body suppressHydrationWarning>
+      <body className="min-h-screen max-w-full overflow-x-clip bg-background text-foreground antialiased" suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

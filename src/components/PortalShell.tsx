@@ -97,7 +97,7 @@ export function PortalShell({
   const { collapsed: sidebarCollapsed, toggle: toggleSidebar } = useSidebarCollapse();
 
   return (
-    <div className="min-h-screen bg-background pb-16 lg:pb-0">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-background pb-16 lg:pb-0">
       <RealtimeNotifications />
       <AppSidebar
         items={items}

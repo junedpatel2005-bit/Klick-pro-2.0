@@ -41,7 +41,7 @@ export function AuthLayout({
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-6 text-center text-sm text-muted-foreground">{footer}</div>}
         </div>
-        <p className="text-center text-xs text-muted-foreground">© 2026 Klick-Pro, Inc.</p>
+        <p className="text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Klick-Pro, Inc.</p>
       </div>
       {!hideAside && (
         <div className="relative hidden gradient-hero lg:block">

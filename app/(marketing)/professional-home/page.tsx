@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import ProfessionalHome from "@/routes/professional-home";
 import { readMarketingContent } from "@/lib/marketing-cms";
+
+export const metadata: Metadata = {
+  title: "Professional Workspace Home",
+  description:
+    "Discover open client requirements, submit quotes, track ongoing projects, and manage your earnings with zero platform deductions.",
+};
 
 export default async function ProfessionalHomePage() {
   const token = (await cookies()).get(sessionCookie)?.value;

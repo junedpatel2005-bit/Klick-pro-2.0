@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description:
+    "Review the terms and conditions governing service projects, milestone payments, and marketplace conduct on Klick-Pro.",
+};
 
 export default function TermsPage() {
   return (

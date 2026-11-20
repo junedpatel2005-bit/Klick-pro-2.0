@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Professional Profile",
+  description:
+    "View and manage your professional credentials, service catalog, verified credentials, and client feedback on Klick-Pro.",
+};
 import {
   BadgeCheck,
   Clock,
@@ -410,13 +417,23 @@ export default async function ProfessionalProfilePage() {
             <h2 className="text-lg font-semibold">Contact</h2>
             <div className="mt-4 space-y-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{professional.email}</span>
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <a
+                  href={`mailto:${professional.email}`}
+                  className="text-foreground hover:text-primary transition-colors hover:underline"
+                >
+                  {professional.email}
+                </a>
               </div>
               {professional.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>{professional.phone}</span>
+                  <Phone className="h-4 w-4 shrink-0 text-primary" />
+                  <a
+                    href={`tel:${professional.phone.replace(/\s+/g, "")}`}
+                    className="text-foreground hover:text-primary transition-colors hover:underline"
+                  >
+                    {professional.phone}
+                  </a>
                 </div>
               )}
               {professional.companyWebsite && (

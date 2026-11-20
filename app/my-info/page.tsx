@@ -1,9 +1,16 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { verifySession, sessionCookie } from "@/lib/auth";
 import { getClientAccountSummary } from "@/lib/services/client-account-service";
 import { ClientMyInfoPage } from "@/components/ClientMyInfoPage";
 import { db } from "@/lib/db";
+
+export const metadata: Metadata = {
+  title: "Account Settings & Profile",
+  description:
+    "Manage your personal identity, company information, billing address, and account preferences.",
+};
 
 async function getCookieValue(name: string) {
   const cookieHeader = (await headers()).get("cookie");

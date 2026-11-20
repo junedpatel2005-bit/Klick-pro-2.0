@@ -32,6 +32,7 @@ import {
   ShieldAlert,
   Cpu,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { ENABLE_ADMIN_EXTRA_SECTION } from "@/config/extra-features";
 import { useAdminSidebar } from "@/components/AdminSidebarContext";
@@ -106,12 +107,26 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const dbStatus = useDatabaseStatus();
-  const { collapsed } = useAdminSidebar();
+  const { collapsed, mobileOpen, setMobileOpen } = useAdminSidebar();
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const isReportsPage = pathname === "/admin/reports" || pathname?.startsWith("/admin/reports");
   const activeReportTab = searchParams?.get("tab") || "client-registrations";
   const [reportsSubmenuOpen, setReportsSubmenuOpen] = useState(true);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname, setMobileOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    if (mobileOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen, setMobileOpen]);
 
   useEffect(() => {
     if (isReportsPage) {
@@ -199,7 +214,8 @@ export function AdminSidebar() {
   }, [pathname]);
 
   return (
-    <aside
+    <>
+      <aside
       className={`fixed inset-y-0 hidden border-r border-slate-200 bg-white lg:flex lg:flex-col justify-between shadow-xs z-30 overflow-y-auto transition-all duration-200 ease-in-out ${
         collapsed ? "w-20 p-2.5 items-center" : "w-64 p-4"
       }`}
@@ -424,5 +440,116 @@ export function AdminSidebar() {
         </div>
       )}
     </aside>
+
+    {/* Mobile Slide-over Drawer */}
+    {mobileOpen && (
+      <div className="fixed inset-0 z-50 lg:hidden">
+        {/* Backdrop overlay */}
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in-0 duration-200"
+          onClick={() => setMobileOpen(false)}
+        />
+        {/* Drawer content */}
+        <aside className="relative flex h-full w-72 max-w-[85vw] flex-col justify-between bg-white p-4 shadow-2xl overflow-y-auto animate-in slide-in-from-left duration-200">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <Link
+                href="/admin"
+                prefetch={false}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2.5"
+              >
+                <div className="relative grid h-8 w-8 place-items-center rounded-lg overflow-hidden bg-white border border-slate-200">
+                  <img
+                    src="/logo-icon.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-full w-full object-contain p-0.5"
+                  />
+                </div>
+                <div>
+                  <span className="font-semibold text-sm text-slate-900">Klick-Pro</span>
+                  <span className="ml-1.5 rounded bg-slate-100 px-1 py-0.2 text-[9px] font-semibold text-slate-600 border border-slate-200">
+                    Admin
+                  </span>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Navigation Groups */}
+            <nav className="mt-4 space-y-4">
+              {linkGroups.map((group) => (
+                <div key={group.group}>
+                  <p className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    {group.group}
+                  </p>
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const active =
+                        pathname === item.href ||
+                        (item.href !== "/admin" && pathname?.startsWith(item.href));
+                      const badgeCount = item.badge ? (counts[item.badge] ?? 0) : 0;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          prefetch={false}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
+                            active
+                              ? "bg-slate-900 text-white font-semibold shadow-2xs"
+                              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </div>
+                          {badgeCount > 0 && (
+                            <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[9px] font-bold text-white">
+                              {badgeCount}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </div>
+
+          {/* Bottom links */}
+          <div className="pt-4 border-t border-slate-100 space-y-2 mt-4">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
+            >
+              <span>Visit Marketplace</span>
+              <span className="text-slate-400 text-xs">↗</span>
+            </a>
+            <div className="flex items-center gap-2 px-3 py-1 text-xs text-slate-500">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  dbStatus === "connected" ? "bg-emerald-500" : "bg-rose-500"
+                }`}
+              />
+              <span>System: {dbStatus === "connected" ? "Operational" : "Offline"}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    )}
+  </>
   );
 }

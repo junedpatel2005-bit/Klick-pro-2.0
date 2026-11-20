@@ -17,7 +17,7 @@ function AdminPortalContent({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/admin/finance") || pathname?.startsWith("/admin/templates");
 
   return (
-    <div className="min-h-screen bg-slate-50/60 text-slate-900 selection:bg-slate-200 selection:text-slate-900 antialiased">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50/60 text-slate-900 selection:bg-slate-200 selection:text-slate-900 antialiased">
       <AdminRealtime />
       <Suspense fallback={null}>
         <AdminSidebar />

@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySession, sessionCookie } from "@/lib/auth";
 import Verification from "@/routes/professional/verification";
 import ClientVerification from "@/routes/client/verification";
+
+export const metadata: Metadata = {
+  title: "Identity & Trade Verification",
+  description:
+    "Complete identity and credential verification to earn the verified badge on Klick-Pro.",
+};
 
 async function getSessionTokenFromCookies() {
   return (await cookies()).get(sessionCookie)?.value;

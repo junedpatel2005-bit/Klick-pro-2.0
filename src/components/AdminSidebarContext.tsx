@@ -6,16 +6,23 @@ interface AdminSidebarContextType {
   collapsed: boolean;
   toggleSidebar: () => void;
   setCollapsed: (collapsed: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+  toggleMobileOpen: () => void;
 }
 
 const AdminSidebarContext = createContext<AdminSidebarContextType>({
   collapsed: false,
   toggleSidebar: () => {},
   setCollapsed: () => {},
+  mobileOpen: false,
+  setMobileOpen: () => {},
+  toggleMobileOpen: () => {},
 });
 
 export function AdminSidebarProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -38,8 +45,21 @@ export function AdminSidebarProvider({ children }: { children: React.ReactNode }
     });
   };
 
+  const toggleMobileOpen = () => {
+    setMobileOpen((prev) => !prev);
+  };
+
   return (
-    <AdminSidebarContext.Provider value={{ collapsed, toggleSidebar, setCollapsed }}>
+    <AdminSidebarContext.Provider
+      value={{
+        collapsed,
+        toggleSidebar,
+        setCollapsed,
+        mobileOpen,
+        setMobileOpen,
+        toggleMobileOpen,
+      }}
+    >
       {children}
     </AdminSidebarContext.Provider>
   );

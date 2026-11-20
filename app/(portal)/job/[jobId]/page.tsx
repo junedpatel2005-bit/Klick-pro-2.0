@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import JobDetails from "@/routes/job.$jobId";
+
+export const metadata: Metadata = {
+  title: "Job Details & Proposals",
+  description:
+    "View project requirements, client details, milestone budgets, and proposal activity on Klick-Pro.",
+};
 
 export default async function JobPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = await params;

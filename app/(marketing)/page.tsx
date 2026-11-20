@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import Landing from "@/routes/index";
 import { readHomeContent } from "@/lib/home-cms-file";
+
+export const metadata: Metadata = {
+  title: "Klick-Pro — Hire Trusted Local & Remote Professionals",
+  description:
+    "Post jobs, connect with vetted service specialists across residential, commercial, and industrial sectors, and pay safely with milestone escrow protection.",
+};
 
 export default async function HomePage() {
   const token = (await cookies()).get(sessionCookie)?.value;

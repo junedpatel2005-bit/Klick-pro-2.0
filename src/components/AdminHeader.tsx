@@ -40,7 +40,7 @@ export function AdminHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const dbStatus = useDatabaseStatus();
-  const { collapsed, toggleSidebar } = useAdminSidebar();
+  const { collapsed, toggleSidebar, toggleMobileOpen } = useAdminSidebar();
   const { unreadCount } = useAdminNotificationCount();
   const currentPageTitle = resolvePageTitle(pathname);
   const onNotificationsPage = pathname?.startsWith("/admin/notifications");
@@ -57,8 +57,14 @@ export function AdminHeader() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={toggleSidebar}
-          aria-label="Toggle Sidebar"
+          onClick={() => {
+            if (typeof window !== "undefined" && window.innerWidth < 1024) {
+              toggleMobileOpen();
+            } else {
+              toggleSidebar();
+            }
+          }}
+          aria-label="Toggle Sidebar Navigation"
           title={collapsed ? "Expand sidebar (show labels)" : "Collapse sidebar (icons only)"}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
         >

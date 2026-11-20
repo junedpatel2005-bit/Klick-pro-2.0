@@ -448,17 +448,27 @@ body:has(.cms-live-editable) button {
 }
 
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
     border-color: var(--color-border);
+    box-sizing: border-box;
   }
   html {
     font-family: "Inter", "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    max-width: 100%;
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: "Inter", "Open Sans", ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    max-width: 100%;
+    overflow-x: clip;
+    position: relative;
+    min-height: 100vh;
   }
   h1,
   h2,

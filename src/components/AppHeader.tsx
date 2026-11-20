@@ -1004,11 +1004,11 @@ export function AppHeader({
       </div>
 
       {role === "CLIENT" && (
-        <Link href="/post-job" className="hidden sm:inline-flex">
-          <Button size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
+        <Button asChild size="sm" className="hidden sm:inline-flex bg-cta text-cta-foreground hover:bg-cta/90 shadow-soft">
+          <Link href="/post-job" prefetch={false}>
             Post a Job
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       )}
 
       {/* Notifications bell */}

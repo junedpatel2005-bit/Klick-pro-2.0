@@ -10,7 +10,7 @@ export function LegalPage({
   sections: { title: string; body: string }[];
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-background">
       <main>
         <section className="gradient-hero">
           <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
@@ -28,7 +28,7 @@ export function LegalPage({
               className="rounded-2xl border border-border bg-card p-7 shadow-soft"
             >
               <h2 className="font-display text-xl font-semibold">{section.title}</h2>
-              <p className="mt-3 leading-7 text-muted-foreground">{section.body}</p>
+              <p className="mt-3 leading-7 text-muted-foreground break-words">{section.body}</p>
             </section>
           ))}
         </article>

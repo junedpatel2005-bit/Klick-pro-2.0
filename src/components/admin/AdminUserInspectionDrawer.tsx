@@ -432,11 +432,29 @@ export function AdminUserInspectionDrawer({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                           <Mail className="h-4 w-4 text-slate-400 shrink-0" />
-                          <span className="font-medium truncate">{user.email || "—"}</span>
+                          {user.email ? (
+                            <a
+                              href={`mailto:${user.email}`}
+                              className="font-medium truncate text-primary hover:underline"
+                            >
+                              {user.email}
+                            </a>
+                          ) : (
+                            <span className="font-medium text-slate-400">—</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                           <Phone className="h-4 w-4 text-slate-400 shrink-0" />
-                          <span className="font-medium">{user.phone || "—"}</span>
+                          {user.phone ? (
+                            <a
+                              href={`tel:${user.phone.replace(/\s+/g, "")}`}
+                              className="font-medium text-primary hover:underline"
+                            >
+                              {user.phone}
+                            </a>
+                          ) : (
+                            <span className="font-medium text-slate-400">—</span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                           <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
