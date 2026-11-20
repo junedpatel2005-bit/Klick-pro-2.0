@@ -215,7 +215,7 @@ export function AdminSidebar() {
           <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-lg overflow-hidden bg-white border border-slate-200">
             <img
               src="/logo-icon.png"
-              alt="Klick-Pro"
+              alt="" aria-hidden="true"
               className="h-full w-full object-contain p-0.5"
             />
           </div>

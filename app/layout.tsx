@@ -21,6 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className="notranslate" translate="no">
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

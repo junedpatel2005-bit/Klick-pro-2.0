@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const isTls = !isDevelopment && (process.env.APP_URL?.startsWith("https://") ?? false);
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://maps.googleapis.com${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -20,7 +21,7 @@ const contentSecurityPolicy = [
   // wss://, so the browser attempts a TLS handshake against the HTTP dev
   // server and Socket.IO fails with "websocket error". Production is served
   // over TLS, so keep the directive there only.
-  ...(isDevelopment ? [] : ["upgrade-insecure-requests"]),
+  ...(isTls ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -84,10 +85,14 @@ const nextConfig: NextConfig = {
         source: "/((?!_next/static|_next/image).*)",
         headers: [
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
+          ...(isTls
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=63072000; includeSubDomains; preload",
+                },
+              ]
+            : []),
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

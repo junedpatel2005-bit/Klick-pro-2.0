@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 
 export const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
@@ -9,6 +9,7 @@ export type GoogleMapsContextValue = {
   isConfigured: boolean;
   hasError: boolean;
   loadError?: Error | string | null;
+  requestLoad?: () => void;
 };
 
 export const GoogleMapsContext = createContext<GoogleMapsContextValue>({
@@ -26,5 +27,9 @@ export function isGoogleMapsConfigured(): boolean {
 }
 
 export function useGoogleMaps(): GoogleMapsContextValue {
-  return useContext(GoogleMapsContext);
+  const context = useContext(GoogleMapsContext);
+  useEffect(() => {
+    context.requestLoad?.();
+  }, [context]);
+  return context;
 }

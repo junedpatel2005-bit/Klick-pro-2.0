@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   GoogleMapsContext,
   isGoogleMapsConfigured,
@@ -15,8 +15,7 @@ export {
   type GoogleMapsContextValue,
 } from "@/components/google-maps-context";
 
-// Loaded only when Maps is configured. It renders nothing, so children are
-// server-rendered and visible immediately regardless of the script's state.
+// Loaded on-demand only when a map subscriber requests it.
 const GoogleMapsScriptLoader = dynamic(() => import("@/components/GoogleMapsScriptLoader"), {
   ssr: false,
 });
@@ -30,6 +29,7 @@ const UNCONFIGURED: GoogleMapsContextValue = {
 
 export function GoogleMapsProvider({ children }: { children: React.ReactNode }) {
   const configured = isGoogleMapsConfigured();
+  const [requested, setRequested] = useState(false);
   const [status, setStatus] = useState<GoogleMapsContextValue>({
     isLoaded: false,
     isConfigured: true,
@@ -37,9 +37,18 @@ export function GoogleMapsProvider({ children }: { children: React.ReactNode }) 
     loadError: null,
   });
 
+  const requestLoad = useCallback(() => {
+    setRequested(true);
+  }, []);
+
+  const value = useMemo<GoogleMapsContextValue>(() => {
+    if (!configured) return UNCONFIGURED;
+    return { ...status, requestLoad };
+  }, [configured, status, requestLoad]);
+
   return (
-    <GoogleMapsContext.Provider value={configured ? status : UNCONFIGURED}>
-      {configured ? <GoogleMapsScriptLoader onStatusChange={setStatus} /> : null}
+    <GoogleMapsContext.Provider value={value}>
+      {configured && requested ? <GoogleMapsScriptLoader onStatusChange={setStatus} /> : null}
       {children}
     </GoogleMapsContext.Provider>
   );

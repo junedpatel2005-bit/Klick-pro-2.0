@@ -161,7 +161,7 @@ export function AppSidebar({
             <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl overflow-hidden bg-white shadow-soft border border-slate-200/80">
               <img
                 src="/logo-icon.png"
-                alt="Klick-Pro"
+                alt="" aria-hidden="true"
                 className="h-full w-full object-contain p-0.5"
               />
             </span>

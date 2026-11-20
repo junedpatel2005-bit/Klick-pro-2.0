@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -453,10 +454,13 @@ export default function Landing({
                 <div className="relative flex flex-col items-center text-center">
                   {/* Website Official Logo Icon */}
                   <div className="relative grid h-24 w-24 place-items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-md">
-                    <img
+                    <Image
                       src="/logo.png"
                       alt="Klick-Pro Official Website Logo"
+                      width={96}
+                      height={96}
                       className="h-full w-full object-contain"
+                      priority
                     />
                   </div>
 
@@ -476,15 +480,15 @@ export default function Landing({
                   {/* 3 Confidence Metrics */}
                   <div className="mt-6 grid w-full grid-cols-3 gap-2 border-t border-slate-100 pt-5 text-left">
                     <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-400">Security</p>
+                      <p className="text-[10px] font-bold uppercase text-slate-600">Security</p>
                       <p className="text-xs font-bold text-slate-900 mt-0.5">100% Escrow</p>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-400">Posting</p>
+                      <p className="text-[10px] font-bold uppercase text-slate-600">Posting</p>
                       <p className="text-xs font-bold text-emerald-700 mt-0.5">₹0 To Post</p>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-400">Identity</p>
+                      <p className="text-[10px] font-bold uppercase text-slate-600">Identity</p>
                       <p className="text-xs font-bold text-slate-900 mt-0.5">Vetted KYC</p>
                     </div>
                   </div>
@@ -622,7 +626,7 @@ export default function Landing({
                     </div>
                     <div className="mt-5 border-t border-slate-100 pt-4 flex justify-between items-center">
                       <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
+                        <p className="text-[10px] uppercase font-bold text-slate-600">Rate</p>
                         <p className="text-base font-bold text-slate-900">{pro.rate}</p>
                       </div>
                       <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
@@ -680,7 +684,7 @@ export default function Landing({
                     </div>
                     <div className="mt-5 border-t border-slate-100 pt-4 flex justify-between items-center">
                       <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
+                        <p className="text-[10px] uppercase font-bold text-slate-600">Rate</p>
                         <p className="text-base font-bold text-slate-900">{pro.rate}</p>
                       </div>
                       <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">

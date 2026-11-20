@@ -81,8 +81,8 @@ export function ProCard({
           </h3>
           <p className="truncate text-sm text-muted-foreground">{pro.title}</p>
           {pro.rating >= 4.8 && pro.reviews >= 3 && (
-            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-cta/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cta">
-              <Star className="h-2.5 w-2.5 fill-cta" /> Top rated
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-amber-100/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
+              <Star className="h-2.5 w-2.5 fill-amber-700 text-amber-700 dark:fill-amber-400 dark:text-amber-400" /> Top rated
             </span>
           )}
         </div>
@@ -144,7 +144,7 @@ export function ProCard({
               Show on map
             </Button>
           )}
-          <Button asChild size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
+          <Button asChild size="sm" className="bg-cta text-slate-950 font-semibold hover:bg-cta/90">
             <Link href={hireHref} onClick={(event) => event.stopPropagation()}>
               Hire
             </Link>
