@@ -318,7 +318,7 @@ export default function Login() {
               className="h-11 w-full transition-transform hover:-translate-y-0.5"
               onClick={() => {
                 setGoogleLoading(true);
-                const googleUrl = new URL("/api/v1/auth/google", window.location.origin);
+                const googleUrl = new URL("/api/auth/google", window.location.origin);
                 if (nextPath) googleUrl.searchParams.set("next", nextPath);
                 window.location.href = googleUrl.toString();
               }}
@@ -340,7 +340,12 @@ export default function Login() {
                 Google sign-in has not been configured yet.
               </p>
             ) : null}
-            {oauthError === "google-failed" ? (
+            {oauthError === "access_denied" ? (
+              <p className="text-sm text-muted-foreground">
+                Google sign-in was cancelled.
+              </p>
+            ) : null}
+            {oauthError && !["google-not-configured", "access_denied"].includes(oauthError) ? (
               <p className="text-sm text-destructive">
                 Google sign-in could not be completed. Please try again.
               </p>

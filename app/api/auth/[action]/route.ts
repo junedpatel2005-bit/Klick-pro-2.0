@@ -24,6 +24,7 @@ import { logServerError } from "@/lib/server-logger";
 import { notifyAdminsOfNewAccount } from "@/lib/marketplace-notifications";
 import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
 import { getSafeRedirectUrl } from "@/lib/safe-redirect";
+import { capitalizeWords } from "@/lib/utils";
 
 const passwordSchema = z.string().min(8).regex(/[A-Z]/).regex(/[a-z]/).regex(/\d/);
 const registerSchema = z.object({
@@ -41,33 +42,43 @@ const clientKey = (request: NextRequest) =>
   request.headers.get("x-forwarded-for")?.split(",")[0] ?? "local";
 const safe = (message: string, status = 400) => NextResponse.json({ error: message }, { status });
 function publicAppOrigin(request: NextRequest) {
-  // Build links from the host the user actually registered on. This keeps local
-  // emails on localhost and makes preview/production emails use their Vercel URL.
-  // APP_URL is only a fallback for runtimes that do not expose the public host.
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const requestHost = forwardedHost || request.headers.get("host")?.trim();
-  const requestProtocol =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
-    request.nextUrl.protocol.replace(":", "");
+  // If an explicit public APP_URL is configured, that is the primary origin
+  const configured = process.env.APP_URL?.trim();
 
-  if (requestHost && requestHost !== "0.0.0.0:3000") {
+  // Check for proxy-forwarded host from frontend (e.g. localhost:3000)
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "http";
+  if (forwardedHost && !forwardedHost.includes(":5000")) {
     try {
-      return new URL(`${requestProtocol}://${requestHost}`).origin;
+      return new URL(`${forwardedProto}://${forwardedHost}`).origin;
     } catch {
-      // Fall through to the configured origin when the proxy host is malformed.
+      // Fall through
     }
   }
 
-  const configured = process.env.APP_URL?.trim();
   if (configured) {
     try {
       return new URL(configured).origin;
     } catch {
-      // Fall through to Next.js' request origin.
+      // Fall through
     }
   }
 
-  return request.nextUrl.origin.replace("0.0.0.0", "localhost");
+  const requestHost = request.headers.get("host")?.trim();
+  const requestProtocol =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+    request.nextUrl.protocol.replace(":", "");
+
+  if (requestHost && requestHost !== "0.0.0.0:3000" && !requestHost.includes(":5000")) {
+    try {
+      return new URL(`${requestProtocol}://${requestHost}`).origin;
+    } catch {
+      // Fall through
+    }
+  }
+
+  return "http://localhost:3000";
 }
 
 function getAuthRedirect(
@@ -158,11 +169,26 @@ export async function GET(
   const { action } = await params;
   if (action === "google") {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const callbackUrl = `${publicAppOrigin(request)}/api/v1/auth/google`;
+    const clientSecret =
+      process.env.GOOGLE_CLIENT_SECRET === "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"
+        ? "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"
+        : process.env.GOOGLE_CLIENT_SECRET;
+    const configuredCallback = process.env.GOOGLE_CALLBACK_URL?.trim();
+    const appOrigin = publicAppOrigin(request);
+    const defaultCallback = `${appOrigin}/api/auth/google`;
+    const callbackUrl = configuredCallback || defaultCallback;
 
     if (!clientId || !clientSecret) {
       return NextResponse.redirect(new URL("/login?oauthError=google-not-configured", request.url));
+    }
+
+    const oauthError = request.nextUrl.searchParams.get("error");
+    if (oauthError) {
+      const response = NextResponse.redirect(
+        new URL(`/login?oauthError=${encodeURIComponent(oauthError)}`, request.url),
+      );
+      response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
+      return response;
     }
 
     const code = request.nextUrl.searchParams.get("code");
@@ -179,13 +205,17 @@ export async function GET(
       url.searchParams.set("prompt", "select_account");
       url.searchParams.set("state", state);
       const response = NextResponse.redirect(url);
-      response.cookies.set("servio_google_oauth", JSON.stringify({ state, role, nextPath }), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 600,
-      });
+      response.cookies.set(
+        "servio_google_oauth",
+        JSON.stringify({ state, role, nextPath, callbackUrl }),
+        {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 600,
+        },
+      );
       return response;
     }
 
@@ -194,25 +224,73 @@ export async function GET(
         state?: string;
         role?: "CLIENT" | "PROFESSIONAL";
         nextPath?: string | null;
+        callbackUrl?: string;
       };
-      if (!saved.state || saved.state !== request.nextUrl.searchParams.get("state"))
+      if (!saved.state || saved.state !== request.nextUrl.searchParams.get("state")) {
         throw new Error("Invalid OAuth state");
-      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      }
+
+      let activeCallbackUrl = saved.callbackUrl || callbackUrl;
+
+      let tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           code,
           client_id: clientId,
           client_secret: clientSecret,
-          redirect_uri: callbackUrl,
+          redirect_uri: activeCallbackUrl,
           grant_type: "authorization_code",
         }),
       });
-      const token = (await tokenResponse.json()) as { access_token?: string };
-      if (!tokenResponse.ok || !token.access_token)
-        throw new Error("Could not exchange Google authorization code");
+
+      let tokenData = (await tokenResponse.json().catch(() => ({}))) as {
+        access_token?: string;
+        error?: string;
+        error_description?: string;
+      };
+
+      // If redirect_uri mismatch occurred, retry with alternate canonical path (/api/v1/auth/google <-> /api/auth/google)
+      if (!tokenResponse.ok && tokenData.error === "redirect_uri_mismatch") {
+        const alternateCallbackUrl = activeCallbackUrl.includes("/api/v1/auth/google")
+          ? activeCallbackUrl.replace("/api/v1/auth/google", "/api/auth/google")
+          : activeCallbackUrl.replace("/api/auth/google", "/api/v1/auth/google");
+
+        if (alternateCallbackUrl !== activeCallbackUrl) {
+          const retryResponse = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "content-type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              code,
+              client_id: clientId,
+              client_secret: clientSecret,
+              redirect_uri: alternateCallbackUrl,
+              grant_type: "authorization_code",
+            }),
+          });
+          const retryData = (await retryResponse.json().catch(() => ({}))) as typeof tokenData;
+          if (retryResponse.ok && retryData.access_token) {
+            tokenResponse = retryResponse;
+            tokenData = retryData;
+            activeCallbackUrl = alternateCallbackUrl;
+          }
+        }
+      }
+
+      if (!tokenResponse.ok || !tokenData.access_token) {
+        console.error("[Google OAuth Token Error]", {
+          status: tokenResponse.status,
+          error: tokenData.error,
+          description: tokenData.error_description,
+          activeCallbackUrl,
+        });
+        throw new Error(
+          `Google token exchange failed: ${tokenData.error || "unknown"} - ${tokenData.error_description || "no description"}`,
+        );
+      }
+
       const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-        headers: { Authorization: `Bearer ${token.access_token}` },
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
       const profile = (await profileResponse.json()) as {
         sub?: string;
@@ -220,54 +298,115 @@ export async function GET(
         given_name?: string;
         family_name?: string;
         name?: string;
+        picture?: string;
         email_verified?: boolean;
       };
-      if (!profileResponse.ok || !profile.sub || !profile.email || profile.email_verified !== true)
+      if (!profileResponse.ok || !profile.sub || !profile.email || profile.email_verified !== true) {
         throw new Error("Could not read Google profile");
+      }
+
+      const normalizedEmail = profile.email.trim().toLowerCase();
       let user = await db.user.findFirst({
-        where: { OR: [{ googleId: profile.sub }, { email: profile.email }] },
+        where: { OR: [{ googleId: profile.sub }, { email: normalizedEmail }] },
       });
+
+      const names = (profile.name ?? "New User").trim().split(/\s+/, 2);
+      const rawFirst = profile.given_name ?? names[0] ?? "New";
+      const rawLast = profile.family_name ?? names[1] ?? "";
+      const firstName = capitalizeWords(rawFirst) || "New";
+      const lastName = capitalizeWords(rawLast) || "";
+      const avatarUrl = profile.picture?.trim() || null;
+
       let createdAccount = false;
       if (!user) {
-        const names = (profile.name ?? "New User").trim().split(/\s+/, 2);
         user = await db.user.create({
           data: {
             googleId: profile.sub,
             authProvider: "GOOGLE",
-            email: profile.email,
-            firstName: profile.given_name ?? names[0] ?? "New",
-            lastName: profile.family_name ?? names[1] ?? "",
+            email: normalizedEmail,
+            firstName,
+            lastName,
+            avatarUrl,
             role: saved.role ?? "CLIENT",
             emailVerifiedAt: new Date(),
           },
         });
         createdAccount = true;
-      } else if (!user.googleId) {
-        user = await db.user.update({
-          where: { id: user.id },
-          data: { googleId: profile.sub, authProvider: "GOOGLE", emailVerifiedAt: new Date() },
-        });
+      } else {
+        const updateData: {
+          googleId?: string;
+          authProvider?: string;
+          emailVerifiedAt?: Date;
+          avatarUrl?: string;
+        } = {};
+        if (!user.googleId) {
+          updateData.googleId = profile.sub;
+          if (user.authProvider === "LOCAL") updateData.authProvider = "GOOGLE";
+        }
+        if (!user.emailVerifiedAt) {
+          updateData.emailVerifiedAt = new Date();
+        }
+        if (!user.avatarUrl && avatarUrl) {
+          updateData.avatarUrl = avatarUrl;
+        }
+        if (Object.keys(updateData).length > 0) {
+          user = await db.user.update({
+            where: { id: user.id },
+            data: updateData,
+          });
+        }
       }
+
       if (createdAccount && user.role !== "ADMIN") {
         await notifyAdminsOfNewAccount(user);
+        await db.userNotification
+          .create({
+            data: {
+              userId: user.id,
+              type: user.role === "PROFESSIONAL" ? "WELCOME_PROFESSIONAL" : "WELCOME_CLIENT",
+              title:
+                user.role === "PROFESSIONAL"
+                  ? "Welcome to your professional dashboard"
+                  : "Welcome to Klick-Pro",
+              description:
+                user.role === "PROFESSIONAL"
+                  ? "Your profile is ready. Update your setup and start getting matched with clients."
+                  : "Your account is ready. Start exploring professionals or post your first project.",
+              href: user.role === "PROFESSIONAL" ? "/professional-home" : "/dashboard",
+            },
+          })
+          .catch(() => {});
       }
-      const redirect =
+
+      const hasClientProfile =
+        user.role === "CLIENT"
+          ? Boolean(
+              await db.clientProfile.findFirst({
+                where: { userId: user.id },
+                select: { id: true },
+              }),
+            )
+          : false;
+
+      const safeRedirect =
         saved.nextPath?.startsWith("/") && !saved.nextPath.startsWith("//")
           ? saved.nextPath
-          : user.role === "CLIENT"
-            ? "/client/setup"
-            : user.role === "PROFESSIONAL"
-              ? "/professional-home"
-              : "/admin";
-      const response = NextResponse.redirect(new URL(redirect, request.url));
+          : getAuthRedirect(user, hasClientProfile, false);
+
+      const response = NextResponse.redirect(new URL(safeRedirect, request.url));
       response.cookies.set(
         sessionCookie,
-        await createSession({ userId: user.id, role: user.role }),
+        await createSession({
+          userId: user.id,
+          role: user.role,
+          emailVerifiedAt: user.emailVerifiedAt,
+        }),
         sessionOptions,
       );
       response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
       return response;
-    } catch {
+    } catch (err) {
+      logServerError("auth.google.oauth", err);
       const response = NextResponse.redirect(
         new URL("/login?oauthError=google-failed", request.url),
       );

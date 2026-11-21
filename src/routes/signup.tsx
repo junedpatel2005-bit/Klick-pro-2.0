@@ -185,7 +185,7 @@ function SignupContent() {
           className="mb-5 h-11 w-full transition-transform hover:-translate-y-0.5"
           onClick={() => {
             setGoogleLoading(true);
-            window.location.href = `/api/v1/auth/google?role=${role === "pro" ? "PROFESSIONAL" : "CLIENT"}`;
+            window.location.href = `/api/auth/google?role=${role === "pro" ? "PROFESSIONAL" : "CLIENT"}`;
           }}
         >
           {googleLoading ? (
