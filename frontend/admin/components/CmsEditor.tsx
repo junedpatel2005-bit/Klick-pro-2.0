@@ -555,10 +555,20 @@ export default function CmsEditor() {
           <div
             onClickCapture={(e) => {
               const target = e.target as HTMLElement;
-              const anchor = target.closest("a");
-              if (anchor && !target.isContentEditable) {
-                e.preventDefault();
+              // If user is editing text (contentEditable), allow natural typing, clicks, and caret placement
+              if (target.isContentEditable || target.closest("[contenteditable='true']")) {
+                return;
               }
+              // Prevent all functional buttons, links, or form submissions in CMS mode so buttons don't navigate
+              const interactive = target.closest("a, button, input[type='submit'], input[type='button']");
+              if (interactive) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            onSubmitCapture={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
             }}
             className={`w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-all duration-300 ${
               viewport === "tablet"

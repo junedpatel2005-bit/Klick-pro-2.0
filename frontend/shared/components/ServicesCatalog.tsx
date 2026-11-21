@@ -22,6 +22,8 @@ import {
   Wallet,
   ArrowRight,
   HelpCircle,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import type { CompleteCategoryHierarchy, HierarchyCategory } from "@/lib/queries/categories-hierarchy";
 import { capitalizeWords } from "@/lib/utils";
@@ -106,6 +108,77 @@ const FALLBACK_CATEGORIES = [
   { id: 603, name: "Language & Skill Training", segment: "EDUCATION", subs: ["Spoken English", "French / German", "Coding & Python", "Public Speaking"] },
 ];
 
+// Rich keyword synonyms and stem dictionary so users searching for professions,
+// common terms, or colloquial phrases instantly match the catalog.
+const SYNONYM_MAP: Record<string, string[]> = {
+  plumber: ["plumbing", "pipe", "tap", "drain", "water tank", "leak"],
+  plumbers: ["plumbing", "pipe", "tap", "drain", "water tank", "leak"],
+  plumbing: ["plumber", "pipe", "tap", "drain", "water tank", "leak"],
+  pipe: ["plumbing", "plumber", "drain", "pipe leaks"],
+  tap: ["plumbing", "plumber", "taps & showers", "faucet"],
+  electrician: ["electrical", "wiring", "switchboard", "inverter", "power", "lighting"],
+  electricians: ["electrical", "wiring", "switchboard", "inverter", "power", "lighting"],
+  electrical: ["electrician", "wiring", "switchboard", "inverter", "power", "lighting"],
+  wiring: ["electrical", "electrician", "wiring repairs", "wire"],
+  carpenter: ["carpentry", "furniture", "wood", "cabinet", "door locks", "polishing"],
+  carpenters: ["carpentry", "furniture", "wood", "cabinet", "door locks", "polishing"],
+  carpentry: ["carpenter", "furniture", "wood", "cabinet", "door locks", "polishing"],
+  painter: ["painting", "wall", "waterproofing", "texture wall", "paint"],
+  painters: ["painting", "wall", "waterproofing", "texture wall", "paint"],
+  painting: ["painter", "wall", "waterproofing", "texture wall", "paint"],
+  cleaner: ["cleaning", "housekeeping", "maid", "sofa", "kitchen cleaning", "deep cleaning"],
+  cleaners: ["cleaning", "housekeeping", "maid", "sofa", "kitchen cleaning", "deep cleaning"],
+  cleaning: ["cleaner", "housekeeping", "maid", "sofa", "kitchen cleaning", "deep cleaning"],
+  maid: ["cleaning", "housekeeping", "home services"],
+  ac: ["ac", "air conditioner", "hvac", "cooling", "gas refill", "duct cleaning"],
+  hvac: ["ac", "air conditioner", "cooling", "duct cleaning"],
+  mechanic: ["machinery", "motor", "engine", "hydraulic", "compressor"],
+  welder: ["welding", "fabrication", "structural steel", "pressure vessels"],
+  welding: ["welder", "fabrication", "structural steel", "pressure vessels"],
+  nurse: ["nursing", "patient care", "elderly care", "post-surgery nursing", "icu at home"],
+  nursing: ["nurse", "patient care", "elderly care", "post-surgery nursing", "icu at home"],
+  physio: ["physiotherapy", "rehabilitation", "stroke rehab", "sports injury"],
+  physiotherapist: ["physiotherapy", "rehabilitation", "stroke rehab", "sports injury"],
+  physiotherapy: ["physio", "rehabilitation", "stroke rehab", "sports injury"],
+  doctor: ["health care", "home visits", "medical equipment", "nursing", "testing"],
+  tutor: ["tutoring", "coaching", "math", "physics", "science", "cbse", "icse", "english"],
+  tutors: ["tutoring", "coaching", "math", "physics", "science", "cbse", "icse", "english"],
+  tutoring: ["tutor", "coaching", "math", "physics", "science", "cbse", "icse", "english"],
+  teacher: ["tutoring", "coaching", "academic", "education"],
+  coaching: ["exam preparation", "iit-jee", "neet", "upsc", "ca foundation", "tutoring"],
+  salon: ["salon & styling", "hair styling", "facials", "skincare", "makeup", "bridal"],
+  spa: ["spa & wellness", "massage", "aromatherapy", "reflexology"],
+  fitness: ["fitness & personal training", "weight loss", "yoga", "gym", "trainer"],
+  yoga: ["fitness", "trainer", "wellness", "yoga instructor"],
+  mover: ["packers & movers", "truck", "transport", "shifting"],
+  packers: ["packers & movers", "truck", "transport", "shifting"],
+  pest: ["pest control", "termites", "cockroach", "fumigation", "rodent"],
+};
+
+function matchesQuery(text: string, q: string): boolean {
+  if (!q) return true;
+  const target = text.toLowerCase();
+  const query = q.trim().toLowerCase();
+
+  // Direct substring check
+  if (target.includes(query)) return true;
+
+  // Word-by-word with synonyms & stemming
+  const words = query.split(/\s+/).filter(Boolean);
+  for (const w of words) {
+    if (target.includes(w)) return true;
+
+    // Check mapped synonyms
+    const syns = SYNONYM_MAP[w];
+    if (syns && syns.some((syn) => target.includes(syn))) return true;
+
+    // Stem check (remove common suffixes like ing, ers, er, ed, s)
+    const stem = w.replace(/(ing|ers|er|ed|s)$/, "");
+    if (stem.length >= 3 && target.includes(stem)) return true;
+  }
+  return false;
+}
+
 function getCategoryIcon(name: string) {
   const n = name.toLowerCase();
   if (n.includes("clean") || n.includes("housekeep") || n.includes("sparkle")) return Sparkles;
@@ -122,6 +195,32 @@ function getCategoryIcon(name: string) {
   if (n.includes("home") || n.includes("house")) return Home;
   return FolderTree;
 }
+
+export type CatalogSub = {
+  id: number;
+  name: string;
+  slug: string;
+  matched: boolean;
+};
+
+export type CatalogCategoryItem = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  iconName: string;
+  segment: string;
+  subs: CatalogSub[];
+};
+
+export type CatalogSectionItem = {
+  segment: string;
+  id: string;
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  blurb: string;
+  categories: CatalogCategoryItem[];
+};
 
 export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,77 +239,82 @@ export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
   }, [data?.subcategories]);
 
   // Filter master sections and categories based on search
-  const filteredSections = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+  const filteredSections: CatalogSectionItem[] = useMemo(() => {
+    const q = searchQuery.trim();
     const categories = data?.categories && data.categories.length > 0 ? data.categories : null;
 
     if (!categories) {
-      // Use fallback preview categories for CMS preview or initial state
+      // Use fallback preview categories for initial or empty state
       return MASTER_SECTIONS.map((sec) => {
         const secCategories = FALLBACK_CATEGORIES.filter((c) => c.segment === sec.segment);
-        const matchedCategories = secCategories
-          .map((cat) => {
-            const matchCat =
-              !q ||
-              cat.name.toLowerCase().includes(q) ||
-              sec.title.toLowerCase().includes(q);
+        const matchedCategories: CatalogCategoryItem[] = [];
 
-            const matchedSubs = matchCat
-              ? cat.subs
-              : cat.subs.filter((s) => s.toLowerCase().includes(q));
+        for (const cat of secCategories) {
+          const matchCatName = matchesQuery(cat.name, q);
+          const matchSecTitle = matchesQuery(sec.title, q);
+          const matchCat = !q || matchCatName || matchSecTitle;
 
-            if (matchedSubs.length > 0 || matchCat) {
-              return {
-                id: cat.id,
-                name: cat.name,
-                slug: cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-                description: "",
-                iconName: "FolderTree",
-                segment: cat.segment,
-                parentId: 1,
-                parentName: sec.title,
-                parentSlug: sec.id,
-                subcategoryCount: matchedSubs.length,
-                previewSubcategories: [],
-                subs: matchedSubs.map((s, idx) => ({ id: cat.id * 10 + idx, name: s, slug: s.toLowerCase().replace(/[^a-z0-9]+/g, "-") })),
-              };
-            }
-            return null;
-          })
-          .filter(Boolean);
+          const matchedSubs = matchCat
+            ? cat.subs
+            : cat.subs.filter((s) => matchesQuery(s, q));
+
+          if (matchedSubs.length > 0 || matchCat) {
+            matchedCategories.push({
+              id: cat.id,
+              name: cat.name,
+              slug: cat.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+              description: "",
+              iconName: "FolderTree",
+              segment: cat.segment,
+              subs: matchedSubs.map((s, idx) => ({
+                id: cat.id * 10 + idx,
+                name: s,
+                slug: s.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                matched: Boolean(q && matchesQuery(s, q)),
+              })),
+            });
+          }
+        }
 
         return {
           ...sec,
-          categories: matchedCategories as Array<HierarchyCategory & { subs: Array<{ id: number; name: string; slug: string }> }>,
+          categories: matchedCategories,
         };
       }).filter((sec) => sec.categories.length > 0);
     }
 
     return MASTER_SECTIONS.map((sec) => {
       const secCategories = categories.filter((cat) => cat.segment === sec.segment);
+      const matchedCategories: CatalogCategoryItem[] = [];
 
-      const matchedCategories = secCategories
-        .map((cat) => {
-          const subs = subcategoriesByCat.get(cat.id) ?? cat.previewSubcategories ?? [];
-          const matchCat =
-            !q ||
-            cat.name.toLowerCase().includes(q) ||
-            cat.description.toLowerCase().includes(q) ||
-            sec.title.toLowerCase().includes(q);
+      for (const cat of secCategories) {
+        const subs = subcategoriesByCat.get(cat.id) ?? cat.previewSubcategories ?? [];
+        const matchCatName = matchesQuery(cat.name, q);
+        const matchCatDesc = matchesQuery(cat.description || "", q);
+        const matchSecTitle = matchesQuery(sec.title, q);
+        const matchCat = !q || matchCatName || matchCatDesc || matchSecTitle;
 
-          const matchedSubs = matchCat
-            ? subs
-            : subs.filter((s) => s.name.toLowerCase().includes(q));
+        const matchedSubs = matchCat
+          ? subs
+          : subs.filter((s) => matchesQuery(s.name, q));
 
-          if (matchedSubs.length > 0 || matchCat) {
-            return {
-              ...cat,
-              subs: matchedSubs.length > 0 ? matchedSubs : subs,
-            };
-          }
-          return null;
-        })
-        .filter((c): c is HierarchyCategory & { subs: Array<{ id: number; name: string; slug: string }> } => c !== null);
+        if (matchedSubs.length > 0 || matchCat) {
+          matchedCategories.push({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            description: cat.description || "",
+            iconName: cat.iconName || "FolderTree",
+            segment: cat.segment,
+            subs: (matchedSubs.length > 0 ? matchedSubs : subs).map((s) => ({
+              id: s.id,
+              name: s.name,
+              slug: s.slug,
+              matched: Boolean(q && matchesQuery(s.name, q)),
+            })),
+          });
+        }
+      }
 
       return {
         ...sec,
@@ -220,12 +324,17 @@ export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
   }, [data?.categories, subcategoriesByCat, searchQuery]);
 
   const totalResults = filteredSections.reduce((acc, sec) => acc + sec.categories.length, 0);
+  const totalSubResults = filteredSections.reduce(
+    (acc, sec) => acc + sec.categories.reduce((cAcc, cat) => cAcc + cat.subs.length, 0),
+    0,
+  );
+  const isSearching = searchQuery.trim().length > 0;
 
   return (
     <div className="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-[#1748b5]">
-      {/* 1. HERO */}
+      {/* 1. HERO WITH LIVE SEARCH BAR */}
       <section className="gradient-hero border-b border-slate-200/60">
-        <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:py-20 text-center sm:px-6">
           <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
             <Sparkles className="h-3.5 w-3.5" /> Service Directory
           </p>
@@ -235,56 +344,94 @@ export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
             Browse residential, commercial, industrial, health care, personal care and education services. Pick a category, choose a specialty and post your job in minutes.
           </p>
-          <div className="relative mx-auto mt-8 max-w-xl">
+
+          {/* Interactive Search Bar */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const el = document.getElementById("directory");
+              if (el) el.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="relative mx-auto mt-8 max-w-xl"
+          >
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search e.g. plumber, welding, physiotherapy, tutor, cleaning..."
-              className="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-12 pr-4 text-sm shadow-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              placeholder="Search e.g. plumber, electrician, AC, carpentry, tutor, cleaning..."
+              className="w-full rounded-2xl border border-slate-300 bg-white py-3.5 pl-12 pr-11 text-sm shadow-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             />
-          </div>
+            {isSearching && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                title="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
+
+          {/* Live Search Status Bar */}
+          {isSearching && (
+            <div className="mx-auto mt-4 flex max-w-xl items-center justify-between rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2 text-xs font-semibold text-blue-900 shadow-2xs">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                Found {totalResults} {totalResults === 1 ? "category" : "categories"} ({totalSubResults} specialties) for &quot;{searchQuery}&quot;
+              </span>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-xs font-bold text-blue-700 underline hover:text-blue-900"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 2. MASTER CATEGORIES TOP GRID */}
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {MASTER_SECTIONS.map((sec) => {
-            const Icon = sec.icon;
-            return (
-              <a
-                key={sec.id}
-                href={`#${sec.id}`}
-                className="group rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand transition group-hover:bg-brand group-hover:text-white">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <h2 className="mt-5 font-display text-lg font-bold text-[#0b1f4d] group-hover:text-brand transition">
-                  {sec.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {sec.blurb}
-                </p>
-              </a>
-            );
-          })}
-        </div>
-      </section>
+      {/* 2. MASTER CATEGORIES TOP GRID (Shown when NOT actively filtering so user gets full overview) */}
+      {!isSearching && (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {MASTER_SECTIONS.map((sec) => {
+              const Icon = sec.icon;
+              return (
+                <a
+                  key={sec.id}
+                  href={`#${sec.id}`}
+                  className="group rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
+                >
+                  <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand transition group-hover:bg-brand group-hover:text-white">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h2 className="mt-5 font-display text-lg font-bold text-[#0b1f4d] group-hover:text-brand transition">
+                    {sec.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    {sec.blurb}
+                  </p>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 3. CATEGORY DIRECTORY SECTIONS */}
       <div id="directory">
         {totalResults === 0 ? (
-          <div className="mx-auto max-w-4xl px-4 pb-20 text-center">
+          <div className="mx-auto max-w-4xl px-4 py-16 text-center">
             <div className="rounded-2xl border border-slate-200 bg-white p-12 shadow-sm">
               <HelpCircle className="mx-auto h-12 w-12 text-slate-300" />
               <h3 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">
                 No Matching Services Found
               </h3>
               <p className="mt-2 text-sm text-slate-500">
-                Cannot find what you are looking for? Describe your custom requirement and verified professionals will reach out.
+                Cannot find what you are looking for? Try searching by profession (e.g. plumber, electrician, painter) or post your custom requirement.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <button
@@ -312,7 +459,7 @@ export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
 
             return (
               <section key={sec.id} id={sec.id} className={`scroll-mt-20 ${bgClass}`}>
-                <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
                   <div className="flex items-center gap-4">
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-brand">
                       <Icon className="h-6 w-6" />
@@ -349,7 +496,11 @@ export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
                               <Link
                                 key={s.id}
                                 href={`/post-job?category=${encodeURIComponent(cat.name)}&sub=${encodeURIComponent(s.name)}`}
-                                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-brand hover:bg-blue-50 hover:text-brand"
+                                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                                  s.matched
+                                    ? "border-brand bg-blue-50 font-bold text-brand shadow-2xs ring-1 ring-brand/30"
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-brand hover:bg-blue-50 hover:text-brand"
+                                }`}
                               >
                                 {capitalizeWords(s.name)}
                               </Link>

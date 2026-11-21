@@ -198,14 +198,30 @@ export default function MarketingVisualPage({
           <ContactForm />
         ) : page === "pricing" ? (
           <p className="mx-auto max-w-7xl px-4 pb-20 text-center text-sm text-muted-foreground">
-            Need something custom?{" "}
-            <Link href="/contact" className="text-primary hover:underline">
-              Contact us
-            </Link>
+            <span
+              contentEditable={cmsMode}
+              suppressContentEditableWarning={cmsMode}
+              className={cmsMode ? "outline-none cursor-text" : ""}
+            >
+              Need something custom?
+            </span>{" "}
+            {cmsMode ? (
+              <span
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                className="text-primary hover:underline cursor-text outline-none font-semibold"
+              >
+                Contact us
+              </span>
+            ) : (
+              <Link href="/contact" className="text-primary hover:underline">
+                Contact us
+              </Link>
+            )}
             .
           </p>
         ) : (
-          <CTA />
+          <CTA cmsMode={cmsMode} />
         )}
       </main>
     </div>
@@ -742,23 +758,54 @@ function MarketingItemCard({
     </article>
   );
 }
-function CTA() {
+function CTA({ cmsMode = false }: { cmsMode?: boolean }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
       <div className="rounded-3xl bg-primary p-10 text-white md:p-14">
-        <h3 className="font-display text-3xl font-bold">Get started today</h3>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Button asChild size="lg" className="bg-cta text-cta-foreground">
-            <Link href="/post-job">Post a Job</Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="border-white/30 bg-white/10 text-white"
+        <h3 className="font-display text-3xl font-bold">
+          <span
+            contentEditable={cmsMode}
+            suppressContentEditableWarning={cmsMode}
+            className={cmsMode ? "outline-none cursor-text hover:ring-1 hover:ring-white/40 rounded px-1" : ""}
           >
-            <Link href="/signup">Become a Professional</Link>
-          </Button>
+            Get started today
+          </span>
+        </h3>
+        <div className="mt-5 flex flex-wrap gap-3">
+          {cmsMode ? (
+            <div
+              className="inline-flex items-center rounded-xl bg-cta px-6 py-3 text-sm font-semibold text-cta-foreground shadow-sm cursor-text hover:ring-2 hover:ring-white/40"
+              title="Click text to edit button"
+            >
+              <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none focus:underline">
+                Post a Job
+              </span>
+            </div>
+          ) : (
+            <Button asChild size="lg" className="bg-cta text-cta-foreground">
+              <Link href="/post-job">Post a Job</Link>
+            </Button>
+          )}
+
+          {cmsMode ? (
+            <div
+              className="inline-flex items-center rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm cursor-text hover:ring-2 hover:ring-white/40"
+              title="Click text to edit button"
+            >
+              <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none focus:underline">
+                Become a Professional
+              </span>
+            </div>
+          ) : (
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/10 text-white"
+            >
+              <Link href="/signup">Become a Professional</Link>
+            </Button>
+          )}
         </div>
       </div>
     </section>

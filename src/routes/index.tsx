@@ -373,58 +373,62 @@ export default function Landing({
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3.5">
-                <Button
-                  asChild={!cmsMode}
-                  size="lg"
-                  type="button"
-                  onClick={cmsMode ? (e) => e.preventDefault() : undefined}
-                  className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 transition"
-                >
-                  {cmsMode ? (
-                    <div className="flex items-center">
-                      <Search className="mr-2 h-4 w-4" />
-                      <span
-                        contentEditable={cmsMode}
-                        suppressContentEditableWarning={cmsMode}
-                        onInput={(e) => edit({ primaryCta: e.currentTarget.textContent ?? "" })}
-                      >
-                        {content.hero.primaryCta}
-                      </span>
-                    </div>
-                  ) : (
+                {cmsMode ? (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft transition cursor-text ring-1 ring-white/20 hover:ring-2 hover:ring-blue-400"
+                    title="Click text to edit button"
+                  >
+                    <Search className="h-4 w-4 shrink-0 pointer-events-none" />
+                    <span
+                      contentEditable={true}
+                      suppressContentEditableWarning={true}
+                      onInput={(e) => edit({ primaryCta: e.currentTarget.textContent ?? "" })}
+                      className="outline-none focus:underline"
+                    >
+                      {content.hero.primaryCta}
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                  >
                     <Link href="/services">
                       <Search className="mr-2 h-4 w-4" />
                       <span>{content.hero.primaryCta}</span>
                     </Link>
-                  )}
-                </Button>
+                  </Button>
+                )}
 
-                <Button
-                  asChild={!cmsMode}
-                  size="lg"
-                  variant="outline"
-                  type="button"
-                  onClick={cmsMode ? (e) => e.preventDefault() : undefined}
-                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition"
-                >
-                  {cmsMode ? (
-                    <div className="flex items-center">
-                      <Briefcase className="mr-2 h-4 w-4" />
-                      <span
-                        contentEditable={cmsMode}
-                        suppressContentEditableWarning={cmsMode}
-                        onInput={(e) => edit({ secondaryCta: e.currentTarget.textContent ?? "" })}
-                      >
-                        {content.hero.secondaryCta}
-                      </span>
-                    </div>
-                  ) : (
+                {cmsMode ? (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-xs transition cursor-text hover:border-blue-400"
+                    title="Click text to edit button"
+                  >
+                    <Briefcase className="h-4 w-4 shrink-0 pointer-events-none" />
+                    <span
+                      contentEditable={true}
+                      suppressContentEditableWarning={true}
+                      onInput={(e) => edit({ secondaryCta: e.currentTarget.textContent ?? "" })}
+                      className="outline-none focus:underline"
+                    >
+                      {content.hero.secondaryCta}
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition"
+                  >
                     <Link href="/post-job">
                       <Briefcase className="mr-2 h-4 w-4" />
                       <span>{content.hero.secondaryCta}</span>
                     </Link>
-                  )}
-                </Button>
+                  </Button>
+                )}
               </div>
 
               {/* Quick Trust Bar Under CTAs */}
@@ -499,13 +503,22 @@ export default function Landing({
 
                   {/* Direct Link to Services */}
                   <div className="mt-5 w-full">
-                    <Link
-                      href="/services"
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shadow-sm"
-                    >
-                      <span>Explore All Service Sectors</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                    {cmsMode ? (
+                      <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white shadow-sm cursor-text hover:ring-2 hover:ring-blue-400">
+                        <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                          Explore All Service Sectors
+                        </span>
+                        <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                      </div>
+                    ) : (
+                      <Link
+                        href="/services"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shadow-sm"
+                      >
+                        <span>Explore All Service Sectors</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -530,7 +543,30 @@ export default function Landing({
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {MASTER_CATEGORIES.map((cat) => {
               const Icon = cat.icon;
-              return (
+              return cmsMode ? (
+                <div
+                  key={cat.title}
+                  className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:scale-105">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <h3 className="mt-4 font-display text-lg font-bold text-slate-900">
+                      {cat.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      {cat.description}
+                    </p>
+                  </div>
+                  <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-blue-600 cursor-text hover:underline">
+                    <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                      Explore {cat.title}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                  </div>
+                </div>
+              ) : (
                 <Link
                   key={cat.title}
                   href={cat.href}
@@ -547,10 +583,10 @@ export default function Landing({
                       {cat.description}
                     </p>
                   </div>
-                  <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-blue-600">
-                    Explore{" "}
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </span>
+                  <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:underline">
+                    <span>Explore {cat.title}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </div>
                 </Link>
               );
             })}
@@ -603,12 +639,21 @@ export default function Landing({
                   Professionals ready to help
                 </h2>
               </div>
-              <Link
-                href="/services"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
-              >
-                Browse all <ArrowRight className="h-4 w-4" />
-              </Link>
+              {cmsMode ? (
+                <div className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 cursor-text hover:underline">
+                  <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                    Browse all verified professionals
+                  </span>
+                  <ArrowRight className="h-4 w-4 pointer-events-none" />
+                </div>
+              ) : (
+                <Link
+                  href="/services"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
+                >
+                  Browse all <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </div>
 
             {/* CMS Mode Skeleton Preview */}
@@ -720,20 +765,39 @@ export default function Landing({
                   </p>
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/post-job"
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-blue-700 transition"
-                  >
-                    <Briefcase className="h-4 w-4" />
-                    <span>Post a Job Free</span>
-                  </Link>
-                  <Link
-                    href="/for-clients"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
-                  >
-                    <span>How it works for clients</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  {cmsMode ? (
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
+                      <Briefcase className="h-4 w-4 pointer-events-none" />
+                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                        Post a Job Free
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/post-job"
+                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      <span>Post a Job Free</span>
+                    </Link>
+                  )}
+
+                  {cmsMode ? (
+                    <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 cursor-text hover:text-blue-600">
+                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                        How it works for clients
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                    </div>
+                  ) : (
+                    <Link
+                      href="/for-clients"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
+                    >
+                      <span>How it works for clients</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
                 </div>
               </div>
 
@@ -751,20 +815,39 @@ export default function Landing({
                   </p>
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/signup?role=PROFESSIONAL"
-                    className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-slate-800 transition"
-                  >
-                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                    <span>Join as a Professional</span>
-                  </Link>
-                  <Link
-                    href="/for-professionals"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
-                  >
-                    <span>Explore pro benefits</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                  {cmsMode ? (
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
+                      <ShieldCheck className="h-4 w-4 text-emerald-400 pointer-events-none" />
+                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                        Join as a Professional
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/signup?role=PROFESSIONAL"
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-slate-800 transition"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                      <span>Join as a Professional</span>
+                    </Link>
+                  )}
+
+                  {cmsMode ? (
+                    <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 cursor-text hover:text-blue-600">
+                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
+                        Explore pro benefits
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                    </div>
+                  ) : (
+                    <Link
+                      href="/for-professionals"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
+                    >
+                      <span>Explore pro benefits</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
