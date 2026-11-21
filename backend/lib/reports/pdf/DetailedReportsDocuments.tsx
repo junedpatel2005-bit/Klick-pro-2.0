@@ -131,10 +131,9 @@ const styles = StyleSheet.create({
   },
   summaryRibbon: {
     flexDirection: "row",
-    gap: 8,
     marginBottom: 10,
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 6,
     backgroundColor: reportTheme.zebra,
     borderRadius: 4,
     borderWidth: 1,
@@ -142,6 +141,7 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
+    paddingHorizontal: 4,
   },
   statLabel: {
     fontSize: 6.2,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     fontWeight: "bold",
     color: reportTheme.ink,
-    marginTop: 1.5,
+    marginTop: 2,
   },
   card: {
     marginBottom: 10,
@@ -785,7 +785,8 @@ export function ClientEngagementDetailedDocument({
               <View>
                 <Text style={styles.cardTitle}>{capitalizeWords(c.name)}</Text>
                 <Text style={styles.cardSub}>
-                  {capitalizeWords(c.company)} · {c.email} · {c.phone || "No phone"} · Location: {capitalizeWords(c.location)}
+                  {capitalizeWords(c.company)} · {c.email}
+                  {c.phone && c.phone !== "—" && c.phone !== "-" ? ` · ${c.phone}` : ""} · Location: {capitalizeWords(c.location)}
                 </Text>
               </View>
               <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
@@ -824,10 +825,10 @@ export function ClientEngagementDetailedDocument({
                 <View style={styles.gridCellCol3}>
                   <View style={styles.subCard}>
                     <Text style={styles.sectionTitle}>
-                      Job Forms Submitted ({c.forms.length})
+                      Jobs Posted ({c.forms.length})
                     </Text>
                     {c.forms.length === 0 ? (
-                      <Text style={styles.emptyNote}>No job forms submitted</Text>
+                      <Text style={styles.emptyNote}>No jobs posted</Text>
                     ) : (
                       c.forms.map((f, fIdx) => (
                         <View key={fIdx} style={styles.itemRow}>
@@ -847,10 +848,10 @@ export function ClientEngagementDetailedDocument({
                 <View style={styles.gridCellCol3}>
                   <View style={styles.subCard}>
                     <Text style={styles.sectionTitle}>
-                      Tasks Completed ({c.tasks.length})
+                      Milestones Completed ({c.tasks.length})
                     </Text>
                     {c.tasks.length === 0 ? (
-                      <Text style={styles.emptyNote}>No milestone tasks completed</Text>
+                      <Text style={styles.emptyNote}>No milestones completed</Text>
                     ) : (
                       c.tasks.map((t, tIdx) => (
                         <View key={tIdx} style={styles.itemRow}>
@@ -858,7 +859,7 @@ export function ClientEngagementDetailedDocument({
                             • {capitalizeWords(t.title)}
                           </Text>
                           <Text style={[styles.itemText, { fontWeight: "bold", fontSize: 6.8 }]}>
-                            {typeof t.amount === "number" ? `₹${t.amount.toLocaleString("en-IN")}` : String(t.amount)}
+                            {typeof t.amount === "number" ? `INR ${t.amount.toLocaleString("en-IN")}` : String(t.amount)}
                           </Text>
                         </View>
                       ))
@@ -1021,7 +1022,7 @@ export function SupportComplaintsDetailedDocument({
                       <Text style={styles.label}>Refund Claimed</Text>
                       <Text style={[styles.value, { color: "#0284c7" }]}>
                         {typeof c.client.claimAmount === "number"
-                          ? `₹${c.client.claimAmount.toLocaleString("en-IN")}`
+                          ? `INR ${c.client.claimAmount.toLocaleString("en-IN")}`
                           : String(c.client.claimAmount)}
                       </Text>
                     </View>
@@ -1060,7 +1061,7 @@ export function SupportComplaintsDetailedDocument({
                       <Text style={styles.label}>Payout Claimed</Text>
                       <Text style={[styles.value, { color: "#9333ea" }]}>
                         {typeof c.professional.claimAmount === "number"
-                          ? `₹${c.professional.claimAmount.toLocaleString("en-IN")}`
+                          ? `INR ${c.professional.claimAmount.toLocaleString("en-IN")}`
                           : String(c.professional.claimAmount)}
                       </Text>
                     </View>
@@ -1074,7 +1075,7 @@ export function SupportComplaintsDetailedDocument({
                   <View style={styles.gridCellCol3}>
                     <Text style={styles.label}>Project Budget</Text>
                     <Text style={styles.value}>
-                      {typeof c.project.budget === "number" ? `₹${c.project.budget.toLocaleString("en-IN")}` : String(c.project.budget)}
+                      {typeof c.project.budget === "number" ? `INR ${c.project.budget.toLocaleString("en-IN")}` : String(c.project.budget)}
                     </Text>
                   </View>
                   <View style={styles.gridCellCol3}>
@@ -1085,7 +1086,7 @@ export function SupportComplaintsDetailedDocument({
                     <Text style={styles.label}>Disputed Amount</Text>
                     <Text style={[styles.value, { color: "#b91c1c" }]}>
                       {typeof c.project.milestoneAmount === "number"
-                        ? `₹${c.project.milestoneAmount.toLocaleString("en-IN")}`
+                        ? `INR ${c.project.milestoneAmount.toLocaleString("en-IN")}`
                         : String(c.project.milestoneAmount)}
                     </Text>
                   </View>
@@ -1440,7 +1441,7 @@ export function PostingGrowthDetailedDocument({
               </View>
               <View style={{ flexDirection: "row", gap: 5 }}>
                 <Text style={[styles.badge, styles.badgeBlue]}>
-                  {typeof p.budget === "number" ? `₹${p.budget.toLocaleString("en-IN")}` : String(p.budget)}
+                  {typeof p.budget === "number" ? `INR ${p.budget.toLocaleString("en-IN")}` : String(p.budget)}
                 </Text>
                 <Text style={[styles.badge, p.status === "COMPLETED" ? styles.badgeGreen : styles.badgeAmber]}>
                   {p.status}
@@ -1499,3 +1500,4 @@ export function PostingGrowthDetailedDocument({
 
 
 export { SingleClientActivityDossierDocument } from "./SingleClientActivityDossierDocument";
+export { SingleClientEngagementDossierDocument } from "./SingleClientEngagementDossierDocument";

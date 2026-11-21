@@ -893,54 +893,6 @@ function AdminReportsContent() {
           </div>
         </div>
 
-        {/* The 3 Primary Master Menus */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {MASTER_MENUS.map((menu) => {
-            const Icon = menu.icon;
-            const isSelected = masterGroup === menu.id;
-            return (
-              <button
-                key={menu.id}
-                onClick={() => handleMasterGroupChange(menu.id)}
-                className={`flex items-start gap-3.5 p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-800 shadow-xs ring-1 ring-indigo-500/20"
-                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs hover:shadow-xs"
-                }`}
-              >
-                <div
-                  className={`p-2.5 rounded-xl shrink-0 ${
-                    isSelected
-                      ? "bg-indigo-600 text-white shadow-2xs"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                      {menu.label}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isSelected
-                          ? "bg-indigo-200/70 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                      }`}
-                    >
-                      {menu.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                    {menu.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Sub-Tabs for Active Master Menu & Dual Role Selector */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <div className="flex flex-wrap items-center gap-1.5">

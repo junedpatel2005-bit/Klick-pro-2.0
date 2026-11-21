@@ -32,6 +32,7 @@ import {
   generateSystemReliabilityDossierCsv,
 } from "@/lib/reports/pdf/user-dossier-builder";
 import { SingleClientActivityDossierDocument } from "@/lib/reports/pdf/SingleClientActivityDossierDocument";
+import { SingleClientEngagementDossierDocument } from "@/lib/reports/pdf/SingleClientEngagementDossierDocument";
 import {
   fetchJobDossierData,
   fetchBatchJobDossierData,
@@ -1414,7 +1415,7 @@ export async function POST(
               title: j.title || `Job #${j.id}`,
               category: j.category || "General Services",
               status: (j.status || "OPEN").toUpperCase(),
-              budget: b > 0 ? `₹${b.toLocaleString("en-IN")}` : "Unspecified",
+              budget: b > 0 ? `INR ${b.toLocaleString("en-IN")}` : "Unspecified",
               date: j.createdAt ? new Date(j.createdAt).toLocaleDateString("en-IN") : undefined,
             });
           });
@@ -1542,14 +1543,20 @@ export async function POST(
         downloadFilename = isSingle
           ? `klick-pro-client-engagement-${singleUserId}-full-audit.pdf`
           : `klick-pro-client-engagement-${new Date().toISOString().slice(0, 10)}.pdf`;
-        document = createElement(ClientEngagementDetailedDocument, {
-          clients: engagementClients,
-          summaryStats,
-          filterSummary: isSingle
-            ? "Individual Client Engagement Dossier"
-            : (selectedOnly ? `${engagementClients.length} selected` : `${engagementClients.length} total`),
-          pageSize: reportRequest.pageSize,
-        }) as unknown as Parameters<typeof renderReportPdf>[0];
+        if (isSingle && engagementClients.length > 0 && engagementClients[0]) {
+          document = createElement(SingleClientEngagementDossierDocument, {
+            client: engagementClients[0],
+          }) as unknown as Parameters<typeof renderReportPdf>[0];
+        } else {
+          document = createElement(ClientEngagementDetailedDocument, {
+            clients: engagementClients,
+            summaryStats,
+            filterSummary: isSingle
+              ? "Individual Client Engagement Dossier"
+              : (selectedOnly ? `${engagementClients.length} selected` : `${engagementClients.length} total`),
+            pageSize: reportRequest.pageSize,
+          }) as unknown as Parameters<typeof renderReportPdf>[0];
+        }
       } else if (resource === "support-complaints") {
         const singleDisputeId = numericIds[0];
         const isSingle = selectedOnly && numericIds.length === 1 && typeof singleDisputeId === "number";
