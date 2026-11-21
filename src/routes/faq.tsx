@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Sparkles,
   Search,
@@ -13,17 +13,18 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-type FAQItem = {
+export type FAQItem = {
+  id?: number;
   question: string;
   answer: string;
 };
 
-type FAQCategory = {
+export type FAQCategory = {
   cat: string;
   items: FAQItem[];
 };
 
-const FAQ_DATA: FAQCategory[] = [
+export const DEFAULT_FAQ_DATA: FAQCategory[] = [
   {
     cat: "General",
     items: [
@@ -141,22 +142,46 @@ const FAQ_DATA: FAQCategory[] = [
   },
 ];
 
-const CATEGORIES = ["All", "General", "For Clients", "For Professionals", "Payments"];
-
-export default function FAQ() {
+export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
+  const [categories, setCategories] = useState<FAQCategory[]>(
+    initialData && initialData.length > 0 ? initialData : DEFAULT_FAQ_DATA,
+  );
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+
+  // Sync client with database / admin updates
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/faq", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && Array.isArray(data?.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => {
+        // Fallback remains active
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const toggleItem = (key: string) => {
     setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Dynamically compute category tabs from live database records
+  const availableCategories = useMemo(() => {
+    const unique = Array.from(new Set(categories.map((c) => c.cat).filter(Boolean)));
+    return ["All", ...unique];
+  }, [categories]);
+
   const filteredCategories = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return FAQ_DATA.filter(
-      (group) => activeCategory === "All" || group.cat === activeCategory,
-    )
+    return categories
+      .filter((group) => activeCategory === "All" || group.cat === activeCategory)
       .map((group) => {
         const filteredItems = group.items.filter(
           (item) =>
@@ -167,7 +192,7 @@ export default function FAQ() {
         return { ...group, items: filteredItems };
       })
       .filter((group) => group.items.length > 0);
-  }, [activeCategory, searchQuery]);
+  }, [categories, activeCategory, searchQuery]);
 
   const totalResults = filteredCategories.reduce(
     (acc, group) => acc + group.items.length,
@@ -204,11 +229,11 @@ export default function FAQ() {
       {/* 2. CATEGORY TABS & FAQ ACCORDIONS */}
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex flex-wrap justify-center gap-2">
-          {CATEGORIES.map((cat) => (
+          {availableCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              className={`rounded-full border px-4 py-2 text-sm font-semibold transition cursor-pointer ${
                 activeCategory === cat
                   ? "border-brand bg-brand text-white shadow-sm"
                   : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
@@ -242,7 +267,7 @@ export default function FAQ() {
                 </h2>
                 <div className="space-y-3">
                   {group.items.map((item, idx) => {
-                    const itemKey = `${group.cat}-${idx}`;
+                    const itemKey = `${group.cat}-${item.id ?? idx}`;
                     const isOpen = Boolean(openItems[itemKey]);
                     return (
                       <article
@@ -252,7 +277,7 @@ export default function FAQ() {
                         <button
                           type="button"
                           onClick={() => toggleItem(itemKey)}
-                          className="flex w-full items-center justify-between gap-4 p-6 text-left"
+                          className="flex w-full items-center justify-between gap-4 p-6 text-left cursor-pointer"
                         >
                           <span className="font-display text-base font-bold text-[#0b1f4d]">
                             {item.question}

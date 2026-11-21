@@ -178,63 +178,10 @@ export default function Admin() {
         ))}
       </div>
 
-      {/* Secondary Metrics */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">User Growth</span>
-            <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/60">
-              Registrations
-            </span>
-          </div>
-          {loading || data === null ? (
-            <div className="mt-3 h-7 w-12 animate-pulse rounded bg-slate-200" />
-          ) : (
-            <p className="mt-3 text-xl font-bold text-slate-900 tabular-nums">{data.newUsers.length}</p>
-          )}
-          <p className="mt-0.5 text-xs text-slate-500">Recent user registrations</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Marketplace</span>
-            <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/60">
-              Activity
-            </span>
-          </div>
-          {loading || data === null ? (
-            <div className="mt-3 h-7 w-12 animate-pulse rounded bg-slate-200" />
-          ) : (
-            <p className="mt-3 text-xl font-bold text-slate-900 tabular-nums">{data.newJobs.length}</p>
-          )}
-          <p className="mt-0.5 text-xs text-slate-500">Recent job requests</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4.5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Disputes</span>
-            <span
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                (data?.newDisputes.length ?? 0) > 0
-                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                  : "bg-slate-100 text-slate-600 border-slate-200/60"
-              }`}
-            >
-              {(data?.newDisputes.length ?? 0) > 0 ? "Requires Review" : "Clear"}
-            </span>
-          </div>
-          {loading || data === null ? (
-            <div className="mt-3 h-7 w-12 animate-pulse rounded bg-slate-200" />
-          ) : (
-            <p className="mt-3 text-xl font-bold text-slate-900 tabular-nums">{data.newDisputes.length}</p>
-          )}
-          <p className="mt-0.5 text-xs text-slate-500">Pending resolution tickets</p>
-        </div>
-      </div>
 
       {/* Activity Feeds */}
       <div className="grid gap-5 xl:grid-cols-3">
-        <Latest title="New registrations" icon={UserPlus} href="/admin/users">
+        <Latest title="Accounts Directory" icon={UsersRound} href="/admin/users">
           {loading || data === null ? (
             <div className="space-y-3 py-2">
               {[1, 2, 3].map((i) => (

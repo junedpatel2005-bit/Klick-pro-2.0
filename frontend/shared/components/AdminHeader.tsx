@@ -48,7 +48,7 @@ export function AdminHeader() {
   async function logout() {
     await fetch("/api/v1/auth/logout", { method: "POST" });
     invalidateCurrentUser();
-    router.replace("/admin/login");
+    window.location.assign("/admin/login");
   }
 
   return (

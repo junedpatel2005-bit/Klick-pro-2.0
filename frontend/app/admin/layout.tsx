@@ -13,18 +13,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const pathname = (await headers()).get("x-pathname") ?? "";
   const isLoginPage = pathname === "/admin/login" || pathname.endsWith("/admin/login");
 
-  if (isLoginPage) {
-    return <>{children}</>;
+  if (!isLoginPage) {
+    const token = (await cookies()).get(sessionCookie)?.value;
+    let session = null;
+    try {
+      session = token ? await verifySession(token) : null;
+    } catch {
+      session = null;
+    }
+    if (session?.role !== "ADMIN") redirect("/admin/login");
   }
-
-  const token = (await cookies()).get(sessionCookie)?.value;
-  let session = null;
-  try {
-    session = token ? await verifySession(token) : null;
-  } catch {
-    session = null;
-  }
-  if (session?.role !== "ADMIN") redirect("/admin/login");
 
   return <AdminPortal>{children}</AdminPortal>;
 }

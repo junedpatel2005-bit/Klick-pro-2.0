@@ -46,7 +46,7 @@ export default function AdminLogin() {
         setPending(false);
         return setError(data.error ?? "Unable to sign in. Please verify your credentials.");
       }
-      router.replace("/admin");
+      window.location.assign("/admin");
     } catch {
       setPending(false);
       setError("Network error. Please check your connection and try again.");

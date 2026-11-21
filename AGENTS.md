@@ -88,4 +88,13 @@ Whenever any schema change is requested:
   - **Notifications & Receipts**:
     * When Commission is 0 / OFF: Omit platform commission labels and deduction rows from emails, notifications, and generated invoice/receipt PDFs.
 
+# Data Protection & Category Preservation Rules (STRICT & MANDATORY)
+
+## Rule 7: NEVER DELETE OR REMOVE SERVICE CATEGORIES UNDER ANY CIRCUMSTANCES
+
+- **PERMANENT PRESERVATION OF SERVICE CATEGORIES**: In any database cleanup, testing, maintenance, seeding, migration, or wiping script or operation, the `ServiceCategory` table (and related catalog service definitions) MUST NEVER BE DELETED, WIPED, DROPPED, OR TRUNCATED under any circumstance.
+- **ZERO TOLERANCE FOR CATEGORY DESTRUCTION**: Any data-wiping or reset script must strictly filter out and protect `ServiceCategory` and category hierarchies. Only transient operational data (test users, jobs, proposals, disputes, milestones, messages, sessions, audit logs, notifications, and transactions) may ever be cleaned.
+- **SAFEGUARDS REQUIRED**: All wipe/reset scripts must contain explicit programmatic safeguards, foreign key disconnects, and safety checks to ensure categories remain 100% intact, active, and untouched in PostgreSQL.
+
+
 

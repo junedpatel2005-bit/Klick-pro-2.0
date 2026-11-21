@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
+  Calendar,
   CheckCircle2,
   ChevronRight,
   Filter,
@@ -16,6 +17,7 @@ import {
   Star,
   Trash2,
   UsersRound,
+  X,
   XCircle,
   LogIn,
 } from "lucide-react";
@@ -43,6 +45,16 @@ type User = {
   location: string;
   companyName: string | null;
 };
+
+type DateFilterPreset =
+  | "ALL"
+  | "TODAY"
+  | "YESTERDAY"
+  | "7D"
+  | "30D"
+  | "THIS_MONTH"
+  | "LAST_MONTH"
+  | "CUSTOM";
 
 function UserGroup({
   title,
@@ -324,11 +336,58 @@ export default function AdminUsersPage() {
   const [message, setMessage] = useState("");
   const [activeGroup, setActiveGroup] = useState<"clients" | "professionals">("clients");
 
-  // Filters: Search, Location, Rating, Status
+  // Filters: Search, Location, Rating, Status, Date
   const [search, setSearch] = useState("");
   const [locationSearch, setLocationSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ENABLED" | "DISABLED">("ALL");
+  const [dateFilter, setDateFilter] = useState<DateFilterPreset>("ALL");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  const isUserDateInRange = useCallback(
+    (dateStr?: string | null) => {
+      if (dateFilter === "ALL" || !dateStr) return true;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return true;
+      const now = new Date();
+
+      if (dateFilter === "TODAY") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        return d >= start && d <= end;
+      }
+      if (dateFilter === "YESTERDAY") {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+        return d >= start && d <= end;
+      }
+      if (dateFilter === "7D") {
+        const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return d >= start;
+      }
+      if (dateFilter === "30D") {
+        const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return d >= start;
+      }
+      if (dateFilter === "THIS_MONTH") {
+        const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        return d >= start;
+      }
+      if (dateFilter === "LAST_MONTH") {
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        return d >= start && d <= end;
+      }
+      if (dateFilter === "CUSTOM") {
+        if (customStart && d < new Date(`${customStart}T00:00:00`)) return false;
+        if (customEnd && d > new Date(`${customEnd}T23:59:59`)) return false;
+        return true;
+      }
+      return true;
+    },
+    [dateFilter, customStart, customEnd],
+  );
 
   const [confirmAction, setConfirmAction] = useState<{
     user: User;
@@ -398,9 +457,12 @@ export default function AdminUsersPage() {
       if (statusFilter === "ENABLED" && !user.isActive) return false;
       if (statusFilter === "DISABLED" && user.isActive) return false;
 
+      // 5. Registration Date filter
+      if (!isUserDateInRange(user.createdAt)) return false;
+
       return true;
     });
-  }, [users, search, locationSearch, ratingFilter, statusFilter]);
+  }, [users, search, locationSearch, ratingFilter, statusFilter, isUserDateInRange]);
 
   const clients = useMemo(() => filtered.filter((user) => user.role === "CLIENT"), [filtered]);
   const professionals = useMemo(
@@ -461,24 +523,174 @@ export default function AdminUsersPage() {
     setLocationSearch("");
     setRatingFilter("ALL");
     setStatusFilter("ALL");
+    setDateFilter("ALL");
+    setCustomStart("");
+    setCustomEnd("");
   };
 
   const hasActiveFilters = Boolean(
-    search || locationSearch || ratingFilter !== "ALL" || statusFilter !== "ALL",
+    search ||
+      locationSearch ||
+      ratingFilter !== "ALL" ||
+      statusFilter !== "ALL" ||
+      dateFilter !== "ALL" ||
+      customStart ||
+      customEnd,
   );
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.2em] text-indigo-600">Admin module</p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-slate-900">User management</h1>
+        <h1 className="mt-2 font-display text-3xl font-bold text-slate-900">Accounts Directory</h1>
         <p className="mt-2 text-slate-500">
           Manage Clients and Professionals independently. View user ratings, completed and closed
           projects, and direct messaging shortcuts.
         </p>
       </div>
 
-      {/* Top Group Switchers */}
+      {/* Filter and Search Bar (Positioned first before boxes) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {/* Search by name/email */}
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name, email, phone…"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
+            />
+          </div>
+
+          {/* Search / Filter by location */}
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={locationSearch}
+              onChange={(event) => setLocationSearch(event.target.value)}
+              placeholder="Filter by city or location…"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
+            />
+          </div>
+
+          {/* Registration Date Filter (7d, yesterday, today, etc.) */}
+          <div className="relative flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/60 px-3 h-10 text-xs font-medium text-slate-700 shadow-2xs focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-500">
+            <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+            <select
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value as DateFilterPreset)}
+              aria-label="Filter users by registration date"
+              className="w-full bg-transparent text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="ALL">📅 All Time</option>
+              <option value="TODAY">📅 Today</option>
+              <option value="YESTERDAY">📅 Yesterday</option>
+              <option value="7D">📅 Last 7 Days (7d)</option>
+              <option value="30D">📅 Last 30 Days (30d)</option>
+              <option value="THIS_MONTH">📅 This Month</option>
+              <option value="LAST_MONTH">📅 Last Month</option>
+              <option value="CUSTOM">📅 Custom Range...</option>
+            </select>
+          </div>
+
+          {/* Filter by Rating */}
+          <div className="relative">
+            <select
+              value={ratingFilter}
+              onChange={(event) => setRatingFilter(event.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 text-xs font-medium text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
+            >
+              <option value="ALL">⭐ All Ratings</option>
+              <option value="4.5">⭐ 4.5 & Above</option>
+              <option value="4.0">⭐ 4.0 & Above</option>
+              <option value="3.0">⭐ 3.0 & Above</option>
+              <option value="UNRATED">⭐ Unrated Only</option>
+            </select>
+          </div>
+
+          {/* Shortcut to filter by Disabled / Enabled Status */}
+          <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200">
+            {(
+              [
+                { key: "ALL", label: "All" },
+                { key: "ENABLED", label: "Enabled" },
+                { key: "DISABLED", label: "Disabled" },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setStatusFilter(item.key)}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
+                  statusFilter === item.key
+                    ? "bg-white text-indigo-700 shadow-2xs border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Date Pickers */}
+        {dateFilter === "CUSTOM" && (
+          <div className="flex flex-wrap items-center gap-3 pt-2.5 border-t border-slate-100 text-xs">
+            <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Registration Date Range:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">From:</span>
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">To:</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 shadow-2xs focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
+            {(customStart || customEnd) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomStart("");
+                  setCustomEnd("");
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 transition-colors"
+              >
+                <X className="h-3 w-3" /> Clear Dates
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Filter stats & Reset button */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <span>
+              Showing {activeGroup === "professionals" ? professionals.length : clients.length}{" "}
+              matching {activeGroup}
+            </span>
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              <RotateCcw className="h-3 w-3" /> Reset Filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Top Group Switchers (Boxes following searchbar) */}
       <div className="grid gap-4 sm:grid-cols-2">
         <button
           onClick={() => setActiveGroup("clients")}
@@ -527,88 +739,6 @@ export default function AdminUsersPage() {
               : "Click to view professionals"}
           </p>
         </button>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Search by name/email */}
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, email, phone…"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
-            />
-          </div>
-
-          {/* Search / Filter by location */}
-          <div className="relative">
-            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={locationSearch}
-              onChange={(event) => setLocationSearch(event.target.value)}
-              placeholder="Filter by city or location…"
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
-            />
-          </div>
-
-          {/* Filter by Rating */}
-          <div className="relative">
-            <select
-              value={ratingFilter}
-              onChange={(event) => setRatingFilter(event.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 text-xs font-medium text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 shadow-2xs"
-            >
-              <option value="ALL">⭐ All Ratings</option>
-              <option value="4.5">⭐ 4.5 & Above</option>
-              <option value="4.0">⭐ 4.0 & Above</option>
-              <option value="3.0">⭐ 3.0 & Above</option>
-              <option value="UNRATED">⭐ Unrated Only</option>
-            </select>
-          </div>
-
-          {/* Shortcut to filter by Disabled / Enabled Status */}
-          <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200">
-            {(
-              [
-                { key: "ALL", label: "All" },
-                { key: "ENABLED", label: "Enabled" },
-                { key: "DISABLED", label: "Disabled" },
-              ] as const
-            ).map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setStatusFilter(item.key)}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-                  statusFilter === item.key
-                    ? "bg-white text-indigo-700 shadow-2xs border border-slate-200/80"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Filter stats & Reset button */}
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-            <span>
-              Showing {activeGroup === "professionals" ? professionals.length : clients.length}{" "}
-              matching {activeGroup}
-            </span>
-            <button
-              onClick={resetFilters}
-              className="inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-700"
-            >
-              <RotateCcw className="h-3 w-3" /> Reset Filters
-            </button>
-          </div>
-        )}
       </div>
 
       {message && (

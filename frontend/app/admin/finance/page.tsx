@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Eye,
   FileCheck2,
+  HelpCircle,
   Landmark,
   Layers,
   Mail,
@@ -233,6 +234,7 @@ const formatDate = (iso: string) => {
 export default function AdminFinancePage() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
   const [activeTab, setActiveTab] = useState<TabView>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -892,43 +894,12 @@ export default function AdminFinancePage() {
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">
             {isCommissionOn
-              ? "Real-time platform cashflow, escrow balances, milestone settlements, and net platform revenue."
-              : "Real-time platform cashflow, escrow balances, and milestone settlements."}
+              ? "Live view of money coming in, safe storage during work, payouts to pros, and platform commission."
+              : "Live view of money coming in, safe storage during work, and 100% payouts to professionals."}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Quick Platform Commission Mode Status & Toggle */}
-          <button
-            type="button"
-            onClick={() => void handleToggleCommission()}
-            disabled={togglingCommission || loading}
-            title={
-              data?.commissionEnabled
-                ? "Platform Commission is ON: Milestone payouts deduct commission. Click to turn OFF (100% payout to pro)."
-                : "Platform Commission is OFF: Zero commission cut (100% payout to pro). Click to turn ON."
-            }
-            className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-95 disabled:opacity-50 cursor-pointer ${
-              data?.commissionEnabled
-                ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                : "border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-          >
-            <Percent
-              className={`h-4 w-4 ${
-                data?.commissionEnabled ? "text-emerald-600" : "text-slate-500"
-              } ${togglingCommission ? "animate-spin" : ""}`}
-            />
-            <span>
-              Commission:{" "}
-              <span className="font-bold underline underline-offset-2">
-                {data?.commissionEnabled
-                  ? `ON (${data?.commissionRate ? Math.round(data.commissionRate * 100) : 10}%)`
-                  : "OFF (0% Cut)"}
-              </span>
-            </span>
-          </button>
-
           {/* Quick Auto-Withdrawal Mode Toggle */}
           <button
             type="button"
@@ -936,8 +907,8 @@ export default function AdminFinancePage() {
             disabled={togglingAutoWithdraw || loading}
             title={
               data?.autoWithdrawalEnabled
-                ? "Auto-Withdrawal is ON: User withdrawals complete automatically without admin approval. Click to switch to manual approval."
-                : "Auto-Withdrawal is OFF: User withdrawals require manual admin approval. Click to turn ON auto-settlement."
+                ? "Auto-Withdrawal is ON: Professional bank/UPI payouts happen automatically without admin check. Click to switch to manual approval."
+                : "Auto-Withdrawal is OFF: Admin must check and approve each withdrawal before money is sent. Click to turn ON auto-pay."
             }
             className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-95 disabled:opacity-50 cursor-pointer ${
               data?.autoWithdrawalEnabled
@@ -960,6 +931,16 @@ export default function AdminFinancePage() {
 
           <button
             type="button"
+            onClick={() => setShowHelpGuide(true)}
+            title="How money, safe hold (escrow), and payouts work in simple words. Click to open guide."
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition active:scale-95 cursor-pointer"
+          >
+            <HelpCircle className="h-4 w-4 text-indigo-500" />
+            <span>Simple Finance Guide</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => void fetchFinance()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition active:scale-95 disabled:opacity-50"
@@ -970,134 +951,7 @@ export default function AdminFinancePage() {
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
-        {/* Card 1: Gross Platform Volume */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500">
-              Gross Volume
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
-              <Coins className="h-3.5 w-3.5" />
-            </span>
-          </div>
-          {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
-          ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
-              {formatMoney(metrics.grossVolume)}
-            </p>
-          )}
-          <p className="mt-0.5 text-[11px] text-slate-400">Total client volume</p>
-        </div>
-
-        {/* Card 2: Platform Net (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
-        {isCommissionOn && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-emerald-800">
-                Platform Net
-              </span>
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
-                <Percent className="h-3.5 w-3.5" />
-              </span>
-            </div>
-            {loading ? (
-              <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-emerald-200/70" />
-            ) : (
-              <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-emerald-700 tabular-nums">
-                +{formatMoney(metrics.platformCommission)}
-              </p>
-            )}
-            <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">Net platform revenue</p>
-          </div>
-        )}
-
-        {/* Card 3: Professional Disbursements */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500">
-              Disbursed to Pros
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </span>
-          </div>
-          {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
-          ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
-              {formatMoney(metrics.proDisbursements)}
-            </p>
-          )}
-          <p className="mt-0.5 text-[11px] text-slate-400">
-            {isCommissionOn ? "Released milestone payouts" : "100% milestone payouts released"}
-          </p>
-        </div>
-
-        {/* Card 4: Escrow In-Transit */}
-        <div
-          onClick={() => setActiveTab("escrow")}
-          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
-            activeTab === "escrow"
-              ? "border-amber-400 bg-amber-50/60"
-              : "border-slate-200/90 bg-white hover:border-slate-300"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-700">
-              Held in Escrow
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100/70 text-amber-700">
-              <Clock className="h-3.5 w-3.5" />
-            </span>
-          </div>
-          {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-amber-200/70" />
-          ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-amber-900 tabular-nums">
-              {formatMoney(metrics.inEscrow)}
-            </p>
-          )}
-          {loading ? (
-            <div className="mt-1 h-3.5 w-24 animate-pulse rounded bg-amber-200/50" />
-          ) : (
-            <p className="mt-0.5 text-[11px] text-amber-700 font-medium">
-              {data?.payments.filter((p) => p.status === "FUNDED").length ?? 0} waiting payout
-            </p>
-          )}
-        </div>
-
-        {/* Card 5: Treasury Wallet */}
-        <div
-          onClick={() => setActiveTab("ledger")}
-          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
-            activeTab === "ledger"
-              ? "border-slate-400 bg-slate-50"
-              : "border-slate-200/90 bg-white hover:border-slate-300"
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-700">
-              Admin Treasury
-            </span>
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
-              <WalletCards className="h-3.5 w-3.5" />
-            </span>
-          </div>
-          {loading ? (
-            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
-          ) : (
-            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
-              {formatMoney(metrics.adminBalance)}
-            </p>
-          )}
-          <p className="mt-0.5 text-[11px] text-slate-500 font-medium">Platform wallet balance</p>
-        </div>
-      </div>
-
-      {/* Tabs & Search Toolbar */}
+      {/* Tabs & Search Toolbar (First before boxes) */}
       <div className="space-y-3">
         {/* Row 1: Filter Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-200">
@@ -1106,12 +960,14 @@ export default function AdminFinancePage() {
             onClick={() => setActiveTab("all")}
             label="All Activity"
             badge={allActivities.length}
+            title="All transactions, payouts, deposits, and transfers"
           />
           <TabButton
             active={activeTab === "payments"}
             onClick={() => setActiveTab("payments")}
             label="Milestone Payments"
             badge={data?.payments.length}
+            title="Payments made by clients for project milestones"
           />
           <TabButton
             active={activeTab === "escrow"}
@@ -1123,24 +979,28 @@ export default function AdminFinancePage() {
               ).length
             }
             badgeTone="amber"
+            title="Milestones where client money is safely held, waiting for work approval"
           />
           <TabButton
             active={activeTab === "topups"}
             onClick={() => setActiveTab("topups")}
             label="Client Top-ups"
             badge={data?.walletTransactions.length}
+            title="Funds added by clients to their platform wallet"
           />
           <TabButton
             active={activeTab === "withdrawals"}
             onClick={() => setActiveTab("withdrawals")}
             label="Pro Withdrawals"
             badge={data?.withdrawals.length}
+            title="Withdrawal requests from professionals to their Bank Account or UPI"
           />
           <TabButton
             active={activeTab === "ledger"}
             onClick={() => setActiveTab("ledger")}
             label="Treasury Ledger"
             badge={data?.platformWalletTransactions.length}
+            title="History of all money entering and leaving the platform safe"
           />
         </div>
 
@@ -1246,6 +1106,194 @@ export default function AdminFinancePage() {
         )}
       </div>
 
+      {/* KPI Cards Grid (Boxes following searchbar) */}
+      <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
+        {/* Card 1: Total Business Done (Gross Volume) */}
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500">
+                Total Business Done
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowHelpGuide(true)}
+                title="Total money paid by clients on this website for all project milestones so far. Click to view simple guide."
+                aria-label="Total Business Done Help"
+                className="text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
+              <Coins className="h-3.5 w-3.5" />
+            </span>
+          </div>
+          {loading ? (
+            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
+          ) : (
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
+              {formatMoney(metrics.grossVolume)}
+            </p>
+          )}
+          <p className="mt-0.5 text-[11px] text-slate-400">Total client payments (Gross Volume)</p>
+        </div>
+
+        {/* Card 2: Platform Earnings (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
+        {isCommissionOn && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-emerald-800">
+                  Platform Earnings
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowHelpGuide(true)}
+                  title="Money kept by the platform as commission fee. (Active only when commission is turned ON). Click to view simple guide."
+                  aria-label="Platform Earnings Help"
+                  className="text-emerald-600/70 hover:text-emerald-800 transition cursor-pointer"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-emerald-100 text-emerald-700">
+                <Percent className="h-3.5 w-3.5" />
+              </span>
+            </div>
+            {loading ? (
+              <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-emerald-200/70" />
+            ) : (
+              <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-emerald-700 tabular-nums">
+                +{formatMoney(metrics.platformCommission)}
+              </p>
+            )}
+            <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">Platform profit from commission</p>
+          </div>
+        )}
+
+        {/* Card 3: Paid to Professionals */}
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500">
+                Paid to Professionals
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowHelpGuide(true)}
+                title="Total money released to professionals for approved work. They can withdraw this directly to their Bank Account or UPI. Click to view simple guide."
+                aria-label="Paid to Professionals Help"
+                className="text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-600">
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </span>
+          </div>
+          {loading ? (
+            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
+          ) : (
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
+              {formatMoney(metrics.proDisbursements)}
+            </p>
+          )}
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {isCommissionOn ? "Released milestone payouts" : "100% full payout released (No cuts)"}
+          </p>
+        </div>
+
+        {/* Card 4: Money on Hold (Escrow) */}
+        <div
+          onClick={() => setActiveTab("escrow")}
+          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+            activeTab === "escrow"
+              ? "border-amber-400 bg-amber-50/60"
+              : "border-slate-200/90 bg-white hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-700">
+                Money on Hold (Escrow)
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowHelpGuide(true);
+                }}
+                title="Advance money paid by clients, safely held while the professional is working. Released once work is approved. Click to view simple guide."
+                aria-label="Money on Hold Help"
+                className="text-slate-400 hover:text-amber-700 transition cursor-pointer"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100/70 text-amber-700">
+              <Clock className="h-3.5 w-3.5" />
+            </span>
+          </div>
+          {loading ? (
+            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-amber-200/70" />
+          ) : (
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-amber-900 tabular-nums">
+              {formatMoney(metrics.inEscrow)}
+            </p>
+          )}
+          {loading ? (
+            <div className="mt-1 h-3.5 w-24 animate-pulse rounded bg-amber-200/50" />
+          ) : (
+            <p className="mt-0.5 text-[11px] text-amber-700 font-medium">
+              {data?.payments.filter((p) => p.status === "FUNDED").length ?? 0} milestones in progress
+            </p>
+          )}
+        </div>
+
+        {/* Card 5: Platform Safe (Treasury Wallet) */}
+        <div
+          onClick={() => setActiveTab("ledger")}
+          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+            activeTab === "ledger"
+              ? "border-slate-400 bg-slate-50"
+              : "border-slate-200/90 bg-white hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-700">
+                Platform Safe
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowHelpGuide(true);
+                }}
+                title="The platform's central digital safe (Treasury). Client milestone payments come here first and stay safe until work is approved. Click to view ledger history."
+                aria-label="Platform Safe Help"
+                className="text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
+              <WalletCards className="h-3.5 w-3.5" />
+            </span>
+          </div>
+          {loading ? (
+            <div className="mt-2 h-7 w-28 animate-pulse rounded-md bg-slate-200" />
+          ) : (
+            <p className="mt-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 tabular-nums">
+              {formatMoney(metrics.adminBalance)}
+            </p>
+          )}
+          <p className="mt-0.5 text-[11px] text-slate-500 font-medium">Current money in platform safe</p>
+        </div>
+      </div>
+
       {/* Unified Transactions Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto lg:overflow-x-visible">
@@ -1256,9 +1304,8 @@ export default function AdminFinancePage() {
                 <th className="py-3 px-2">Details / Project</th>
                 <th className="py-3 px-2 w-40">Client</th>
                 <th className="py-3 px-2 w-40">Professional</th>
-                <th className="py-3 px-2 text-right w-24">Gross</th>
                 {isCommissionOn && <th className="py-3 px-2 text-right w-24">Platform Net</th>}
-                <th className="py-3 px-2 text-right w-24">Pro Payout</th>
+                <th className="py-3 px-2 text-right w-28">Payout</th>
                 <th className="py-3 px-2 text-center w-28">Status</th>
                 <th className="py-3 pr-5 pl-2 text-right w-20">Actions</th>
               </tr>
@@ -1377,22 +1424,6 @@ export default function AdminFinancePage() {
                       )}
                     </td>
 
-                    {/* Client Paid (Gross) */}
-                    <td className="py-3 px-2 text-right whitespace-nowrap">
-                      {item.clientPaid !== null && item.clientPaid !== undefined ? (
-                        <div>
-                          <p className="font-bold text-slate-900">{formatMoney(item.clientPaid)}</p>
-                          {item.baseAmount && (
-                            <p className="text-[10px] text-slate-400">
-                              Base: {formatMoney(item.baseAmount)}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300 text-xs">—</span>
-                      )}
-                    </td>
-
                     {/* Platform Net (STRICTLY ONLY when commission is ON) */}
                     {isCommissionOn && (
                       <td className="py-3 px-2 text-right whitespace-nowrap">
@@ -1406,11 +1437,15 @@ export default function AdminFinancePage() {
                       </td>
                     )}
 
-                    {/* Pro Payout */}
+                    {/* Single Payout Column */}
                     <td className="py-3 px-2 text-right whitespace-nowrap">
                       {item.proPayout !== null && item.proPayout !== undefined ? (
-                        <span className="font-semibold text-slate-800">
+                        <span className="font-bold text-slate-900">
                           {formatMoney(item.proPayout)}
+                        </span>
+                      ) : item.clientPaid !== null && item.clientPaid !== undefined ? (
+                        <span className="font-bold text-slate-900">
+                          {formatMoney(item.clientPaid)}
                         </span>
                       ) : (
                         <span className="text-slate-300 text-xs">—</span>
@@ -1523,7 +1558,7 @@ export default function AdminFinancePage() {
 
               {!loading && !filteredItems.length && (
                 <tr>
-                  <td colSpan={isCommissionOn ? 9 : 8} className="py-12 text-center text-sm text-slate-500">
+                  <td colSpan={isCommissionOn ? 8 : 7} className="py-12 text-center text-sm text-slate-500">
                     No transactions found matching your criteria.
                   </td>
                 </tr>
@@ -1679,6 +1714,13 @@ export default function AdminFinancePage() {
         title="Processing transaction…"
         description="Updating transaction records and ledger balances."
       />
+
+      <FinanceHelpDrawer
+        isOpen={showHelpGuide}
+        onClose={() => setShowHelpGuide(false)}
+        commissionEnabled={Boolean(data?.commissionEnabled)}
+        commissionRate={data?.commissionRate}
+      />
     </div>
   );
 }
@@ -1693,17 +1735,20 @@ function TabButton({
   label,
   badge,
   badgeTone = "slate",
+  title,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
   badge?: number;
   badgeTone?: "slate" | "amber";
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
         active
           ? "bg-indigo-600 text-white shadow-2xs"
@@ -3126,6 +3171,252 @@ function GenericActivityDrawer({
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
           >
             Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------------------
+// FINANCE & TREASURY OPERATIONS GUIDE SLIDE-OVER DRAWER
+// -------------------------------------------------------------------------
+
+function FinanceHelpDrawer({
+  isOpen,
+  onClose,
+  commissionEnabled,
+  commissionRate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  commissionEnabled: boolean;
+  commissionRate?: number;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs transition-opacity"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-2xs">
+              <HelpCircle className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Simple Money & Payouts Guide</h2>
+              <p className="text-[11px] text-slate-500">Easy explanation of how client payments, safe storage (escrow), and payouts work</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
+            aria-label="Close Guide"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Visual Escrow Flow Diagram */}
+          <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 via-white to-slate-50 p-5 shadow-xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+              How Money Moves in 3 Simple Steps
+            </span>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {/* Step 1 */}
+              <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700">
+                    1
+                  </span>
+                  <span className="text-xs font-bold text-slate-800">1. Client Pays Advance</span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed">
+                  Client deposits money for a project milestone. The money is securely received into the platform safe (Treasury).
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-3 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-200 text-[10px] font-bold text-amber-900">
+                    2
+                  </span>
+                  <span className="text-xs font-bold text-amber-900">2. Kept Safe (Escrow Vault)</span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-amber-800/80 leading-relaxed">
+                  Money stays locked in the platform safe while the professional works. Neither client nor professional can lose money.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-200 text-[10px] font-bold text-emerald-900">
+                    3
+                  </span>
+                  <span className="text-xs font-bold text-emerald-900">3. Released on Approval</span>
+                </div>
+                <p className="mt-1.5 text-[11px] text-emerald-800/80 leading-relaxed">
+                  When the client approves the completed work, money is immediately sent to the professional for direct Bank or UPI transfer.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI Terminology Explanations */}
+          <div className="space-y-3.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Simple Guide to Financial Terms & Cards
+            </h3>
+
+            {/* Admin Treasury */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
+                    <WalletCards className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Platform Safe (Admin Treasury)</span>
+                </div>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                  Secure Storage
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                Think of this as the platform's central secure digital locker. When a client pays for a milestone, money is kept here safely.
+                When work is finished and approved, money is paid out from here to the professional's bank or UPI. Clicking this card filters
+                the table to show all money coming in and going out.
+              </p>
+            </div>
+
+            {/* Held in Escrow */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 text-amber-700">
+                    <Clock className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Money on Hold (Held in Escrow)</span>
+                </div>
+                <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+                  Work Underway
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                This is client advance money currently held safely while work is in progress. It protects both sides: the client knows
+                their money won't leave the safe until work is done, and the professional knows the money is already guaranteed and waiting for them.
+              </p>
+            </div>
+
+            {/* Disbursed to Pros */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Paid to Professionals (Disbursed)</span>
+                </div>
+                <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                  Paid Out
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                Total milestone money that has been successfully released to professionals after work approval. Professionals
+                can instantly withdraw this money to their Indian Bank Account (IMPS/NEFT) or UPI ID.
+              </p>
+            </div>
+
+            {/* Gross Volume */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-slate-700">
+                    <Coins className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Total Business Done (Gross Volume)</span>
+                </div>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                  Total Turnover
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                The grand total of all client payments made on the website since day one. It shows the overall size and activity of your marketplace.
+              </p>
+            </div>
+
+            {/* Platform Commission Rule */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-100 text-indigo-700">
+                    <Percent className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Platform Fee & Commission Policy</span>
+                </div>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-bold border ${
+                    commissionEnabled
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-slate-100 text-slate-700 border-slate-200"
+                  }`}
+                >
+                  {commissionEnabled ? `Active (${commissionRate ? Math.round(commissionRate * 100) : 10}%)` : "Disabled (₹0 Fee / 100% to Pro)"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                By default, our platform takes ₹0 commission fee (0% cut). That means 100% of what the client pays goes straight into the professional's
+                pocket. Only if you manually turn ON Commission in Admin Settings, a small percentage is kept by the platform as company earnings.
+              </p>
+            </div>
+
+            {/* Auto-Withdrawal Mode */}
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-amber-100 text-amber-700">
+                    <Zap className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">Automatic Bank / UPI Transfer Mode</span>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                • <strong>When ON</strong>: When a professional clicks 'Withdraw', money transfers automatically to their Bank or UPI without waiting for admin check.<br />
+                • <strong>When OFF (Recommended for Safety)</strong>: Every withdrawal request must first be checked and approved manually by the Admin before any money leaves the bank.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-slate-200 bg-slate-50 px-6 py-4 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer"
+          >
+            Close Guide
           </button>
         </div>
       </div>

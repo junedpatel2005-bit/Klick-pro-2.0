@@ -80,12 +80,11 @@ export const MASTER_MENUS = [
     id: "users" as const,
     label: "User Management",
     icon: UsersRound,
-    badge: "5 Views",
-    description: "User Directory, Registrations, Activity, Engagement & Growth Cohorts for Clients & Professionals",
-    defaultTab: "directory" as TabKey,
+    badge: "4 Views",
+    description: "Accounts Directory, Activity, Engagement & Growth Cohorts for Clients & Professionals",
+    defaultTab: "client-registrations" as TabKey,
     reports: [
-      { id: "directory" as const, label: "Accounts Directory", icon: UsersRound },
-      { id: "client-registrations" as const, label: "New Registrations", icon: UserPlus },
+      { id: "client-registrations" as const, label: "Accounts Directory", icon: UsersRound },
       { id: "client-activity" as const, label: "User Activity", icon: Activity },
       { id: "client-engagement" as const, label: "User Engagement", icon: Layers },
       { id: "client-growth" as const, label: "User Growth", icon: TrendingUp },
@@ -118,8 +117,7 @@ export const MASTER_MENUS = [
 ] as const;
 
 export const ALL_REPORTS: Array<{ id: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { id: "directory", label: "Accounts Directory", icon: UsersRound },
-  { id: "client-registrations", label: "New Registrations", icon: UserPlus },
+  { id: "client-registrations", label: "Accounts Directory", icon: UsersRound },
   { id: "client-activity", label: "User Activity", icon: Activity },
   { id: "client-engagement", label: "User Engagement", icon: Layers },
   { id: "client-growth", label: "User Growth", icon: TrendingUp },
@@ -269,7 +267,7 @@ function AdminReportsContent() {
   };
 
   const fetchReport = useCallback(async () => {
-    if (activeTab === "directory" || activeTab === "operations") {
+    if (activeTab === "operations") {
       setLoading(false);
       return;
     }
@@ -457,7 +455,7 @@ function AdminReportsContent() {
 
   // CSV Export handler with Full Info & Metadata
   const handleExportCsv = (selectedOnly = false) => {
-    if (activeTab === "directory" || activeTab === "operations") return;
+    if (activeTab === "operations") return;
     const rowsToExport = selectedOnly && selectedRowIds.size > 0
       ? filteredRows.filter((r, i) => selectedRowIds.has(r.id ?? i))
       : filteredRows;
@@ -756,7 +754,7 @@ function AdminReportsContent() {
   };
 
   const handleExportPdf = async (selectedOnly = false) => {
-    if (activeTab === "directory" || activeTab === "operations") return;
+    if (activeTab === "operations") return;
     setExportingPdf(true);
     try {
       const isClientGrowthCohorts = activeTab === "client-growth" && subFilter !== "DETAILS";
@@ -807,7 +805,7 @@ function AdminReportsContent() {
     recordId: string | number,
     format: "pdf" | "csv" = "pdf",
   ) => {
-    if (activeTab === "directory" || activeTab === "operations") return;
+    if (activeTab === "operations") return;
     // In Client Growth Cohorts view, rows are weekly intervals, not individual user IDs
     if (activeTab === "client-growth" && subFilter !== "DETAILS") {
       if (format === "csv") {
@@ -958,23 +956,273 @@ function AdminReportsContent() {
       </div>
 
       {/* ----------------------------------------------------------------- */}
-      {/* EMBEDDED CONSOLES FOR DIRECTORY & OPERATIONS                      */}
+      {/* EMBEDDED CONSOLES FOR OPERATIONS                                  */}
       {/* ----------------------------------------------------------------- */}
-      {activeTab === "directory" && (
-        <UserManagementView onInspectUser={(id) => setInspectUserId(id)} />
-      )}
-
       {activeTab === "operations" && (
         <OperationsManagementView />
       )}
 
       {/* ----------------------------------------------------------------- */}
-      {/* ANALYTICS REPORT VIEWS (KPIs, FILTERS & TABLES)                   */}
+      {/* ANALYTICS REPORT VIEWS (SEARCH FIRST, THEN KPIs, THEN TABLES)     */}
       {/* ----------------------------------------------------------------- */}
-      {activeTab !== "directory" && activeTab !== "operations" && (
+      {activeTab !== "operations" && (
         <>
           {/* ----------------------------------------------------------------- */}
-          {/* TOP KPI METRIC CARDS FOR CURRENT TAB                             */}
+          {/* FILTER & SEARCH CONTROL BAR (Positioned first before boxes)       */}
+          {/* ----------------------------------------------------------------- */}
+          <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              {/* Universal Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search in tab data (name, email, phone, location, status, job, etc.)..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Date Range & Sub-Filters Toolbar */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Time Range Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <select
+                    value={timeRange}
+                    onChange={(e) => {
+                      setTimeRange(e.target.value as TimeRange);
+                      setPage(1);
+                    }}
+                    aria-label="Filter report by time range"
+                    className="bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="last7days">Last 7 Days</option>
+                    <option value="last30days">Last 30 Days</option>
+                    <option value="thisMonth">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="custom">Custom Date Range</option>
+                  </select>
+                </div>
+
+                {/* Custom Date Pickers */}
+                {timeRange === "custom" && (
+                  <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs">
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) => {
+                        setCustomStart(e.target.value);
+                        setPage(1);
+                      }}
+                      aria-label="Start date filter"
+                      className="bg-transparent border-none text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                    />
+                    <span className="text-slate-400 text-[11px]">to</span>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) => {
+                        setCustomEnd(e.target.value);
+                        setPage(1);
+                      }}
+                      aria-label="End date filter"
+                      className="bg-transparent border-none text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {/* Sub-Filters by Tab */}
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
+                  <Filter className="w-3.5 h-3.5 text-slate-400" />
+                  <select
+                    value={subFilter}
+                    onChange={(e) => {
+                      setSubFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    aria-label="Filter report records"
+                    className="bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+                  >
+                    <option value="ALL">All Records</option>
+                    {activeTab === "client-registrations" && (
+                      <>
+                        <option value="COMPANIES">Companies Only</option>
+                        <option value="INDIVIDUALS">Individuals Only</option>
+                      </>
+                    )}
+                    {activeTab === "client-activity" && (
+                      <>
+                        <option value="ONLINE">Online Today</option>
+                        <option value="ACTIVE">Active This Week</option>
+                        <option value="IDLE">Idle Accounts</option>
+                      </>
+                    )}
+                    {activeTab === "client-engagement" && (
+                      <>
+                        <option value="HIGH">High Engagement</option>
+                        <option value="MEDIUM">Medium Engagement</option>
+                        <option value="LOW">Low Engagement</option>
+                      </>
+                    )}
+                    {activeTab === "support-complaints" && (
+                      <>
+                        <option value="OPEN">Open Cases</option>
+                        <option value="RESOLVED">Resolved Cases</option>
+                        <option value="DISPUTE">Disputes Only</option>
+                        <option value="SUPPORT">General Support</option>
+                      </>
+                    )}
+                    {activeTab === "system-reliability" && (
+                      <>
+                        <option value="UPTIME">System Uptime & Runtime</option>
+                        <option value="DATABASE_HEALTH">Database Health & Ping</option>
+                        <option value="FAILED_LOGIN">Failed Logins</option>
+                        <option value="API_FAILURE">API Failures</option>
+                        <option value="SERVER_ERROR">Server Errors</option>
+                        <option value="SLOW_PAGE">Slow Pages</option>
+                      </>
+                    )}
+                    {activeTab === "client-growth" && (
+                      <>
+                        <option value="ALL">Weekly Cohorts View</option>
+                        <option value="DETAILS">Detailed Clients Influx</option>
+                      </>
+                    )}
+                    {activeTab === "posting-growth" && (
+                      <>
+                        <option value="OPEN">Open Postings</option>
+                        <option value="AWARDED">Awarded / Active</option>
+                        <option value="COMPLETED">Completed</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                {/* Reset All Filters button */}
+                {(search || timeRange !== "all" || subFilter !== "ALL" || customStart || customEnd) && (
+                  <button
+                    onClick={() => {
+                      setSearch("");
+                      setTimeRange("all");
+                      setCustomStart("");
+                      setCustomEnd("");
+                      setSubFilter("ALL");
+                      setPage(1);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200/90 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs cursor-pointer active:scale-95"
+                    title="Reset all active filters"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Clear Filters</span>
+                  </button>
+                )}
+
+                {/* Refresh Button */}
+                <button
+                  onClick={() => void fetchReport()}
+                  disabled={loading}
+                  title="Refresh current report"
+                  className="p-2 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
+                </button>
+
+                {/* Export CSV Button */}
+                <button
+                  onClick={() => {
+                    const singleId = Array.from(selectedRowIds)[0];
+                    if (selectedRowIds.size === 1 && singleId !== undefined) {
+                      void handleExportSingleRecord(singleId, "csv");
+                    } else {
+                      handleExportCsv(selectedRowIds.size > 0);
+                    }
+                  }}
+                  disabled={downloadingRecordId !== null}
+                  title="Export complete detailed CSV spreadsheet"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {downloadingRecordId !== null && downloadingFormat === "csv" ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {selectedRowIds.size === 1
+                      ? "Download CSV"
+                      : selectedRowIds.size > 1
+                        ? `CSV (${selectedRowIds.size})`
+                        : "Export CSV"}
+                  </span>
+                </button>
+
+                {/* Export PDF Button */}
+                <button
+                  onClick={() => {
+                    const singleId = Array.from(selectedRowIds)[0];
+                    if (selectedRowIds.size === 1 && singleId !== undefined) {
+                      void handleExportSingleRecord(singleId, "pdf");
+                    } else {
+                      void handleExportPdf(selectedRowIds.size > 0);
+                    }
+                  }}
+                  disabled={exportingPdf || downloadingRecordId !== null}
+                  title="Download detailed PDF report"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {exportingPdf || (downloadingRecordId !== null && downloadingFormat === "pdf") ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileText className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {exportingPdf || (downloadingRecordId !== null && downloadingFormat === "pdf")
+                      ? "Generating..."
+                      : selectedRowIds.size === 1
+                        ? "Download PDF"
+                        : selectedRowIds.size > 1
+                          ? `PDF (${selectedRowIds.size})`
+                          : "Export PDF"}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Results Counter & Active Filter Summary Strip */}
+            <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 dark:border-slate-800/80 pt-2 px-0.5">
+              <div>
+                Showing <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredRows.length}</span> matching records
+                {search && <span> for &ldquo;{search}&rdquo;</span>}
+                {timeRange === "custom" && customStart && customEnd && (
+                  <span> from {customStart} to {customEnd}</span>
+                )}
+              </div>
+              {filteredRows.length > 0 && selectedRowIds.size === 0 && (
+                <div className="text-slate-400">
+                  Select rows to export individual or batch reports
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ----------------------------------------------------------------- */}
+          {/* TOP KPI METRIC CARDS FOR CURRENT TAB (Boxes following searchbar) */}
           {/* ----------------------------------------------------------------- */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {activeTab === "client-registrations" && (
@@ -1294,260 +1542,6 @@ function AdminReportsContent() {
             />
           </>
         )}
-      </div>
-
-      {/* ----------------------------------------------------------------- */}
-      {/* FILTER & SEARCH CONTROL BAR                                       */}
-      {/* ----------------------------------------------------------------- */}
-      <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Universal Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search in tab data (name, email, phone, location, status, job, etc.)..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                title="Clear search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Date Range & Sub-Filters Toolbar */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Time Range Selector */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={timeRange}
-                onChange={(e) => {
-                  setTimeRange(e.target.value as TimeRange);
-                  setPage(1);
-                }}
-                aria-label="Filter report by time range"
-                className="bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="last7days">Last 7 Days</option>
-                <option value="last30days">Last 30 Days</option>
-                <option value="thisMonth">This Month</option>
-                <option value="lastMonth">Last Month</option>
-                <option value="custom">Custom Date Range</option>
-              </select>
-            </div>
-
-            {/* Custom Date Pickers */}
-            {timeRange === "custom" && (
-              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs">
-                <input
-                  type="date"
-                  value={customStart}
-                  onChange={(e) => {
-                    setCustomStart(e.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="Start date filter"
-                  className="bg-transparent border-none text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                />
-                <span className="text-slate-400 text-[11px]">to</span>
-                <input
-                  type="date"
-                  value={customEnd}
-                  onChange={(e) => {
-                    setCustomEnd(e.target.value);
-                    setPage(1);
-                  }}
-                  aria-label="End date filter"
-                  className="bg-transparent border-none text-xs text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                />
-              </div>
-            )}
-
-            {/* Sub-Filters by Tab */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={subFilter}
-                onChange={(e) => {
-                  setSubFilter(e.target.value);
-                  setPage(1);
-                }}
-                aria-label="Filter report records"
-                className="bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-              >
-                <option value="ALL">All Records</option>
-                {activeTab === "client-registrations" && (
-                  <>
-                    <option value="COMPANIES">Companies Only</option>
-                    <option value="INDIVIDUALS">Individuals Only</option>
-                  </>
-                )}
-                {activeTab === "client-activity" && (
-                  <>
-                    <option value="ONLINE">Online Today</option>
-                    <option value="ACTIVE">Active This Week</option>
-                    <option value="IDLE">Idle Accounts</option>
-                  </>
-                )}
-                {activeTab === "client-engagement" && (
-                  <>
-                    <option value="HIGH">High Engagement</option>
-                    <option value="MEDIUM">Medium Engagement</option>
-                    <option value="LOW">Low Engagement</option>
-                  </>
-                )}
-                {activeTab === "support-complaints" && (
-                  <>
-                    <option value="OPEN">Open Cases</option>
-                    <option value="RESOLVED">Resolved Cases</option>
-                    <option value="DISPUTE">Disputes Only</option>
-                    <option value="SUPPORT">General Support</option>
-                  </>
-                )}
-                {activeTab === "system-reliability" && (
-                  <>
-                    <option value="UPTIME">System Uptime & Runtime</option>
-                    <option value="DATABASE_HEALTH">Database Health & Ping</option>
-                    <option value="FAILED_LOGIN">Failed Logins</option>
-                    <option value="API_FAILURE">API Failures</option>
-                    <option value="SERVER_ERROR">Server Errors</option>
-                    <option value="SLOW_PAGE">Slow Pages</option>
-                  </>
-                )}
-                {activeTab === "client-growth" && (
-                  <>
-                    <option value="ALL">Weekly Cohorts View</option>
-                    <option value="DETAILS">Detailed Clients Influx</option>
-                  </>
-                )}
-                {activeTab === "posting-growth" && (
-                  <>
-                    <option value="OPEN">Open Postings</option>
-                    <option value="AWARDED">Awarded / Active</option>
-                    <option value="COMPLETED">Completed</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            {/* Reset All Filters button */}
-            {(search || timeRange !== "all" || subFilter !== "ALL" || customStart || customEnd) && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setTimeRange("all");
-                  setCustomStart("");
-                  setCustomEnd("");
-                  setSubFilter("ALL");
-                  setPage(1);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200/90 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-xs cursor-pointer active:scale-95"
-                title="Reset all active filters"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                <span>Clear Filters</span>
-              </button>
-            )}
-
-            {/* Refresh Button */}
-            <button
-              onClick={() => void fetchReport()}
-              disabled={loading}
-              title="Refresh current report"
-              className="p-2 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
-            </button>
-
-            {/* Export CSV Button */}
-            <button
-              onClick={() => {
-                const singleId = Array.from(selectedRowIds)[0];
-                if (selectedRowIds.size === 1 && singleId !== undefined) {
-                  void handleExportSingleRecord(singleId, "csv");
-                } else {
-                  handleExportCsv(selectedRowIds.size > 0);
-                }
-              }}
-              disabled={downloadingRecordId !== null}
-              title="Export complete detailed CSV spreadsheet"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-            >
-              {downloadingRecordId !== null && downloadingFormat === "csv" ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              <span>
-                {selectedRowIds.size === 1
-                  ? "Dossier CSV"
-                  : selectedRowIds.size > 1
-                    ? `CSV (${selectedRowIds.size})`
-                    : "Export CSV"}
-              </span>
-            </button>
-
-            {/* Export PDF Button */}
-            <button
-              onClick={() => {
-                const singleId = Array.from(selectedRowIds)[0];
-                if (selectedRowIds.size === 1 && singleId !== undefined) {
-                  void handleExportSingleRecord(singleId, "pdf");
-                } else {
-                  void handleExportPdf(selectedRowIds.size > 0);
-                }
-              }}
-              disabled={exportingPdf || downloadingRecordId !== null}
-              title="Export complete detailed PDF report dossier"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
-            >
-              {exportingPdf || (downloadingRecordId !== null && downloadingFormat === "pdf") ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <FileText className="w-3.5 h-3.5" />
-              )}
-              <span>
-                {exportingPdf || (downloadingRecordId !== null && downloadingFormat === "pdf")
-                  ? "Generating..."
-                  : selectedRowIds.size === 1
-                    ? "Download Dossier (PDF)"
-                    : selectedRowIds.size > 1
-                      ? `PDF (${selectedRowIds.size})`
-                      : "Export PDF"}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Results Counter & Active Filter Summary Strip */}
-        <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 dark:border-slate-800/80 pt-2 px-0.5">
-          <div>
-            Showing <span className="font-semibold text-slate-700 dark:text-slate-300">{filteredRows.length}</span> matching records
-            {search && <span> for &ldquo;{search}&rdquo;</span>}
-            {timeRange === "custom" && customStart && customEnd && (
-              <span> from {customStart} to {customEnd}</span>
-            )}
-          </div>
-          {filteredRows.length > 0 && selectedRowIds.size === 0 && (
-            <div className="text-slate-400">
-              Select rows to export individual or batch dossiers
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ----------------------------------------------------------------- */}
@@ -2253,7 +2247,7 @@ function AdminReportsContent() {
                           <button
                             onClick={() => void handleExportSingleRecord(rowId, "pdf")}
                             disabled={downloadingRecordId === rowId}
-                            title="Download complete detailed PDF dossier for this record"
+                            title="Download PDF report for this record"
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors disabled:opacity-50"
                           >
                             {downloadingRecordId === rowId && downloadingFormat === "pdf" ? (
@@ -2261,12 +2255,12 @@ function AdminReportsContent() {
                             ) : (
                               <FileText className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
                             )}
-                            <span>Full Dossier</span>
+                            <span>Download PDF</span>
                           </button>
                           <button
                             onClick={() => void handleExportSingleRecord(rowId, "csv")}
                             disabled={downloadingRecordId === rowId}
-                            title="Download complete detailed CSV dossier for this record"
+                            title="Download CSV report for this record"
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors disabled:opacity-50"
                           >
                             {downloadingRecordId === rowId && downloadingFormat === "csv" ? (

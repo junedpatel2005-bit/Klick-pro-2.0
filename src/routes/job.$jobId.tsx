@@ -1103,7 +1103,7 @@ export default function JobDetails({
                   <FileDown className="h-3.5 w-3.5 text-primary" />
                   {downloadingDossier
                     ? `Preparing ${downloadingDossier.toUpperCase()}…`
-                    : "Download Job Dossier"}
+                    : "Download PDF"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -1113,7 +1113,7 @@ export default function JobDetails({
                   className="gap-2 cursor-pointer"
                 >
                   <Download className="h-4 w-4 text-primary" />
-                  <span>Download as PDF Dossier</span>
+                  <span>Download as PDF</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={downloadingDossier !== null}
