@@ -1255,7 +1255,7 @@ function ProfessionalJobsContent() {
                     Verified only
                   </p>
                   <label className="flex items-center justify-between text-sm">
-                    <span>Verified pros</span>
+                    <span>Verified professionals</span>
                     <input
                       type="checkbox"
                       checked={verifiedOnly}
@@ -1272,7 +1272,7 @@ function ProfessionalJobsContent() {
                   <Input
                     value={city}
                     onChange={(event) => setCity(event.target.value)}
-                    placeholder="e.g. Toronto, Vancouver"
+                    placeholder="e.g. Mumbai, Delhi, Bengaluru, Surat"
                   />
                 </div>
 
@@ -1561,7 +1561,7 @@ function ProfessionalJobsContent() {
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {job.proposalCount} pros saved
+                              {job.proposalCount} {job.proposalCount === 1 ? "professional" : "professionals"} saved
                             </span>
                           </div>
                         </article>

@@ -222,7 +222,7 @@ export type CatalogSectionItem = {
   categories: CatalogCategoryItem[];
 };
 
-export function ServicesCatalog({ data }: { data: CompleteCategoryHierarchy }) {
+export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } = {}) {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Map subcategories by categoryId for fast lookup

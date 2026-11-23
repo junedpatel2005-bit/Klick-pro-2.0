@@ -6,18 +6,26 @@ import dynamic from "next/dynamic";
 import { moveItem } from "@/lib/move-item";
 import type { DragHandle } from "@/components/cms/CmsSortable";
 import {
+  ArrowRight,
   Award,
   Briefcase,
+  Building2,
   Check,
   CheckCircle2,
   Clock,
+  Factory,
+  GraduationCap,
+  HeartPulse,
+  HelpCircle,
   Home,
   LocateFixed,
   Mail,
   MapPin,
   MessageCircle,
+  Phone,
   Search,
   ShieldCheck,
+  Sparkles,
   Star,
   TrendingUp,
   Users,
@@ -57,6 +65,7 @@ const iconMap = {
   map: MapPin,
   search: Search,
   arrow: Award,
+  award: Award,
   clipboard: CheckCircle2,
   message: MessageCircle,
   wallet: Wallet,
@@ -65,6 +74,14 @@ const iconMap = {
   check: Check,
   star: Star,
   mail: Mail,
+  phone: Phone,
+  help: HelpCircle,
+  building: Building2,
+  factory: Factory,
+  home: Home,
+  heart: HeartPulse,
+  graduation: GraduationCap,
+  sparkles: Sparkles,
 };
 
 // CMS-only drag-and-drop, loaded lazily so the six public marketing pages that
@@ -195,7 +212,7 @@ export default function MarketingVisualPage({
         </section>
         {page === "services" && <ServicesJobsSection cmsMode={cmsMode} />}
         {page === "contact" ? (
-          <ContactForm />
+          <ContactForm cmsMode={cmsMode} />
         ) : page === "pricing" ? (
           <p className="mx-auto max-w-7xl px-4 pb-20 text-center text-sm text-muted-foreground">
             <span
@@ -221,7 +238,11 @@ export default function MarketingVisualPage({
             .
           </p>
         ) : (
-          <CTA cmsMode={cmsMode} />
+          <CTA
+            cmsMode={cmsMode}
+            cta={content.cta}
+            onCtaChange={(cta) => onChange?.({ ...content, cta })}
+          />
         )}
       </main>
     </div>
@@ -520,17 +541,38 @@ function ServicesJobsSection({ cmsMode }: { cmsMode: boolean }) {
                   <div className="space-y-2">
                     <button
                       type="button"
-                      onClick={() => setLocation("current location")}
+                      onClick={() => {
+                        if (typeof navigator !== "undefined" && navigator.geolocation) {
+                          navigator.geolocation.getCurrentPosition(
+                            async (pos) => {
+                              try {
+                                const res = await fetch(`/api/geocode?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  if (data.city || data.district || data.state) {
+                                    setLocation(data.city || data.district || data.state);
+                                    return;
+                                  }
+                                }
+                              } catch {}
+                              setLocation("Near Me");
+                            },
+                            () => {
+                              setLocation("");
+                            }
+                          );
+                        }
+                      }}
                       className="flex h-10 w-full items-center gap-2 rounded-lg border border-border px-3 text-left text-xs font-semibold hover:bg-muted"
                     >
                       <LocateFixed className="h-4 w-4" /> Use my current location
                     </button>
                     <button
                       type="button"
-                      onClick={() => setLocation("service location")}
+                      onClick={() => setLocation("")}
                       className="flex h-10 w-full items-center gap-2 rounded-lg border border-border px-3 text-left text-xs font-semibold hover:bg-muted"
                     >
-                      <Home className="h-4 w-4" /> Use my service location
+                      <Home className="h-4 w-4" /> All Locations / Remote
                     </button>
                   </div>
                 </div>
@@ -555,7 +597,7 @@ function ServicesJobsSection({ cmsMode }: { cmsMode: boolean }) {
                   <input
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
-                    placeholder="e.g. Toronto, Vancouver"
+                    placeholder="e.g. Mumbai, Delhi, Bengaluru, Surat"
                     className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
                   />
                 </div>
@@ -691,18 +733,51 @@ function MarketingItemCard({
       style={drag?.style}
       {...(drag?.handleProps ?? {})}
       onClick={cmsMode ? onSelect : undefined}
-      className={`relative rounded-2xl border border-border bg-card p-7 shadow-soft ${cmsMode ? "cursor-grab active:cursor-grabbing" : ""} ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""}`}
+      className={`relative rounded-2xl border border-border bg-card p-7 shadow-soft flex flex-col justify-between ${cmsMode ? "cursor-grab active:cursor-grabbing hover:border-blue-400" : ""} ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""} ${drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""}`}
     >
-      <Icon className="h-7 w-7 text-primary" />
-      <h2 className="mt-5 font-display text-xl font-semibold" {...editable("title")}>
-        {item.title}
-      </h2>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground" {...editable("description")}>
-        {item.description}
-      </p>
+      <div>
+        <Icon className="h-7 w-7 text-primary" />
+        <h2 className="mt-5 font-display text-xl font-semibold text-foreground" {...editable("title")}>
+          {item.title}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground" {...editable("description")}>
+          {item.description}
+        </p>
+      </div>
+
+      {/* Editable Button for every box */}
+      <div className="mt-5 flex items-center justify-between border-t border-border/80 pt-4">
+        {cmsMode ? (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition cursor-text ring-1 ring-blue-200"
+            title="Click text to edit button name"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onInput={(e) => onChange({ buttonText: e.currentTarget.textContent ?? "" })}
+              className="outline-none"
+            >
+              {item.buttonText || "Learn more"}
+            </span>
+            <ArrowRight className="h-3 w-3 pointer-events-none" />
+          </div>
+        ) : (
+          <Link
+            href={item.buttonLink || "/services"}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
+          >
+            <span>{item.buttonText || "Learn more"}</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
+
       {cmsMode && selected && (
         <div
-          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs shadow-lg"
+          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs shadow-lg z-20"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
@@ -726,12 +801,12 @@ function MarketingItemCard({
               Move &rarr;
             </button>
           )}
-          <label>
+          <label className="text-slate-500 font-medium">
             Icon{" "}
             <select
               value={item.icon}
               onChange={(e) => onChange({ icon: e.target.value })}
-              className="bg-background font-medium"
+              className="bg-background text-foreground font-medium rounded border border-border px-1 py-0.5"
             >
               <option value="shield">Shield</option>
               <option value="briefcase">Briefcase</option>
@@ -745,12 +820,21 @@ function MarketingItemCard({
               <option value="trend">Trend</option>
               <option value="message">Message</option>
               <option value="mail">Mail</option>
+              <option value="phone">Phone</option>
+              <option value="help">Help</option>
+              <option value="building">Building</option>
+              <option value="factory">Factory</option>
+              <option value="home">Home</option>
+              <option value="heart">Heart</option>
+              <option value="graduation">Education</option>
+              <option value="sparkles">Sparkles</option>
+              <option value="award">Award</option>
             </select>
           </label>
-          <button type="button" onClick={onDelete} className="text-destructive font-bold">
+          <button type="button" onClick={onDelete} className="text-destructive font-bold hover:underline">
             Delete
           </button>
-          <button type="button" onClick={onDuplicate} className="text-primary font-bold">
+          <button type="button" onClick={onDuplicate} className="text-primary font-bold hover:underline">
             Duplicate
           </button>
         </div>
@@ -758,7 +842,24 @@ function MarketingItemCard({
     </article>
   );
 }
-function CTA({ cmsMode = false }: { cmsMode?: boolean }) {
+
+function CTA({
+  cmsMode = false,
+  cta,
+  onCtaChange,
+}: {
+  cmsMode?: boolean;
+  cta?: MarketingPageContent["cta"];
+  onCtaChange?: (cta: NonNullable<MarketingPageContent["cta"]>) => void;
+}) {
+  const currentCta = {
+    title: cta?.title || "Get started today",
+    primaryBtn: cta?.primaryBtn || "Post a Job",
+    primaryLink: cta?.primaryLink || "/post-job",
+    secondaryBtn: cta?.secondaryBtn || "Become a Professional",
+    secondaryLink: cta?.secondaryLink || "/signup",
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
       <div className="rounded-3xl bg-primary p-10 text-white md:p-14">
@@ -766,34 +867,60 @@ function CTA({ cmsMode = false }: { cmsMode?: boolean }) {
           <span
             contentEditable={cmsMode}
             suppressContentEditableWarning={cmsMode}
+            onInput={(e) =>
+              onCtaChange?.({
+                ...currentCta,
+                title: e.currentTarget.textContent ?? "",
+              })
+            }
             className={cmsMode ? "outline-none cursor-text hover:ring-1 hover:ring-white/40 rounded px-1" : ""}
           >
-            Get started today
+            {currentCta.title}
           </span>
         </h3>
         <div className="mt-5 flex flex-wrap gap-3">
           {cmsMode ? (
             <div
               className="inline-flex items-center rounded-xl bg-cta px-6 py-3 text-sm font-semibold text-cta-foreground shadow-sm cursor-text hover:ring-2 hover:ring-white/40"
-              title="Click text to edit button"
+              title="Click text to edit button name"
             >
-              <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none focus:underline">
-                Post a Job
+              <span
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onInput={(e) =>
+                  onCtaChange?.({
+                    ...currentCta,
+                    primaryBtn: e.currentTarget.textContent ?? "",
+                  })
+                }
+                className="outline-none focus:underline"
+              >
+                {currentCta.primaryBtn}
               </span>
             </div>
           ) : (
             <Button asChild size="lg" className="bg-cta text-cta-foreground">
-              <Link href="/post-job">Post a Job</Link>
+              <Link href={currentCta.primaryLink}>{currentCta.primaryBtn}</Link>
             </Button>
           )}
 
           {cmsMode ? (
             <div
               className="inline-flex items-center rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white shadow-sm cursor-text hover:ring-2 hover:ring-white/40"
-              title="Click text to edit button"
+              title="Click text to edit button name"
             >
-              <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none focus:underline">
-                Become a Professional
+              <span
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onInput={(e) =>
+                  onCtaChange?.({
+                    ...currentCta,
+                    secondaryBtn: e.currentTarget.textContent ?? "",
+                  })
+                }
+                className="outline-none focus:underline"
+              >
+                {currentCta.secondaryBtn}
               </span>
             </div>
           ) : (
@@ -803,7 +930,7 @@ function CTA({ cmsMode = false }: { cmsMode?: boolean }) {
               variant="outline"
               className="border-white/30 bg-white/10 text-white"
             >
-              <Link href="/signup">Become a Professional</Link>
+              <Link href={currentCta.secondaryLink}>{currentCta.secondaryBtn}</Link>
             </Button>
           )}
         </div>
@@ -811,12 +938,17 @@ function CTA({ cmsMode = false }: { cmsMode?: boolean }) {
     </section>
   );
 }
-function ContactForm() {
+
+function ContactForm({ cmsMode = false }: { cmsMode?: boolean }) {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState("");
   const [sending, setSending] = useState(false);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (cmsMode) {
+      setSent("In CMS Editor mode, form submission is simulated.");
+      return;
+    }
     setSending(true);
     const response = await fetch("/api/v1/contact", {
       method: "POST",
@@ -891,7 +1023,7 @@ function ContactForm() {
         </label>
         <div className="mt-5 flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">{sent}</p>
-          <Button disabled={sending} className="bg-cta text-cta-foreground">
+          <Button type="submit" disabled={sending} className="bg-cta text-cta-foreground">
             {sending ? "Sending…" : "Send message"}
           </Button>
         </div>

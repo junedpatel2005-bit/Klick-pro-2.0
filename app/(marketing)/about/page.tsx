@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import About from "@/routes/about";
-import { readCmsContent } from "@/lib/cms-file";
+import MarketingVisualPage from "@/components/MarketingVisualPage";
+import { readMarketingContent } from "@/lib/marketing-cms";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -9,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const content = await readCmsContent();
-  return <About cmsContent={content} />;
+  const content = await readMarketingContent("about");
+  return <MarketingVisualPage page="about" content={content} />;
 }

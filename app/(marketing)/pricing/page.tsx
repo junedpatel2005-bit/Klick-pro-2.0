@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Pricing from "@/routes/pricing";
+import MarketingVisualPage from "@/components/MarketingVisualPage";
+import { readMarketingContent } from "@/lib/marketing-cms";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -7,4 +8,7 @@ export const metadata: Metadata = {
     "Explore transparent pricing on Klick-Pro. 100% free for clients to post jobs, and 100% full payout on completed milestones for verified professionals.",
 };
 
-export default Pricing;
+export default async function PricingPage() {
+  const content = await readMarketingContent("pricing");
+  return <MarketingVisualPage page="pricing" content={content} />;
+}

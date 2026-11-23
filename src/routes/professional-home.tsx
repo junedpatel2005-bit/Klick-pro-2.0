@@ -186,12 +186,34 @@ export default function ProfessionalHome({
   const loadJobs = useCallback(async () => {
     try {
       const response = await fetch("/api/v1/portal/professional-jobs", { cache: "no-store" });
-      if (!response.ok) throw new Error("Professional jobs request failed");
-      const data = (await response.json()) as { openJobs: HomeJob[] };
-      setJobs(Array.isArray(data.openJobs) ? data.openJobs : []);
-      setFailed(false);
+      if (response.ok) {
+        const data = (await response.json()) as { openJobs: HomeJob[] };
+        setJobs(Array.isArray(data.openJobs) ? data.openJobs : []);
+        setFailed(false);
+      } else {
+        // Fallback for public / unauthenticated marketing visitors
+        const pubResponse = await fetch("/api/v1/marketplace/jobs", { cache: "no-store" });
+        if (pubResponse.ok) {
+          const pubJobs = (await pubResponse.json()) as HomeJob[];
+          setJobs(Array.isArray(pubJobs) ? pubJobs : []);
+          setFailed(false);
+        } else {
+          setFailed(true);
+        }
+      }
     } catch {
-      setFailed(true);
+      try {
+        const pubResponse = await fetch("/api/v1/marketplace/jobs", { cache: "no-store" });
+        if (pubResponse.ok) {
+          const pubJobs = (await pubResponse.json()) as HomeJob[];
+          setJobs(Array.isArray(pubJobs) ? pubJobs : []);
+          setFailed(false);
+        } else {
+          setFailed(true);
+        }
+      } catch {
+        setFailed(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -291,13 +313,13 @@ export default function ProfessionalHome({
                   <div className="flex items-center">
                     <Briefcase className="mr-2 h-4 w-4" />
                     <span contentEditable={cmsMode} suppressContentEditableWarning={cmsMode}>
-                      My Dashboard
+                      Professional Dashboard
                     </span>
                   </div>
                 ) : (
                   <Link href="/professional/dashboard">
                     <Briefcase className="mr-2 h-4 w-4" />
-                    <span>My Dashboard</span>
+                    <span>Professional Dashboard</span>
                   </Link>
                 )}
               </Button>

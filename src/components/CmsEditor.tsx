@@ -34,7 +34,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Landing from "@/routes/index";
 import MarketingVisualPage from "@/components/MarketingVisualPage";
-import type { HomeContent, HomeFeature } from "@/lib/home-cms-file";
+import type { HomeContent, HomeFeature } from "@/lib/home-cms-shared";
 import type {
   MarketingPageContent,
   MarketingItem,
@@ -188,14 +188,18 @@ export default function CmsEditor() {
         const data = await res.json();
 
         if (selectedSlug === "home") {
-          const hero = data.hero || fallbackHomeContent.hero;
-          const features = Array.isArray(data.boxes) && data.boxes.length > 0
-            ? data.boxes
-            : Array.isArray(data.features) && data.features.length > 0
-              ? data.features
-              : fallbackHomeContent.features;
-          setHomeContent({ hero, features });
-          setMetaDescription(hero.description || "");
+          if (data.homeContent) {
+            setHomeContent(data.homeContent);
+          } else {
+            const hero = data.hero || fallbackHomeContent.hero;
+            const features = Array.isArray(data.boxes) && data.boxes.length > 0
+              ? data.boxes
+              : Array.isArray(data.features) && data.features.length > 0
+                ? data.features
+                : fallbackHomeContent.features;
+            setHomeContent({ hero, features });
+          }
+          setMetaDescription(data.hero?.description || "");
         } else {
           const hero = {
             label: data.hero?.eyebrow || data.hero?.label || "VERIFIED PLATFORM",
@@ -203,16 +207,29 @@ export default function CmsEditor() {
             description: data.hero?.description || "Explore verified services with escrow safeguards.",
           };
           const items: MarketingItem[] = Array.isArray(data.boxes) && data.boxes.length > 0
-            ? data.boxes.map((b: { id: string; title: string; description: string; icon?: string }) => ({
+            ? data.boxes.map((b: { id: string; title: string; description: string; icon?: string; buttonText?: string; buttonLink?: string }) => ({
                 id: b.id,
                 title: b.title,
                 description: b.description,
                 icon: b.icon || "shield",
+                buttonText: b.buttonText || "Learn more",
+                buttonLink: b.buttonLink || "/services",
               }))
             : Array.isArray(data.items) && data.items.length > 0
-              ? data.items
+              ? data.items.map((i: MarketingItem) => ({
+                  ...i,
+                  buttonText: i.buttonText || "Learn more",
+                  buttonLink: i.buttonLink || "/services",
+                }))
               : fallbackMarketingContent.items;
-          setMarketingContent({ hero, items });
+          const cta = data.cta || {
+            title: "Get started today",
+            primaryBtn: "Post a Job",
+            primaryLink: "/post-job",
+            secondaryBtn: "Become a Professional",
+            secondaryLink: "/signup",
+          };
+          setMarketingContent({ hero, items, cta });
           setMetaDescription(hero.description || "");
         }
 
@@ -239,6 +256,7 @@ export default function CmsEditor() {
           title: "Home",
           hero: homeContent.hero,
           boxes: homeContent.features,
+          homeContent: homeContent,
           seo: {
             metaTitle,
             metaDescription,
@@ -256,6 +274,7 @@ export default function CmsEditor() {
             description: marketingContent.hero.description,
           },
           boxes: marketingContent.items,
+          cta: marketingContent.cta,
           seo: {
             metaTitle,
             metaDescription,
@@ -286,6 +305,8 @@ export default function CmsEditor() {
     const newTitle = preset?.title || "New Service Guarantee";
     const newDesc = preset?.description || "Click directly here to change this text.";
     const newIcon = preset?.icon || "shield";
+    const newBtn = preset?.buttonText || "Learn more";
+    const newLink = preset?.buttonLink || "/services";
 
     if (selectedSlug === "home") {
       const newFeature: HomeFeature = {
@@ -293,6 +314,8 @@ export default function CmsEditor() {
         title: newTitle,
         description: newDesc,
         icon: newIcon,
+        buttonText: newBtn,
+        buttonLink: newLink,
       };
       setHomeContent({
         ...homeContent,
@@ -304,6 +327,8 @@ export default function CmsEditor() {
         title: newTitle,
         description: newDesc,
         icon: newIcon,
+        buttonText: newBtn,
+        buttonLink: newLink,
       };
       setMarketingContent({
         ...marketingContent,
@@ -375,7 +400,7 @@ export default function CmsEditor() {
   };
 
   const activePage = pagesList.find((p) => p.slug === selectedSlug);
-  const liveStandaloneHref = `/p/${selectedSlug}`;
+  const liveWebsiteUrl = activePage?.href || (activePage?.isCustom ? `/p/${selectedSlug}` : `/${selectedSlug}`);
 
   return (
     <div className="space-y-6">
@@ -451,13 +476,13 @@ export default function CmsEditor() {
             <span>SEO &amp; Meta</span>
           </button>
 
-          {/* View Live on Website (Opens dedicated CMS standalone route without header/footer) */}
+          {/* View Live on Website */}
           <a
-            href={liveStandaloneHref}
+            href={liveWebsiteUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
-            title="View this CMS page live on the website (clean view without header and footer)"
+            title="View this page live on the website in a new tab"
           >
             <Eye className="h-4 w-4 text-emerald-600" />
             <span>Live Website</span>
@@ -557,6 +582,10 @@ export default function CmsEditor() {
               const target = e.target as HTMLElement;
               // If user is editing text (contentEditable), allow natural typing, clicks, and caret placement
               if (target.isContentEditable || target.closest("[contenteditable='true']")) {
+                const linkOrButton = target.closest("a, button, input[type='submit'], input[type='button']");
+                if (linkOrButton && linkOrButton.tagName.toLowerCase() === "a") {
+                  e.preventDefault();
+                }
                 return;
               }
               // Prevent all functional buttons, links, or form submissions in CMS mode so buttons don't navigate

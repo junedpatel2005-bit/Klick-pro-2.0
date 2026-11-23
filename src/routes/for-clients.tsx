@@ -86,7 +86,7 @@ export default function ForClients({
               <Sparkles className="h-3.5 w-3.5" /> For Clients
             </p>
             <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
-              Hire Trusted Pros &mdash; Without the Back-and-Forth
+              Hire Trusted Professionals &mdash; Without the Back-and-Forth
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-500 sm:text-lg">
               Post once. Get qualified, vetted proposals fast. Pay online or offline, and only when the work is done. For your home, your business or your plant.

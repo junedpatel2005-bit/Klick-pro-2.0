@@ -190,10 +190,10 @@ export default function ClientProfilePage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild variant="default">
-              <Link href="/jobs">Browse Jobs</Link>
+              <Link href="/services">Browse Services</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/professionals">Find Professionals</Link>
+              <Link href="/discover">Find Professionals</Link>
             </Button>
           </div>
         </div>
@@ -442,8 +442,8 @@ export default function ClientProfilePage() {
                 </p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link href="/jobs" className="gap-1.5">
-                  Browse All Marketplace Jobs
+                <Link href="/services" className="gap-1.5">
+                  Browse All Marketplace Services
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
@@ -458,7 +458,7 @@ export default function ClientProfilePage() {
                   explore other opportunities.
                 </p>
                 <Button asChild size="sm" className="mt-4">
-                  <Link href="/jobs">Explore Marketplace Jobs</Link>
+                  <Link href="/services">Explore Marketplace Services</Link>
                 </Button>
               </div>
             ) : (
@@ -659,7 +659,7 @@ export default function ClientProfilePage() {
                 Klick-Pro.
               </span>
             </div>
-            <Link href="/privacy" className="text-primary hover:underline">
+            <Link href="/privacy-policy" className="text-primary hover:underline">
               Privacy & Trust Policy
             </Link>
           </div>

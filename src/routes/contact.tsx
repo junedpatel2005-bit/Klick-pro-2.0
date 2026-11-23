@@ -20,7 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 
-export default function Contact() {
+export default function Contact({ cmsMode = false }: { cmsMode?: boolean } = {}) {
   const [topic, setTopic] = useState("General Question");
   const [role, setRole] = useState("Client looking to hire");
   const [name, setName] = useState("");
@@ -34,6 +34,7 @@ export default function Contact() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    if (cmsMode) return;
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {

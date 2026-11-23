@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   // There is no simulated/sandbox path. A previous build accepted any
   // `pay_simulated_*` id with the literal signature "sandbox_test_verified"
   // whenever the key was a test key, which let anyone mint wallet balance in
-  // every test-key environment including Vercel previews. Nothing in the app
+  // every test-key environment including preview/staging environments. Nothing in the app
   // used it, so payment must always be proven by a real Razorpay signature.
   if (
     !verifyRazorpayPaymentSignature(

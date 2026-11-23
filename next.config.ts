@@ -59,6 +59,21 @@ const nextConfig: NextConfig = {
         destination: "/admin",
         permanent: false,
       },
+      {
+        source: "/privacy",
+        destination: "/privacy-policy",
+        permanent: true,
+      },
+      {
+        source: "/jobs",
+        destination: "/services",
+        permanent: false,
+      },
+      {
+        source: "/professionals",
+        destination: "/discover",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {

@@ -19,6 +19,8 @@ export type CmsBox = {
   icon: string;
   badge?: string;
   link?: string;
+  buttonText?: string;
+  buttonLink?: string;
 };
 
 export type CmsSection = {
@@ -49,6 +51,14 @@ export type CmsPageData = {
   };
   boxes: CmsBox[];
   sections?: CmsSection[];
+  homeContent?: HomeContent;
+  cta?: {
+    title?: string;
+    primaryBtn?: string;
+    primaryLink?: string;
+    secondaryBtn?: string;
+    secondaryLink?: string;
+  };
   seo?: {
     metaTitle?: string;
     metaDescription?: string;
@@ -148,16 +158,7 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
 
   // 1. HOME PAGE
   if (slug === "home") {
-    const home = await readHomeContent().catch((): HomeContent => ({
-      hero: {
-        eyebrow: "VERIFIED MARKETPLACE PROFESSIONALS",
-        title: "Find trusted professionals for work that matters.",
-        description: "Post work, compare qualified professionals, and manage every project in one place.",
-        primaryCta: "Browse professionals",
-        secondaryCta: "Post a job",
-      },
-      features: [],
-    }));
+    const home = await readHomeContent();
     return {
       slug: "home",
       title: "Home",
@@ -171,9 +172,10 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
         secondaryCta: home.hero.secondaryCta,
         secondaryCtaLink: "/post-job",
       },
+      homeContent: home,
       boxesSection: {
-        title: "Platform Capabilities & Features",
-        subtitle: "Everything you need to find, hire, and manage verified professionals.",
+        title: home.whyChooseUsSection?.title || "Platform Capabilities & Features",
+        subtitle: home.whyChooseUsSection?.description || "Everything you need to find, hire, and manage verified professionals.",
       },
       boxes: (home.features || []).map((f: HomeFeature) => ({
         id: f.id,
@@ -254,7 +256,10 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
         title: item.title,
         description: item.description,
         icon: item.icon,
+        buttonText: item.buttonText,
+        buttonLink: item.buttonLink,
       })),
+      cta: m.cta,
       seo: {
         metaTitle: `${def?.title || slug} | Klick-Pro Verified Marketplace`,
         metaDescription: m.hero.description,
@@ -376,20 +381,31 @@ export async function saveCmsPage(data: CmsPageData): Promise<boolean> {
 
   // 1. HOME PAGE
   if (slug === "home") {
+    const existing = await readHomeContent();
+    const homePayload = data.homeContent;
     await writeHomeContent({
       hero: {
-        eyebrow: data.hero.eyebrow,
-        title: data.hero.title,
-        description: data.hero.description,
-        primaryCta: data.hero.primaryCta || "Browse professionals",
-        secondaryCta: data.hero.secondaryCta || "Post a job",
+        eyebrow: homePayload?.hero?.eyebrow || data.hero.eyebrow || existing.hero.eyebrow,
+        title: homePayload?.hero?.title || data.hero.title || existing.hero.title,
+        description: homePayload?.hero?.description || data.hero.description || existing.hero.description,
+        primaryCta: homePayload?.hero?.primaryCta || data.hero.primaryCta || existing.hero.primaryCta,
+        secondaryCta: homePayload?.hero?.secondaryCta || data.hero.secondaryCta || existing.hero.secondaryCta,
       },
-      features: data.boxes.map((b) => ({
-        id: b.id,
-        title: b.title,
-        description: b.description,
-        icon: b.icon,
-      })),
+      heroShowcase: homePayload?.heroShowcase ?? existing.heroShowcase,
+      categoriesSection: homePayload?.categoriesSection ?? existing.categoriesSection,
+      whyChooseUsSection: homePayload?.whyChooseUsSection ?? existing.whyChooseUsSection,
+      features: (homePayload?.features && homePayload.features.length > 0)
+        ? homePayload.features
+        : (data.boxes && data.boxes.length > 0)
+          ? data.boxes.map((b) => ({
+              id: b.id,
+              title: b.title,
+              description: b.description,
+              icon: b.icon,
+            }))
+          : existing.features,
+      featuredProsSection: homePayload?.featuredProsSection ?? existing.featuredProsSection,
+      ctaDualBanner: homePayload?.ctaDualBanner ?? existing.ctaDualBanner,
     });
     return true;
   }
@@ -434,7 +450,10 @@ export async function saveCmsPage(data: CmsPageData): Promise<boolean> {
         title: b.title,
         description: b.description,
         icon: b.icon,
+        buttonText: b.buttonText,
+        buttonLink: b.buttonLink,
       })),
+      cta: data.cta,
     });
     return true;
   }

@@ -386,15 +386,16 @@ export function AdminSmsTemplateCatalog() {
                       )}
                     </div>
 
-                    <Link href={`/admin/sms-templates/${tpl.key}`} className="w-full block">
-                      <Button
-                        variant="outline"
-                        className="w-full justify-between text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:border-indigo-300 group/btn"
-                      >
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full justify-between text-xs font-semibold text-slate-700 hover:text-indigo-600 hover:border-indigo-300 group/btn"
+                    >
+                      <Link href={`/admin/sms-templates/${tpl.key}`}>
                         <span>Edit Template &amp; Test</span>
                         <ChevronRight className="h-4 w-4 text-slate-400 group-hover/btn:translate-x-0.5 transition-transform" />
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               );

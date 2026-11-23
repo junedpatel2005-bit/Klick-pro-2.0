@@ -2028,7 +2028,7 @@ function AdminReportsContent() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-medium text-slate-900 dark:text-white capitalize">
-                              {row.proDetails?.name || "Assigned Pro"}
+                              {row.proDetails?.name || "Assigned Professional"}
                             </div>
                             <div className="text-[11px] text-slate-500 flex items-center gap-1">
                               <span>{row.proDetails?.phone || "—"}</span> · <span>{row.proDetails?.state || "India"}</span>

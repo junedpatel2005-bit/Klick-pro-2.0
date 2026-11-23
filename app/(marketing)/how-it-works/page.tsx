@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import HowItWorks from "@/routes/how-it-works";
+import MarketingVisualPage from "@/components/MarketingVisualPage";
 import { readMarketingContent } from "@/lib/marketing-cms";
 
 export const metadata: Metadata = {
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 
 export default async function HowItWorksPage() {
   const content = await readMarketingContent("how-it-works");
-  return <HowItWorks cmsContent={content} />;
+  return <MarketingVisualPage page="how-it-works" content={content} />;
 }

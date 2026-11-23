@@ -6,18 +6,28 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  Award,
   Briefcase,
   Building2,
+  Check,
+  CheckCircle2,
+  Clock,
   Factory,
   GraduationCap,
   HeartPulse,
+  HelpCircle,
   Home,
+  Mail,
   MapPin,
+  MessageCircle,
+  Phone,
   Search,
   ShieldCheck,
   Sparkles,
   Star,
+  TrendingUp,
   Users,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProCard } from "@/components/ProCard";
@@ -25,7 +35,7 @@ import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { moveItem } from "@/lib/move-item";
 import type { DragHandle } from "@/components/cms/CmsSortable";
-import type { HomeContent } from "@/lib/home-cms-file";
+import { defaultHomeContent, type HomeContent } from "@/lib/home-cms-shared";
 import type { MarketplaceProfessional } from "@/lib/types/marketplace";
 
 // Drag-and-drop is CMS-only, so the libraries load lazily and never ship to
@@ -142,77 +152,104 @@ export default function Landing({
   onFeatureDelete?: (id: string) => void;
   onFeatureDuplicate?: (id: string) => void;
 }) {
-  const fallback: HomeContent = {
-    hero: {
-      eyebrow: "VERIFIED MARKETPLACE PROFESSIONALS",
-      title: "Find trusted professionals for work that matters.",
-      description:
-        "Post work, compare qualified professionals, and manage every project in one place.",
-      primaryCta: "Browse professionals",
-      secondaryCta: "Post a job",
-    },
-    features: [
-      {
-        id: "projects",
-        title: "Project Management",
-        description:
-          "Track progress, communicate in real-time, and manage all projects in one centralized dashboard.",
-        icon: "briefcase",
-      },
-      {
-        id: "verified",
-        title: "Verified Professionals",
-        description:
-          "All professionals are verified and vetted to ensure quality work and your peace of mind.",
-        icon: "shield",
-      },
-      {
-        id: "matching",
-        title: "Expert Matching",
-        description:
-          "Get matched with professionals that best fit your project needs and budget requirements.",
-        icon: "users",
-      },
-      {
-        id: "local",
-        title: "Local & Remote",
-        description:
-          "Work with professionals near you or globally - choose what works best for your project.",
-        icon: "map",
-      },
-      {
-        id: "discovery",
-        title: "Easy Discovery",
-        description:
-          "Browse portfolios, reviews, and rates to find the right fit. Make data-driven decisions.",
-        icon: "search",
-      },
-      {
-        id: "growth",
-        title: "Seamless Growth",
-        description:
-          "Build long-term relationships with reliable partners and scale your business together.",
-        icon: "arrow",
-      },
-    ],
-  };
-
   const content: HomeContent = {
     hero: {
-      eyebrow: homeContent?.hero?.eyebrow || fallback.hero.eyebrow,
-      title: homeContent?.hero?.title || fallback.hero.title,
-      description: homeContent?.hero?.description || fallback.hero.description,
-      primaryCta: homeContent?.hero?.primaryCta || fallback.hero.primaryCta,
-      secondaryCta: homeContent?.hero?.secondaryCta || fallback.hero.secondaryCta,
+      eyebrow: homeContent?.hero?.eyebrow ?? defaultHomeContent.hero.eyebrow,
+      title: homeContent?.hero?.title ?? defaultHomeContent.hero.title,
+      description: homeContent?.hero?.description ?? defaultHomeContent.hero.description,
+      primaryCta: homeContent?.hero?.primaryCta ?? defaultHomeContent.hero.primaryCta,
+      secondaryCta: homeContent?.hero?.secondaryCta ?? defaultHomeContent.hero.secondaryCta,
+    },
+    heroShowcase: {
+      badge: homeContent?.heroShowcase?.badge ?? defaultHomeContent.heroShowcase!.badge,
+      title: homeContent?.heroShowcase?.title ?? defaultHomeContent.heroShowcase!.title,
+      description: homeContent?.heroShowcase?.description ?? defaultHomeContent.heroShowcase!.description,
+      metrics: homeContent?.heroShowcase?.metrics ?? defaultHomeContent.heroShowcase!.metrics,
+      ctaText: homeContent?.heroShowcase?.ctaText ?? defaultHomeContent.heroShowcase!.ctaText,
+    },
+    categoriesSection: {
+      eyebrow: homeContent?.categoriesSection?.eyebrow ?? defaultHomeContent.categoriesSection!.eyebrow,
+      title: homeContent?.categoriesSection?.title ?? defaultHomeContent.categoriesSection!.title,
+      description: homeContent?.categoriesSection?.description ?? defaultHomeContent.categoriesSection!.description,
+      items: homeContent?.categoriesSection?.items ?? defaultHomeContent.categoriesSection!.items,
+    },
+    whyChooseUsSection: {
+      eyebrow: homeContent?.whyChooseUsSection?.eyebrow ?? defaultHomeContent.whyChooseUsSection!.eyebrow,
+      title: homeContent?.whyChooseUsSection?.title ?? defaultHomeContent.whyChooseUsSection!.title,
+      description: homeContent?.whyChooseUsSection?.description ?? defaultHomeContent.whyChooseUsSection!.description,
     },
     features:
       homeContent?.features && homeContent.features.length > 0
         ? homeContent.features
-        : fallback.features,
+        : defaultHomeContent.features,
+    featuredProsSection: {
+      eyebrow: homeContent?.featuredProsSection?.eyebrow ?? defaultHomeContent.featuredProsSection!.eyebrow,
+      title: homeContent?.featuredProsSection?.title ?? defaultHomeContent.featuredProsSection!.title,
+      ctaText: homeContent?.featuredProsSection?.ctaText ?? defaultHomeContent.featuredProsSection!.ctaText,
+    },
+    ctaDualBanner: {
+      client: {
+        badge: homeContent?.ctaDualBanner?.client?.badge ?? defaultHomeContent.ctaDualBanner!.client.badge,
+        title: homeContent?.ctaDualBanner?.client?.title ?? defaultHomeContent.ctaDualBanner!.client.title,
+        description: homeContent?.ctaDualBanner?.client?.description ?? defaultHomeContent.ctaDualBanner!.client.description,
+        primaryCta: homeContent?.ctaDualBanner?.client?.primaryCta ?? defaultHomeContent.ctaDualBanner!.client.primaryCta,
+        secondaryCta: homeContent?.ctaDualBanner?.client?.secondaryCta ?? defaultHomeContent.ctaDualBanner!.client.secondaryCta,
+      },
+      pro: {
+        badge: homeContent?.ctaDualBanner?.pro?.badge ?? defaultHomeContent.ctaDualBanner!.pro.badge,
+        title: homeContent?.ctaDualBanner?.pro?.title ?? defaultHomeContent.ctaDualBanner!.pro.title,
+        description: homeContent?.ctaDualBanner?.pro?.description ?? defaultHomeContent.ctaDualBanner!.pro.description,
+        primaryCta: homeContent?.ctaDualBanner?.pro?.primaryCta ?? defaultHomeContent.ctaDualBanner!.pro.primaryCta,
+        secondaryCta: homeContent?.ctaDualBanner?.pro?.secondaryCta ?? defaultHomeContent.ctaDualBanner!.pro.secondaryCta,
+      },
+    },
   };
+
   const edit = (hero: Partial<HomeContent["hero"]>) =>
     onHomeChange?.({ ...content, hero: { ...content.hero, ...hero } });
+
+  const editShowcase = (showcase: Partial<NonNullable<HomeContent["heroShowcase"]>>) =>
+    onHomeChange?.({ ...content, heroShowcase: { ...content.heroShowcase!, ...showcase } });
+
+  const editCategories = (cat: Partial<NonNullable<HomeContent["categoriesSection"]>>) =>
+    onHomeChange?.({ ...content, categoriesSection: { ...content.categoriesSection!, ...cat } });
+
+  const editCategoryItem = (
+    index: number,
+    patch: Partial<NonNullable<NonNullable<HomeContent["categoriesSection"]>["items"]>[number]>,
+  ) => {
+    const nextItems = [...(content.categoriesSection?.items || [])];
+    if (nextItems[index]) {
+      nextItems[index] = { ...nextItems[index], ...patch };
+      editCategories({ items: nextItems });
+    }
+  };
+
+  const editWhyChooseUs = (why: Partial<NonNullable<HomeContent["whyChooseUsSection"]>>) =>
+    onHomeChange?.({ ...content, whyChooseUsSection: { ...content.whyChooseUsSection!, ...why } });
+
+  const editFeaturedPros = (pros: Partial<NonNullable<HomeContent["featuredProsSection"]>>) =>
+    onHomeChange?.({ ...content, featuredProsSection: { ...content.featuredProsSection!, ...pros } });
+
+  const editClientCta = (client: Partial<NonNullable<NonNullable<HomeContent["ctaDualBanner"]>["client"]>>) =>
+    onHomeChange?.({
+      ...content,
+      ctaDualBanner: {
+        client: { ...content.ctaDualBanner!.client, ...client },
+        pro: { ...content.ctaDualBanner!.pro },
+      },
+    });
+
+  const editProCta = (pro: Partial<NonNullable<NonNullable<HomeContent["ctaDualBanner"]>["pro"]>>) =>
+    onHomeChange?.({
+      ...content,
+      ctaDualBanner: {
+        client: { ...content.ctaDualBanner!.client },
+        pro: { ...content.ctaDualBanner!.pro, ...pro },
+      },
+    });
   const router = useRouter();
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<number | null>(null);
   const [professionals, setProfessionals] = useState<MarketplaceProfessional[]>([]);
   const [failed, setFailed] = useState(false);
   const [savedIds, setSavedIds] = useState<number[]>([]);
@@ -457,56 +494,120 @@ export default function Landing({
 
                 <div className="relative flex flex-col items-center text-center">
                   {/* Website Official Logo Icon */}
-                  <Link
-                    href="/"
-                    title="Klick-Pro Homepage"
-                    className="group relative grid h-24 w-24 place-items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-md transition-transform duration-200 hover:scale-105"
-                  >
-                    <Image
-                      src="/logo.png"
-                      alt="Klick-Pro Official Website Logo"
-                      width={96}
-                      height={96}
-                      className="h-full w-full object-contain"
-                      priority
-                    />
-                  </Link>
+                  {cmsMode ? (
+                    <div
+                      title="Klick-Pro Homepage"
+                      className="group relative grid h-24 w-24 place-items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-md"
+                    >
+                      <Image
+                        src="/logo.png"
+                        alt="Klick-Pro Official Website Logo"
+                        width={96}
+                        height={96}
+                        className="h-full w-full object-contain pointer-events-none"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <Link
+                      href="/"
+                      title="Klick-Pro Homepage"
+                      className="group relative grid h-24 w-24 place-items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-md transition-transform duration-200 hover:scale-105"
+                    >
+                      <Image
+                        src="/logo.png"
+                        alt="Klick-Pro Official Website Logo"
+                        width={96}
+                        height={96}
+                        className="h-full w-full object-contain"
+                        priority
+                      />
+                    </Link>
+                  )}
 
                   <div className="mt-4">
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Verified Service Marketplace
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse pointer-events-none" />
+                      <span
+                        contentEditable={cmsMode}
+                        suppressContentEditableWarning={cmsMode}
+                        onInput={(e) => editShowcase({ badge: e.currentTarget.textContent ?? "" })}
+                        className={cmsMode ? "outline-none focus:underline" : ""}
+                      >
+                        {content.heroShowcase?.badge}
+                      </span>
                     </div>
                     <h2 className="mt-2.5 font-display text-2xl font-extrabold tracking-tight text-slate-900">
-                      Klick<span className="text-blue-600">-Pro</span>
+                      <span
+                        contentEditable={cmsMode}
+                        suppressContentEditableWarning={cmsMode}
+                        onInput={(e) => editShowcase({ title: e.currentTarget.textContent ?? "" })}
+                        className={cmsMode ? "outline-none focus:underline" : ""}
+                      >
+                        {content.heroShowcase?.title}
+                      </span>
                     </h2>
                     <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-xs leading-relaxed">
-                      Find trusted professionals for work that matters. Post requirements, compare quotes, and hire with milestone escrow safety.
+                      <span
+                        contentEditable={cmsMode}
+                        suppressContentEditableWarning={cmsMode}
+                        onInput={(e) => editShowcase({ description: e.currentTarget.textContent ?? "" })}
+                        className={cmsMode ? "outline-none focus:underline" : ""}
+                      >
+                        {content.heroShowcase?.description}
+                      </span>
                     </p>
                   </div>
 
                   {/* 3 Confidence Metrics */}
                   <div className="mt-6 grid w-full grid-cols-3 gap-2 border-t border-slate-100 pt-5 text-left">
-                    <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-600">Security</p>
-                      <p className="text-xs font-bold text-slate-900 mt-0.5">100% Escrow</p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-600">Posting</p>
-                      <p className="text-xs font-bold text-emerald-700 mt-0.5">₹0 To Post</p>
-                    </div>
-                    <div className="rounded-xl bg-slate-50 p-2.5">
-                      <p className="text-[10px] font-bold uppercase text-slate-600">Identity</p>
-                      <p className="text-xs font-bold text-slate-900 mt-0.5">Vetted KYC</p>
-                    </div>
+                    {(content.heroShowcase?.metrics || defaultHomeContent.heroShowcase!.metrics).map((m, idx) => (
+                      <div key={idx} className="rounded-xl bg-slate-50 p-2.5">
+                        <p
+                          className="text-[10px] font-bold uppercase text-slate-600 outline-none"
+                          contentEditable={cmsMode}
+                          suppressContentEditableWarning={cmsMode}
+                          onInput={(e) => {
+                            const nextMetrics = [
+                              ...(content.heroShowcase?.metrics || defaultHomeContent.heroShowcase!.metrics),
+                            ];
+                            const current = nextMetrics[idx] ?? { label: "", value: "" };
+                            nextMetrics[idx] = { label: e.currentTarget.textContent ?? "", value: current.value };
+                            editShowcase({ metrics: nextMetrics });
+                          }}
+                        >
+                          {m.label}
+                        </p>
+                        <p
+                          className={`text-xs font-bold mt-0.5 outline-none ${idx === 1 ? "text-emerald-700" : "text-slate-900"}`}
+                          contentEditable={cmsMode}
+                          suppressContentEditableWarning={cmsMode}
+                          onInput={(e) => {
+                            const nextMetrics = [
+                              ...(content.heroShowcase?.metrics || defaultHomeContent.heroShowcase!.metrics),
+                            ];
+                            const current = nextMetrics[idx] ?? { label: "", value: "" };
+                            nextMetrics[idx] = { label: current.label, value: e.currentTarget.textContent ?? "" };
+                            editShowcase({ metrics: nextMetrics });
+                          }}
+                        >
+                          {m.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Direct Link to Services */}
                   <div className="mt-5 w-full">
                     {cmsMode ? (
                       <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white shadow-sm cursor-text hover:ring-2 hover:ring-blue-400">
-                        <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                          Explore All Service Sectors
+                        <span
+                          contentEditable={true}
+                          suppressContentEditableWarning={true}
+                          onInput={(e) => editShowcase({ ctaText: e.currentTarget.textContent ?? "" })}
+                          className="outline-none"
+                        >
+                          {content.heroShowcase?.ctaText}
                         </span>
                         <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
                       </div>
@@ -515,7 +616,7 @@ export default function Landing({
                         href="/services"
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shadow-sm"
                       >
-                        <span>Explore All Service Sectors</span>
+                        <span>{content.heroShowcase?.ctaText}</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     )}
@@ -526,50 +627,169 @@ export default function Landing({
           </div>
         </section>
 
-        {/* ================= 2. 6 MASTER SERVICE CATEGORIES (EXACT FROM INDEX.HTML) ================= */}
+        {/* ================= 2. 6 MASTER SERVICE CATEGORIES ================= */}
         <section className="mx-auto max-w-7xl px-4 pt-20 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-              SERVICES FOR EVERYONE
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editCategories({ eyebrow: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.categoriesSection?.eyebrow}
+              </span>
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-              Residential, Commercial, Industrial &amp; more
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editCategories({ title: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.categoriesSection?.title}
+              </span>
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-slate-500 text-sm sm:text-base">
-              From a leaking tap to a factory upgrade to a health check or a private tutor, find the right expert for any job.
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editCategories({ description: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.categoriesSection?.description}
+              </span>
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {MASTER_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
+            {(content.categoriesSection?.items || defaultHomeContent.categoriesSection!.items!).map((cat, idx) => {
+              const fallbackCat = MASTER_CATEGORIES[idx] ?? MASTER_CATEGORIES[0]!;
+              const Icon = fallbackCat.icon;
+              const isSelected = selectedCategoryIndex === idx;
+              const itemsList = content.categoriesSection?.items || defaultHomeContent.categoriesSection!.items!;
               return cmsMode ? (
                 <div
-                  key={cat.title}
-                  className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft transition flex flex-col justify-between"
+                  key={idx}
+                  onClick={() => setSelectedCategoryIndex(idx)}
+                  className={`relative group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft transition flex flex-col justify-between cursor-pointer ${
+                    isSelected ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-white" : "hover:border-blue-300"
+                  }`}
                 >
                   <div>
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:scale-105">
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-6 w-6 pointer-events-none" />
                     </div>
                     <h3 className="mt-4 font-display text-lg font-bold text-slate-900">
-                      {cat.title}
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onInput={(e) => editCategoryItem(idx, { title: e.currentTarget.textContent ?? "" })}
+                        className="outline-none focus:underline"
+                      >
+                        {cat.title}
+                      </span>
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      {cat.description}
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onInput={(e) => editCategoryItem(idx, { description: e.currentTarget.textContent ?? "" })}
+                        className="outline-none focus:underline"
+                      >
+                        {cat.description}
+                      </span>
                     </p>
                   </div>
-                  <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-blue-600 cursor-text hover:underline">
-                    <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                      Explore {cat.title}
-                    </span>
-                    <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <div
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition cursor-text ring-1 ring-blue-200"
+                      title="Click text to edit button name"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => editCategoryItem(idx, { ctaText: e.currentTarget.textContent ?? "" })}
+                        className="outline-none"
+                      >
+                        {cat.ctaText || `Explore ${cat.title}`}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
+                    </div>
                   </div>
+
+                  {/* Floating Action Toolbar on Selected Category */}
+                  {isSelected && (
+                    <div
+                      className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg z-20"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = moveItem(itemsList, idx, idx - 1);
+                            editCategories({ items: next });
+                            setSelectedCategoryIndex(idx - 1);
+                          }}
+                          className="text-blue-600 font-bold hover:underline"
+                          title="Move box earlier"
+                        >
+                          &larr; Move
+                        </button>
+                      )}
+                      {idx < itemsList.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = moveItem(itemsList, idx, idx + 1);
+                            editCategories({ items: next });
+                            setSelectedCategoryIndex(idx + 1);
+                          }}
+                          className="text-blue-600 font-bold hover:underline"
+                          title="Move box later"
+                        >
+                          Move &rarr;
+                        </button>
+                      )}
+                      {itemsList.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = itemsList.filter((_, i) => i !== idx);
+                            editCategories({ items: next });
+                            setSelectedCategoryIndex(null);
+                          }}
+                          className="text-red-600 font-bold hover:underline"
+                        >
+                          Delete
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const copy = { ...cat, title: `${cat.title} (Copy)` };
+                          const next = [...itemsList];
+                          next.splice(idx + 1, 0, copy);
+                          editCategories({ items: next });
+                          setSelectedCategoryIndex(idx + 1);
+                        }}
+                        className="text-blue-600 font-bold hover:underline"
+                      >
+                        Duplicate
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Link
-                  key={cat.title}
-                  href={cat.href}
+                  key={idx}
+                  href={cat.href || fallbackCat.href}
                   className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft hover:shadow-md transition flex flex-col justify-between"
                 >
                   <div>
@@ -584,7 +804,7 @@ export default function Landing({
                     </p>
                   </div>
                   <div className="mt-6 flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:underline">
-                    <span>Explore {cat.title}</span>
+                    <span>{cat.ctaText || `Explore ${cat.title}`}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </div>
                 </Link>
@@ -597,13 +817,34 @@ export default function Landing({
         <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
-              WHY CHOOSE US
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editWhyChooseUs({ eyebrow: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.whyChooseUsSection?.eyebrow}
+              </span>
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-              Everything you need to succeed
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editWhyChooseUs({ title: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.whyChooseUsSection?.title}
+              </span>
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-slate-500 text-sm sm:text-base">
-              A complete platform built for seamless collaboration between professionals and clients
+              <span
+                contentEditable={cmsMode}
+                suppressContentEditableWarning={cmsMode}
+                onInput={(e) => editWhyChooseUs({ description: e.currentTarget.textContent ?? "" })}
+                className={cmsMode ? "outline-none focus:underline" : ""}
+              >
+                {content.whyChooseUsSection?.description}
+              </span>
             </p>
           </div>
 
@@ -634,15 +875,36 @@ export default function Landing({
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Featured</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                  <span
+                    contentEditable={cmsMode}
+                    suppressContentEditableWarning={cmsMode}
+                    onInput={(e) => editFeaturedPros({ eyebrow: e.currentTarget.textContent ?? "" })}
+                    className={cmsMode ? "outline-none focus:underline" : ""}
+                  >
+                    {content.featuredProsSection?.eyebrow}
+                  </span>
+                </p>
                 <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-                  Professionals ready to help
+                  <span
+                    contentEditable={cmsMode}
+                    suppressContentEditableWarning={cmsMode}
+                    onInput={(e) => editFeaturedPros({ title: e.currentTarget.textContent ?? "" })}
+                    className={cmsMode ? "outline-none focus:underline" : ""}
+                  >
+                    {content.featuredProsSection?.title}
+                  </span>
                 </h2>
               </div>
               {cmsMode ? (
                 <div className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 cursor-text hover:underline">
-                  <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                    Browse all verified professionals
+                  <span
+                    contentEditable={true}
+                    suppressContentEditableWarning={true}
+                    onInput={(e) => editFeaturedPros({ ctaText: e.currentTarget.textContent ?? "" })}
+                    className="outline-none"
+                  >
+                    {content.featuredProsSection?.ctaText}
                   </span>
                   <ArrowRight className="h-4 w-4 pointer-events-none" />
                 </div>
@@ -651,7 +913,7 @@ export default function Landing({
                   href="/services"
                   className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline"
                 >
-                  Browse all <ArrowRight className="h-4 w-4" />
+                  {content.featuredProsSection?.ctaText} <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
             </div>
@@ -718,16 +980,17 @@ export default function Landing({
             {!cmsMode && (failed || (!professionals.length && failed)) && (
               <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 {FALLBACK_FEATURED_PROS.map((pro) => (
-                  <div
+                  <Link
                     key={pro.id}
-                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-soft hover:shadow-md transition"
+                    href="/services"
+                    className="block rounded-2xl border border-slate-200/80 bg-white p-5 shadow-soft hover:shadow-md transition hover:border-blue-400 group"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`grid h-12 w-12 place-items-center rounded-full text-base font-bold ${pro.bgClass}`}>
                         {pro.initials}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{pro.name}</p>
+                        <p className="font-semibold text-slate-900 group-hover:text-blue-600 transition">{pro.name}</p>
                         <p className="text-xs text-slate-500">{pro.category}</p>
                       </div>
                     </div>
@@ -740,7 +1003,7 @@ export default function Landing({
                         ★ {pro.rating} ({pro.reviewsCount})
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -755,21 +1018,47 @@ export default function Landing({
               <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
                 <div>
                   <span className="inline-flex rounded-lg bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-                    For Clients
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editClientCta({ badge: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.client.badge}
+                    </span>
                   </span>
                   <h3 className="mt-4 font-display text-2xl font-bold text-slate-900">
-                    Ready to start your next project?
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editClientCta({ title: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.client.title}
+                    </span>
                   </h3>
                   <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                    Post your job in minutes, compare verified professional bids, and keep 100% control through escrow protection.
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editClientCta({ description: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.client.description}
+                    </span>
                   </p>
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   {cmsMode ? (
                     <div className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
                       <Briefcase className="h-4 w-4 pointer-events-none" />
-                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                        Post a Job Free
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => editClientCta({ primaryCta: e.currentTarget.textContent ?? "" })}
+                        className="outline-none"
+                      >
+                        {content.ctaDualBanner?.client.primaryCta}
                       </span>
                     </div>
                   ) : (
@@ -778,14 +1067,19 @@ export default function Landing({
                       className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-blue-700 transition"
                     >
                       <Briefcase className="h-4 w-4" />
-                      <span>Post a Job Free</span>
+                      <span>{content.ctaDualBanner?.client.primaryCta}</span>
                     </Link>
                   )}
 
                   {cmsMode ? (
                     <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 cursor-text hover:text-blue-600">
-                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                        How it works for clients
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => editClientCta({ secondaryCta: e.currentTarget.textContent ?? "" })}
+                        className="outline-none"
+                      >
+                        {content.ctaDualBanner?.client.secondaryCta}
                       </span>
                       <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
                     </div>
@@ -794,7 +1088,7 @@ export default function Landing({
                       href="/for-clients"
                       className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
                     >
-                      <span>How it works for clients</span>
+                      <span>{content.ctaDualBanner?.client.secondaryCta}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   )}
@@ -805,21 +1099,47 @@ export default function Landing({
               <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
                 <div>
                   <span className="inline-flex rounded-lg bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-                    For Professionals
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editProCta({ badge: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.pro.badge}
+                    </span>
                   </span>
                   <h3 className="mt-4 font-display text-2xl font-bold text-slate-900">
-                    Are you a qualified service specialist?
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editProCta({ title: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.pro.title}
+                    </span>
                   </h3>
                   <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                    Join Klick-Pro to connect directly with serious residential and commercial clients with zero platform commissions.
+                    <span
+                      contentEditable={cmsMode}
+                      suppressContentEditableWarning={cmsMode}
+                      onInput={(e) => editProCta({ description: e.currentTarget.textContent ?? "" })}
+                      className={cmsMode ? "outline-none focus:underline" : ""}
+                    >
+                      {content.ctaDualBanner?.pro.description}
+                    </span>
                   </p>
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   {cmsMode ? (
                     <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
                       <ShieldCheck className="h-4 w-4 text-emerald-400 pointer-events-none" />
-                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                        Join as a Professional
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => editProCta({ primaryCta: e.currentTarget.textContent ?? "" })}
+                        className="outline-none"
+                      >
+                        {content.ctaDualBanner?.pro.primaryCta}
                       </span>
                     </div>
                   ) : (
@@ -828,14 +1148,19 @@ export default function Landing({
                       className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-slate-800 transition"
                     >
                       <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                      <span>Join as a Professional</span>
+                      <span>{content.ctaDualBanner?.pro.primaryCta}</span>
                     </Link>
                   )}
 
                   {cmsMode ? (
                     <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 cursor-text hover:text-blue-600">
-                      <span contentEditable={true} suppressContentEditableWarning={true} className="outline-none">
-                        Explore pro benefits
+                      <span
+                        contentEditable={true}
+                        suppressContentEditableWarning={true}
+                        onInput={(e) => editProCta({ secondaryCta: e.currentTarget.textContent ?? "" })}
+                        className="outline-none"
+                      >
+                        {content.ctaDualBanner?.pro.secondaryCta}
                       </span>
                       <ArrowRight className="h-3.5 w-3.5 pointer-events-none" />
                     </div>
@@ -844,7 +1169,7 @@ export default function Landing({
                       href="/for-professionals"
                       className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-600 transition"
                     >
-                      <span>Explore pro benefits</span>
+                      <span>{content.ctaDualBanner?.pro.secondaryCta}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   )}
@@ -888,6 +1213,21 @@ function HomeFeature({
     map: MapPin,
     search: Search,
     arrow: ArrowRight,
+    award: Award,
+    wallet: Wallet,
+    clock: Clock,
+    trend: TrendingUp,
+    check: Check,
+    star: Star,
+    mail: Mail,
+    phone: Phone,
+    help: HelpCircle,
+    building: Building2,
+    factory: Factory,
+    home: Home,
+    heart: HeartPulse,
+    graduation: GraduationCap,
+    sparkles: Sparkles,
   };
   const Icon = icons[feature.icon as keyof typeof icons] ?? ShieldCheck;
   const editable = (field: "title" | "description") =>
@@ -907,24 +1247,56 @@ function HomeFeature({
       style={drag?.style}
       {...(drag?.handleProps ?? {})}
       onClick={cmsMode ? onSelect : undefined}
-      className={`relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-soft hover:shadow-md transition ${
-        cmsMode ? "cursor-grab active:cursor-grabbing" : ""
+      className={`relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-soft hover:shadow-md transition flex flex-col justify-between ${
+        cmsMode ? "cursor-grab active:cursor-grabbing hover:border-blue-300" : ""
       } ${selected ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-white" : ""} ${
         drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""
       }`}
     >
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-        <Icon className="h-6 w-6" />
+      <div>
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+          <Icon className="h-6 w-6" />
+        </div>
+        <h3 className="mt-4 font-display text-lg font-bold text-slate-900" {...editable("title")}>
+          {feature.title}
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-slate-500" {...editable("description")}>
+          {feature.description}
+        </p>
       </div>
-      <h3 className="mt-4 font-display text-lg font-bold text-slate-900" {...editable("title")}>
-        {feature.title}
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-slate-500" {...editable("description")}>
-        {feature.description}
-      </p>
+
+      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-3">
+        {cmsMode ? (
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition cursor-text ring-1 ring-blue-200"
+            title="Click text to edit button name"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              onInput={(e) => onChange({ buttonText: e.currentTarget.textContent ?? "" })}
+              className="outline-none"
+            >
+              {feature.buttonText || "Learn more"}
+            </span>
+            <ArrowRight className="h-3 w-3 pointer-events-none" />
+          </div>
+        ) : (
+          <Link
+            href={feature.buttonLink || "/services"}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
+          >
+            <span>{feature.buttonText || "Learn more"}</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        )}
+      </div>
+
       {cmsMode && selected && (
         <div
-          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg"
+          className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg z-20"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
@@ -948,26 +1320,41 @@ function HomeFeature({
               Move &rarr;
             </button>
           )}
-          <label className="text-slate-500">
+          <label className="text-slate-500 font-medium">
             Icon{" "}
             <select
               value={feature.icon}
               onPointerDown={(event) => event.stopPropagation()}
               onChange={(event) => onChange({ icon: event.target.value })}
-              className="bg-white text-slate-900"
+              className="bg-white text-slate-900 border border-slate-200 rounded px-1 py-0.5"
             >
               <option value="shield">Shield</option>
               <option value="briefcase">Briefcase</option>
               <option value="users">Users</option>
               <option value="map">Map</option>
               <option value="search">Search</option>
+              <option value="wallet">Wallet</option>
+              <option value="check">Check</option>
+              <option value="star">Star</option>
+              <option value="clock">Clock</option>
+              <option value="trend">Trend</option>
+              <option value="message">Message</option>
+              <option value="mail">Mail</option>
+              <option value="phone">Phone</option>
+              <option value="help">Help</option>
+              <option value="building">Building</option>
+              <option value="factory">Factory</option>
+              <option value="home">Home</option>
+              <option value="heart">Heart</option>
+              <option value="graduation">Education</option>
+              <option value="sparkles">Sparkles</option>
               <option value="arrow">Arrow</option>
             </select>
           </label>
-          <button type="button" onClick={onDelete} className="text-red-600 font-bold">
+          <button type="button" onClick={onDelete} className="text-red-600 font-bold hover:underline">
             Delete
           </button>
-          <button type="button" onClick={onDuplicate} className="text-blue-600 font-bold">
+          <button type="button" onClick={onDuplicate} className="text-blue-600 font-bold hover:underline">
             Duplicate
           </button>
         </div>

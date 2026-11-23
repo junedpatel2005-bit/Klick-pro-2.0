@@ -332,7 +332,7 @@ export default function ProfessionalReviews() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Award className="h-3.5 w-3.5" />
-              Verified Pro Reputation
+              Verified Professional Reputation
             </span>
           </div>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

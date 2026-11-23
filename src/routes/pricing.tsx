@@ -104,7 +104,7 @@ export default function Pricing({
           {/* Card 2: For Professionals */}
           <article className="relative flex flex-col justify-between rounded-3xl border-2 border-brand bg-white p-8 shadow-md">
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-brand px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm">
-              Popular for Pros
+              Popular for Professionals
             </span>
             <div>
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-100 text-brand">
@@ -132,7 +132,7 @@ export default function Pricing({
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    <span>Verified pro credibility badge</span>
+                    <span>Verified professional credibility badge</span>
                   </li>
                   <li className="flex gap-3">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />

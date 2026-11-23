@@ -149,7 +149,7 @@ function SignupContent() {
       />
       <AuthLayout
         title="Create your account"
-        subtitle="Join 50,000+ clients and pros on Klick-Pro."
+        subtitle="Join 50,000+ clients and professionals on Klick-Pro."
         hideAside
         footer={
           <>

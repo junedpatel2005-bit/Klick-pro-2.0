@@ -95,7 +95,7 @@ export default function About({
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Pro Dashboard
+                    Professional Dashboard
                   </Link>
                 </>
               ) : user?.role === "ADMIN" ? (
@@ -293,7 +293,7 @@ export default function About({
       </section>
 
       {/* 5. BUILT ON TRUST */}
-      <section className="border-y border-slate-200/70 bg-white">
+      <section id="trust" className="border-y border-slate-200/70 bg-white scroll-mt-20">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-[#1748b5]">Our foundation</p>

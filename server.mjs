@@ -169,9 +169,9 @@ const browseHost = LOOPBACK_ALIASES.has(hostname) ? "localhost" : hostname;
 httpServer.listen(port, hostname, () => {
   console.log(`> Klick-pro ready on http://${browseHost}:${port} (bound to ${hostname})`);
 
-  // Autonomous 15-Minute Milestone Validity Cron Worker
+  // Autonomous Milestone Validity Cron Worker
   const MILESTONE_CRON_INTERVAL_MS = 15 * 60 * 1000;
-  setInterval(async () => {
+  async function runMilestoneValidityCron() {
     try {
       const cronSecret = process.env.CRON_SECRET || "";
       const headers = { "x-internal-loopback": "true" };
@@ -191,5 +191,9 @@ httpServer.listen(port, hostname, () => {
     } catch (cronErr) {
       // Server may still be warming up or restarting; keep loop silent
     }
-  }, MILESTONE_CRON_INTERVAL_MS);
+  }
+
+  // Initial check 30 seconds after boot, then recurring every 15 minutes
+  setTimeout(runMilestoneValidityCron, 30 * 1000);
+  setInterval(runMilestoneValidityCron, MILESTONE_CRON_INTERVAL_MS);
 });

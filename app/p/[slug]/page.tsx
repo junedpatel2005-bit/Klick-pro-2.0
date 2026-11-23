@@ -3,6 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Landing from "@/routes/index";
 import About from "@/routes/about";
+import HowItWorks from "@/routes/how-it-works";
+import { ServicesCatalog } from "@/components/ServicesCatalog";
+import ForClients from "@/routes/for-clients";
+import ForPros from "@/routes/for-professionals";
+import Pricing from "@/routes/pricing";
+import FAQ from "@/routes/faq";
+import Contact from "@/routes/contact";
+import ProfessionalHome from "@/routes/professional-home";
 import MarketingVisualPage from "@/components/MarketingVisualPage";
 import { readHomeContent } from "@/lib/home-cms-file";
 import { readCmsContent } from "@/lib/cms-file";
@@ -94,17 +102,7 @@ export default async function StandaloneCmsPage({ params }: Props) {
     );
   }
 
-  // 2. ABOUT US (renders authentic website about page without header and footer)
-  if (slug === "about") {
-    const aboutContent = await readCmsContent();
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <About cmsContent={aboutContent} />
-      </div>
-    );
-  }
-
-  // 3. MARKETING PAGES (renders authentic website marketing page without header and footer)
+  // 2. STANDARD MARKETING PAGES
   if (marketingPageIds.includes(slug as MarketingPageId)) {
     const pageId = slug as MarketingPageId;
     const content = await readMarketingContent(pageId);
@@ -115,7 +113,7 @@ export default async function StandaloneCmsPage({ params }: Props) {
     );
   }
 
-  // 4. CUSTOM CMS DYNAMIC PAGES
+  // 3. CUSTOM CMS DYNAMIC PAGES
   let page;
   try {
     page = await getCmsPage(slug);

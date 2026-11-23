@@ -119,7 +119,7 @@ export const DEFAULT_FAQ_DATA: FAQCategory[] = [
           "Funds are deposited into neutral escrow before work starts. The professional knows payment is guaranteed, while the client knows money is released only after deliverables are inspected and approved.",
       },
       {
-        question: "Is it free to post jobs and join as a pro?",
+        question: "Is it free to post jobs and join as a professional?",
         answer:
           "Yes! Posting jobs for clients is 100% free with zero recurring subscription charges. Professionals can also register and submit proposals for free.",
       },
@@ -304,7 +304,7 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
       </section>
 
       {/* 3. STILL NEED HELP */}
-      <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
+      <section id="disputes" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="grid gap-6 md:grid-cols-3">
           <Link
             href="/contact"

@@ -38,7 +38,7 @@ const articles = [
       "Adding verified trade documents, past work photos, accurate service radiuses, and transparent pricing establishes instant credibility with clients.",
     readingTime: "5 min read",
     href: "/for-professionals",
-    actionLabel: "Read Pro Guide",
+    actionLabel: "Read Professional Guide",
   },
   {
     id: "escrow-protection",

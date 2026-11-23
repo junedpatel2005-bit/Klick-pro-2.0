@@ -47,7 +47,7 @@ const departments = [
   },
   {
     id: "cx",
-    title: "Customer Success & Pro Concierge",
+    title: "Customer Success & Professional Concierge",
     type: "Full-Time · Customer Experience",
     icon: Headphones,
     badge: "Customer Support",

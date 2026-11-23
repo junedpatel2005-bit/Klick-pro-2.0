@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import FAQ from "@/routes/faq";
-import { getPublishedFaqCategories } from "@/lib/queries/faq";
+import MarketingVisualPage from "@/components/MarketingVisualPage";
+import { readMarketingContent } from "@/lib/marketing-cms";
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions | Klick-Pro Help Center",
@@ -11,6 +11,6 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function FaqPage() {
-  const initialData = await getPublishedFaqCategories().catch(() => []);
-  return <FAQ initialData={initialData} />;
+  const content = await readMarketingContent("faq");
+  return <MarketingVisualPage page="faq" content={content} />;
 }

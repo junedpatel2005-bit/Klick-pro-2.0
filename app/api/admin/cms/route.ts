@@ -60,8 +60,9 @@ export async function PUT(request: Request) {
     // Support both direct CmsPageData or legacy { page, content } payload
     let pageData: CmsPageData;
 
-    if ("slug" in body && "hero" in body && "boxes" in body) {
+    if (("slug" in body && "hero" in body && "boxes" in body) || ("slug" in body && "homeContent" in body)) {
       pageData = body as unknown as CmsPageData;
+      if (!pageData.boxes) pageData.boxes = [];
     } else if ("page" in body && "content" in body) {
       const rawPage = String(body.page);
       const content = body.content as Record<string, unknown>;

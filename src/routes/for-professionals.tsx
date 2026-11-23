@@ -102,7 +102,7 @@ export default function ForPros({
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Pro Dashboard
+                    Professional Dashboard
                   </Link>
                 </>
               ) : user?.role === "CLIENT" ? (

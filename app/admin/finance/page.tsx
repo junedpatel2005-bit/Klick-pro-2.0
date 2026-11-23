@@ -894,7 +894,7 @@ export default function AdminFinancePage() {
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">
             {isCommissionOn
-              ? "Live view of money coming in, safe storage during work, payouts to pros, and platform commission."
+              ? "Live view of money coming in, safe storage during work, payouts to professionals, and platform commission."
               : "Live view of money coming in, safe storage during work, and 100% payouts to professionals."}
           </p>
         </div>
@@ -991,7 +991,7 @@ export default function AdminFinancePage() {
           <TabButton
             active={activeTab === "withdrawals"}
             onClick={() => setActiveTab("withdrawals")}
-            label="Pro Withdrawals"
+            label="Professional Withdrawals"
             badge={data?.withdrawals.length}
             title="Withdrawal requests from professionals to their Bank Account or UPI"
           />
@@ -1012,7 +1012,7 @@ export default function AdminFinancePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by client, pro, project, #ID..."
+              placeholder="Search by client, professional, project, #ID..."
               className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8.5 pr-3 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-200"
             />
             {searchQuery && (
@@ -2421,7 +2421,7 @@ function TransactionDrawer({
               </div>
               {isCommissionOn && proComm > 0 && (
                 <div className="flex justify-between text-rose-600 font-medium">
-                  <span>(-) Pro Commission Deducted:</span>
+                  <span>(-) Professional Commission Deducted:</span>
                   <span>-{formatMoney(proComm)}</span>
                 </div>
               )}
@@ -3382,7 +3382,7 @@ function FinanceHelpDrawer({
                       : "bg-slate-100 text-slate-700 border-slate-200"
                   }`}
                 >
-                  {commissionEnabled ? `Active (${commissionRate ? Math.round(commissionRate * 100) : 10}%)` : "Disabled (₹0 Fee / 100% to Pro)"}
+                  {commissionEnabled ? `Active (${commissionRate ? Math.round(commissionRate * 100) : 10}%)` : "Disabled (₹0 Fee / 100% to Professional)"}
                 </span>
               </div>
               <p className="mt-2 text-xs text-slate-600 leading-relaxed">
