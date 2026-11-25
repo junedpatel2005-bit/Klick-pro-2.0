@@ -319,6 +319,7 @@ export default function Login() {
               onClick={() => {
                 setGoogleLoading(true);
                 const googleUrl = new URL("/api/auth/google", window.location.origin);
+                googleUrl.searchParams.set("intent", "login");
                 if (nextPath) googleUrl.searchParams.set("next", nextPath);
                 window.location.href = googleUrl.toString();
               }}
@@ -345,7 +346,27 @@ export default function Login() {
                 Google sign-in was cancelled.
               </p>
             ) : null}
-            {oauthError && !["google-not-configured", "access_denied"].includes(oauthError) ? (
+            {oauthError === "account-not-registered" ? (
+              <p className="text-sm text-destructive">
+                No account is registered with this Google email. Please{" "}
+                <Link href="/signup" className="font-semibold underline underline-offset-2">
+                  sign up first
+                </Link>
+                .
+              </p>
+            ) : null}
+            {oauthError === "account-inactive" ? (
+              <p className="text-sm text-destructive">
+                This account has been deactivated. Please contact support.
+              </p>
+            ) : null}
+            {oauthError &&
+            ![
+              "google-not-configured",
+              "access_denied",
+              "account-not-registered",
+              "account-inactive",
+            ].includes(oauthError) ? (
               <p className="text-sm text-destructive">
                 Google sign-in could not be completed. Please try again.
               </p>

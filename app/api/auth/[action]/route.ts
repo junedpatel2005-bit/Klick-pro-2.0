@@ -178,14 +178,37 @@ export async function GET(
     const defaultCallback = `${appOrigin}/api/auth/google`;
     const callbackUrl = configuredCallback || defaultCallback;
 
+    const intent = request.nextUrl.searchParams.get("intent") === "register" ? "register" : "login";
+
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(new URL("/login?oauthError=google-not-configured", request.url));
+      return NextResponse.redirect(
+        new URL(
+          `${intent === "register" ? "/signup" : "/login"}?oauthError=google-not-configured`,
+          appOrigin,
+        ),
+      );
     }
+
+    const savedCookie = (() => {
+      try {
+        return JSON.parse(request.cookies.get("servio_google_oauth")?.value ?? "{}") as {
+          state?: string;
+          intent?: "login" | "register";
+          role?: "CLIENT" | "PROFESSIONAL";
+          nextPath?: string | null;
+          callbackUrl?: string;
+        };
+      } catch {
+        return {};
+      }
+    })();
+    const oauthIntent = savedCookie.intent === "register" ? "register" : "login";
+    const errorRedirectPath = oauthIntent === "register" ? "/signup" : "/login";
 
     const oauthError = request.nextUrl.searchParams.get("error");
     if (oauthError) {
       const response = NextResponse.redirect(
-        new URL(`/login?oauthError=${encodeURIComponent(oauthError)}`, request.url),
+        new URL(`${errorRedirectPath}?oauthError=${encodeURIComponent(oauthError)}`, appOrigin),
       );
       response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
       return response;
@@ -207,7 +230,7 @@ export async function GET(
       const response = NextResponse.redirect(url);
       response.cookies.set(
         "servio_google_oauth",
-        JSON.stringify({ state, role, nextPath, callbackUrl }),
+        JSON.stringify({ state, intent, role, nextPath, callbackUrl }),
         {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -220,12 +243,7 @@ export async function GET(
     }
 
     try {
-      const saved = JSON.parse(request.cookies.get("servio_google_oauth")?.value ?? "{}") as {
-        state?: string;
-        role?: "CLIENT" | "PROFESSIONAL";
-        nextPath?: string | null;
-        callbackUrl?: string;
-      };
+      const saved = savedCookie;
       if (!saved.state || saved.state !== request.nextUrl.searchParams.get("state")) {
         throw new Error("Invalid OAuth state");
       }
@@ -307,7 +325,12 @@ export async function GET(
 
       const normalizedEmail = profile.email.trim().toLowerCase();
       let user = await db.user.findFirst({
-        where: { OR: [{ googleId: profile.sub }, { email: normalizedEmail }] },
+        where: {
+          OR: [
+            { googleId: profile.sub },
+            { email: { equals: normalizedEmail, mode: "insensitive" } },
+          ],
+        },
       });
 
       const names = (profile.name ?? "New User").trim().split(/\s+/, 2);
@@ -319,6 +342,13 @@ export async function GET(
 
       let createdAccount = false;
       if (!user) {
+        if (oauthIntent !== "register") {
+          const response = NextResponse.redirect(
+            new URL("/login?oauthError=account-not-registered", appOrigin),
+          );
+          response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
+          return response;
+        }
         user = await db.user.create({
           data: {
             googleId: profile.sub,
@@ -333,6 +363,13 @@ export async function GET(
         });
         createdAccount = true;
       } else {
+        if (!user.isActive) {
+          const response = NextResponse.redirect(
+            new URL(`${errorRedirectPath}?oauthError=account-inactive`, appOrigin),
+          );
+          response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
+          return response;
+        }
         const updateData: {
           googleId?: string;
           authProvider?: string;
@@ -393,7 +430,7 @@ export async function GET(
           ? saved.nextPath
           : getAuthRedirect(user, hasClientProfile, false);
 
-      const response = NextResponse.redirect(new URL(safeRedirect, request.url));
+      const response = NextResponse.redirect(new URL(safeRedirect, appOrigin));
       response.cookies.set(
         sessionCookie,
         await createSession({
@@ -408,7 +445,7 @@ export async function GET(
     } catch (err) {
       logServerError("auth.google.oauth", err);
       const response = NextResponse.redirect(
-        new URL("/login?oauthError=google-failed", request.url),
+        new URL(`${errorRedirectPath}?oauthError=google-failed`, appOrigin),
       );
       response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
       return response;

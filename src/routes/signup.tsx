@@ -31,6 +31,7 @@ function SignupContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const oauthError = searchParams.get("oauthError");
 
   useEffect(() => {
     const rawRole = searchParams.get("role")?.toLowerCase();
@@ -185,7 +186,10 @@ function SignupContent() {
           className="mb-5 h-11 w-full transition-transform hover:-translate-y-0.5"
           onClick={() => {
             setGoogleLoading(true);
-            window.location.href = `/api/auth/google?role=${role === "pro" ? "PROFESSIONAL" : "CLIENT"}`;
+            const googleUrl = new URL("/api/auth/google", window.location.origin);
+            googleUrl.searchParams.set("intent", "register");
+            googleUrl.searchParams.set("role", role === "pro" ? "PROFESSIONAL" : "CLIENT");
+            window.location.href = googleUrl.toString();
           }}
         >
           {googleLoading ? (
@@ -200,6 +204,27 @@ function SignupContent() {
             </span>
           )}
         </Button>
+        {oauthError === "google-not-configured" ? (
+          <p className="mb-4 text-sm text-destructive">
+            Google sign-up has not been configured yet.
+          </p>
+        ) : null}
+        {oauthError === "access_denied" ? (
+          <p className="mb-4 text-sm text-muted-foreground">
+            Google sign-up was cancelled.
+          </p>
+        ) : null}
+        {oauthError === "account-inactive" ? (
+          <p className="mb-4 text-sm text-destructive">
+            This account has been deactivated. Please contact support.
+          </p>
+        ) : null}
+        {oauthError &&
+        !["google-not-configured", "access_denied", "account-inactive"].includes(oauthError) ? (
+          <p className="mb-4 text-sm text-destructive">
+            Google sign-up could not be completed. Please try again.
+          </p>
+        ) : null}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
           <div className="grid grid-cols-2 gap-3">
