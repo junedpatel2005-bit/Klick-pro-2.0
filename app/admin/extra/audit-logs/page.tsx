@@ -150,7 +150,7 @@ export default function AdminAuditLogsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Total Action Records</p>
           {loading ? (
             <div className="mt-2 h-8 w-20 animate-pulse rounded-lg bg-slate-200" />
@@ -160,7 +160,7 @@ export default function AdminAuditLogsPage() {
           <p className="mt-1 text-[11px] text-slate-400">Captured events</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Active Admin Actors</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-indigo-100" />
@@ -170,7 +170,7 @@ export default function AdminAuditLogsPage() {
           <p className="mt-1 text-[11px] text-slate-400">Staff accounts</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Matching Events</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-slate-200" />
@@ -180,7 +180,7 @@ export default function AdminAuditLogsPage() {
           <p className="mt-1 text-[11px] text-slate-400">In current filter</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Log Integrity</p>
           {loading ? (
             <div className="mt-2 h-8 w-28 animate-pulse rounded-lg bg-emerald-100" />

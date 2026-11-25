@@ -2,12 +2,28 @@
 @source "../src";
 @source "../app";
 
-/* Hand cursor on all buttons and interactive button roles */
+@layer base {
+  /* Show standard arrow cursor over static text/paragraphs on live pages instead of I-beam */
+  body {
+    cursor: default;
+  }
+
+  /* Keep I-beam cursor only on real text-entry inputs and CMS inline editable elements */
+  input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+}
+
+/* Hand cursor on all buttons, links, and interactive roles */
+a[href],
 button,
 [role="button"],
 input[type="button"],
 input[type="submit"],
-input[type="reset"] {
+input[type="reset"],
+summary {
   cursor: pointer;
 }
 

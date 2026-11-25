@@ -61,6 +61,8 @@ model SQLiteMigrationTableArchive {
   rows        Json
   sourceCount Int      @map("source_count")
   migratedAt  DateTime @default(now()) @map("migrated_at")
+
+  @@map("sqlite_migration_table_archives")
 }
 
 model SQLiteMigrationAudit {
@@ -68,6 +70,8 @@ model SQLiteMigrationAudit {
   sourceCount   Int      @map("source_count")
   archivedCount Int      @map("archived_count")
   migratedAt    DateTime @default(now()) @map("migrated_at")
+
+  @@map("sqlite_migration_audits")
 }
 
 model WebsitePage {
@@ -78,6 +82,8 @@ model WebsitePage {
   status    CmsPageStatus @default(DRAFT)
   updatedAt DateTime      @map("updated_at")
   css       String        @default("")
+
+  @@map("website_pages")
 }
 
 model LegalPage {
@@ -86,6 +92,8 @@ model LegalPage {
   content   String        @default("")
   status    CmsPageStatus @default(PUBLISHED)
   updatedAt DateTime      @map("updated_at")
+
+  @@map("legal_pages")
 }
 
 model ServiceCategory {
@@ -105,6 +113,7 @@ model ServiceCategory {
   professionalUsers User[]            @relation("ProfessionalPrimaryCategory")
 
   @@index([parentId])
+  @@map("service_categories")
 }
 
 model User {
@@ -184,6 +193,7 @@ model User {
   @@index([professionalState, professionalDistrict])
   @@index([professionalCategoryId])
   @@index([razorpayContactId])
+  @@map("users")
 }
 
 model Session {
@@ -218,6 +228,7 @@ model ClientProfile {
   savedLocations     ClientSavedLocation?
 
   @@index([userId])
+  @@map("client_profiles")
 }
 
 model ClientSavedLocation {
@@ -230,6 +241,7 @@ model ClientSavedLocation {
   clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
 
   @@index([clientProfileId])
+  @@map("client_saved_locations")
 }
 
 model ClientHiringNeed {
@@ -240,6 +252,7 @@ model ClientHiringNeed {
   clientProfile   ClientProfile @relation(fields: [clientProfileId], references: [id], onDelete: Cascade)
 
   @@index([clientProfileId])
+  @@map("client_hiring_needs")
 }
 
 model ClientJob {
@@ -278,6 +291,7 @@ model ClientJob {
   @@index([userId])
   @@index([status])
   @@index([locationState, locationDistrict])
+  @@map("client_jobs")
 }
 
 model FavoriteJob {
@@ -291,6 +305,7 @@ model FavoriteJob {
   @@unique([userId, jobId])
   @@index([userId])
   @@index([jobId])
+  @@map("favorite_jobs")
 }
 
 model SavedProfessional {
@@ -304,6 +319,7 @@ model SavedProfessional {
   @@unique([userId, professionalId])
   @@index([userId])
   @@index([professionalId])
+  @@map("saved_professionals")
 }
 
 model ClientJobAttachment {
@@ -317,6 +333,7 @@ model ClientJobAttachment {
   job        ClientJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
+  @@map("client_job_attachments")
 }
 
 model ClientJobMilestone {
@@ -333,7 +350,7 @@ model ClientJobMilestone {
   job          ClientJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([jobId])
-  @@map("ClientJobMilestone")
+  @@map("client_job_milestones")
 }
 
 model ProjectTransaction {
@@ -355,7 +372,7 @@ model ProjectTransaction {
   @@index([clientId])
   @@index([professionalId])
   @@index([status])
-  @@map("ProjectTransaction")
+  @@map("project_transactions")
 }
 
 model ProjectNegotiation {
@@ -381,7 +398,7 @@ model ProjectNegotiation {
   @@index([requestId])
   @@index([clientId])
   @@index([professionalId])
-  @@map("ProjectNegotiation")
+  @@map("project_negotiations")
 }
 
 model ProjectReview {
@@ -402,7 +419,7 @@ model ProjectReview {
 
   @@index([clientId])
   @@index([professionalId])
-  @@map("ProjectReview")
+  @@map("project_reviews")
 }
 
 model ProjectRequest {
@@ -428,7 +445,7 @@ model ProjectRequest {
   @@index([jobId])
   @@index([clientId])
   @@index([professionalId])
-  @@map("ProjectRequest")
+  @@map("project_requests")
 }
 
 model ProjectTracking {
@@ -457,7 +474,7 @@ model ProjectTracking {
   @@index([jobId])
   @@index([clientId])
   @@index([professionalId])
-  @@map("ProjectTracking")
+  @@map("project_trackings")
 }
 
 model ProjectTimelineEvent {
@@ -476,7 +493,7 @@ model ProjectTimelineEvent {
   tracking       ProjectTracking @relation(fields: [trackingId], references: [id])
 
   @@index([trackingId, createdAt])
-  @@map("ProjectTimelineEvent")
+  @@map("project_timeline_events")
 }
 
 model ProjectMilestone {
@@ -501,7 +518,7 @@ model ProjectMilestone {
   workUploads       ProjectWorkUpload[]
 
   @@index([trackingId])
-  @@map("ProjectMilestone")
+  @@map("project_milestones")
 }
 
 model ProjectWorkUpload {
@@ -520,7 +537,7 @@ model ProjectWorkUpload {
   tracking    ProjectTracking   @relation(fields: [trackingId], references: [id])
 
   @@index([trackingId])
-  @@map("ProjectWorkUpload")
+  @@map("project_work_uploads")
 }
 
 model SocketConversation {
@@ -539,6 +556,7 @@ model SocketConversation {
 
   @@index([userAId])
   @@index([userBId])
+  @@map("socket_conversations")
 }
 
 model SocketMessage {
@@ -555,6 +573,7 @@ model SocketMessage {
   @@index([conversationId])
   @@index([senderId])
   @@index([receiverId])
+  @@map("socket_messages")
 }
 
 model SocketConversationClear {
@@ -564,6 +583,7 @@ model SocketConversationClear {
   conversation   SocketConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@id([conversationId, userId])
+  @@map("socket_conversation_clears")
 }
 
 model CallSession {
@@ -575,6 +595,8 @@ model CallSession {
   answerSdp      String?  @map("answer_sdp")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("call_sessions")
 }
 
 model MessageConversation {
@@ -590,6 +612,7 @@ model MessageConversation {
 
   @@index([clientId])
   @@index([professionalId])
+  @@map("message_conversations")
 }
 
 model Message {
@@ -603,6 +626,7 @@ model Message {
 
   @@index([conversationId])
   @@index([senderId])
+  @@map("messages")
 }
 
 model UserNotification {
@@ -618,6 +642,7 @@ model UserNotification {
 
   @@index([userId])
   @@index([createdAt])
+  @@map("user_notifications")
 }
 
 model UserNotificationState {
@@ -627,6 +652,7 @@ model UserNotificationState {
   clearedAt       DateTime? @map("cleared_at")
 
   @@id([userId, notificationKey])
+  @@map("user_notification_states")
 }
 
 model Payment {
@@ -662,6 +688,7 @@ model Payment {
 
   @@index([clientId])
   @@index([professionalId])
+  @@map("payments")
 }
 
 model RazorpayWebhookEvent {
@@ -689,6 +716,8 @@ model Wallet {
   pendingBalance Int                 @default(0) @map("pending_balance")
   updatedAt      DateTime            @updatedAt @map("updated_at")
   transactions   WalletTransaction[]
+
+  @@map("wallets")
 }
 
 model WalletTransaction {
@@ -706,6 +735,7 @@ model WalletTransaction {
   wallet            Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId])
+  @@map("wallet_transactions")
 }
 
 model ProjectWithdrawal {
@@ -732,6 +762,7 @@ model ProjectWithdrawal {
   @@index([utr])
   @@index([status])
   @@index([professionalId, status])
+  @@map("project_withdrawals")
 }
 
 model Invoice {
@@ -783,6 +814,7 @@ model ProjectDispute {
   @@index([trackingId])
   @@index([clientId])
   @@index([professionalId])
+  @@map("project_disputes")
 }
 
 model ProjectDisputeMessage {
@@ -810,6 +842,7 @@ model ProjectCompletionRequest {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
+  @@map("project_completion_requests")
 }
 
 model ProjectRevisionRequest {
@@ -823,6 +856,7 @@ model ProjectRevisionRequest {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
+  @@map("project_revision_requests")
 }
 
 model ProjectReviewRequest {
@@ -835,6 +869,7 @@ model ProjectReviewRequest {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([trackingId])
+  @@map("project_review_requests")
 }
 
 model ProfessionalVerification {
@@ -847,6 +882,8 @@ model ProfessionalVerification {
   status             String   @default("PENDING")
   updatedAt          DateTime @updatedAt @map("updated_at")
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("professional_verifications")
 }
 
 model VerificationDocumentReview {
@@ -906,6 +943,7 @@ model StoredFile {
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([ownerId])
+  @@map("stored_files")
 }
 
 model AuditLog {
@@ -936,6 +974,7 @@ model ApiToken {
 
   @@index([userId, kind])
   @@index([userId, kind, createdAt])
+  @@map("api_tokens")
 }
 
 model OtpCode {
@@ -950,6 +989,7 @@ model OtpCode {
 
   @@index([phone, role, expiresAt])
   @@index([phone, role, consumedAt])
+  @@map("otp_codes")
 }
 
 model BrowserSubscription {
@@ -961,6 +1001,7 @@ model BrowserSubscription {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
+  @@map("browser_subscriptions")
 }
 
 model Faq {
@@ -972,6 +1013,8 @@ model Faq {
   category     String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("faqs")
 }
 
 model ContactRequest {
@@ -983,6 +1026,8 @@ model ContactRequest {
   status    String   @default("OPEN")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("contact_requests")
 }
 
 model Service {
@@ -1000,6 +1045,7 @@ model Service {
   professional   User            @relation("ProfessionalServices", fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@index([professionalId])
+  @@map("services")
 }
 
 model PageConfiguration {

@@ -518,7 +518,7 @@ export default function AdminSupportPage() {
               paginatedFaqs.map((faq) => (
                 <article
                   key={faq.id ?? `${faq.question}-${faq.displayOrder}`}
-                  className={`rounded-xl border p-3.5 transition ${
+                  className={`rounded-xl border p-3.5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                     editingId === faq.id
                       ? "border-indigo-400 bg-indigo-50/40 ring-1 ring-indigo-200"
                       : "border-slate-200/90 bg-white hover:border-slate-300"
@@ -645,7 +645,7 @@ export default function AdminSupportPage() {
             paginatedContactRequests.map((item) => (
               <article
                 key={item.id}
-                className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 hover:border-slate-300 transition"
+                className="rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">

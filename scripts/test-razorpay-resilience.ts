@@ -308,10 +308,10 @@ async function runResilienceAudit() {
   // User has balance 3000, tries to withdraw 2000 twice rapidly during network lag
   const withdrawAttempt1 = await db.$transaction(async (tx) => {
     const reserved = await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 2000
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 2000
         WHERE "id" = ${wallet.id}
-          AND "balance" - "pendingBalance" >= 2000`,
+          AND balance - pending_balance >= 2000`,
     );
     if (reserved !== 1) return null;
     return tx.projectWithdrawal.create({
@@ -328,10 +328,10 @@ async function runResilienceAudit() {
   // Second rapid click / duplicate packet
   const withdrawAttempt2 = await db.$transaction(async (tx) => {
     const reserved = await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 2000
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 2000
         WHERE "id" = ${wallet.id}
-          AND "balance" - "pendingBalance" >= 2000`,
+          AND balance - pending_balance >= 2000`,
     );
     if (reserved !== 1) return null;
     return tx.projectWithdrawal.create({
@@ -432,10 +432,10 @@ async function runResilienceAudit() {
   // Create withdrawal of 500
   const w2 = await db.$transaction(async (tx) => {
     await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 500
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 500
         WHERE "id" = ${wallet.id}
-          AND "balance" - "pendingBalance" >= 500`,
+          AND balance - pending_balance >= 500`,
     );
     return tx.projectWithdrawal.create({
       data: {

@@ -3,8 +3,8 @@ import { AdminPageSkeleton } from "@/components/LoadingSkeleton";
 export default function Loading() {
   return (
     <AdminPageSkeleton
-      title="Loading Content Management…"
-      subtitle="Fetching CMS pages, policies, and editorial sections…"
+      title="Loading Webpage Editor…"
+      subtitle="Fetching webpages, policies, and editorial sections…"
     />
   );
 }

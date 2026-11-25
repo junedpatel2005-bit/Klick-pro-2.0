@@ -435,10 +435,10 @@ async function runRazorpayFullSuite() {
   // Professional tries to withdraw 2500 (exceeds balance 2000)
   const overdrawAttempt = await db.$transaction(async (tx) => {
     const reserved = await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 2500
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 2500
         WHERE "id" = ${profWallet.id}
-          AND "balance" - "pendingBalance" >= 2500`,
+          AND balance - pending_balance >= 2500`,
     );
     return reserved === 1;
   });
@@ -446,10 +446,10 @@ async function runRazorpayFullSuite() {
   // Valid withdrawal of 600
   const validWithdrawReservation = await db.$transaction(async (tx) => {
     const reserved = await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 600
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 600
         WHERE "id" = ${profWallet.id}
-          AND "balance" - "pendingBalance" >= 600`,
+          AND balance - pending_balance >= 600`,
     );
     if (reserved !== 1) throw new Error("Exceeds available balance.");
     return tx.projectWithdrawal.create({
@@ -532,10 +532,10 @@ async function runRazorpayFullSuite() {
   // Reserve ₹500
   const withdrawal2 = await db.$transaction(async (tx) => {
     await tx.$executeRaw(
-      Prisma.sql`UPDATE "Wallet"
-        SET "pendingBalance" = "pendingBalance" + 500
+      Prisma.sql`UPDATE wallets
+        SET pending_balance = pending_balance + 500
         WHERE "id" = ${profWallet.id}
-          AND "balance" - "pendingBalance" >= 500`,
+          AND balance - pending_balance >= 500`,
     );
     return tx.projectWithdrawal.create({
       data: {

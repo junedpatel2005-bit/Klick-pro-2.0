@@ -193,7 +193,7 @@ export default function ReviewModerationPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Total Reviews</p>
           {loading ? (
             <div className="mt-2 h-8 w-20 animate-pulse rounded-lg bg-slate-200" />
@@ -203,7 +203,7 @@ export default function ReviewModerationPage() {
           <p className="mt-1 text-[11px] text-slate-400">Published feedback</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Average Platform Score</p>
           {loading ? (
             <div className="mt-2 h-8 w-24 animate-pulse rounded-lg bg-amber-100" />
@@ -218,7 +218,7 @@ export default function ReviewModerationPage() {
           <p className="mt-1 text-[11px] text-slate-400">Out of 5.0 stars</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-emerald-700">5-Star Feedback</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-emerald-100" />
@@ -228,7 +228,7 @@ export default function ReviewModerationPage() {
           <p className="mt-1 text-[11px] text-slate-400">Top quality ratings</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-rose-700">1-Star / Flagged</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-rose-100" />

@@ -103,7 +103,7 @@ async function main() {
              'actorId','actor_id','startedBy','started_by','uploadedBy','uploaded_by',
              'reviewedBy','reviewed_by'
            )
-           AND c.table_name NOT IN ('ClientJob')`,
+           AND c.table_name NOT IN ('client_jobs')`,
         );
 
         // Dependencies can be nested (messages -> conversations, milestones -> tracking).

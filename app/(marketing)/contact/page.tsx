@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import MarketingVisualPage from "@/components/MarketingVisualPage";
-import { readMarketingContent } from "@/lib/marketing-cms";
+import Contact from "@/routes/contact";
+import { readPageTexts } from "@/lib/cms-page-texts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Contact Support",
@@ -9,6 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const content = await readMarketingContent("contact");
-  return <MarketingVisualPage page="contact" content={content} />;
+  const pageTexts = await readPageTexts("contact");
+  return <Contact pageTexts={pageTexts} />;
 }

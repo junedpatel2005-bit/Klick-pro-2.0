@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import MarketingVisualPage from "@/components/MarketingVisualPage";
-import { readMarketingContent } from "@/lib/marketing-cms";
+import Pricing from "@/routes/pricing";
+import { readPageTexts } from "@/lib/cms-page-texts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -9,6 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  const content = await readMarketingContent("pricing");
-  return <MarketingVisualPage page="pricing" content={content} />;
+  const pageTexts = await readPageTexts("pricing");
+  return <Pricing pageTexts={pageTexts} />;
 }

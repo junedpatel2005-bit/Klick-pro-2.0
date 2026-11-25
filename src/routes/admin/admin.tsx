@@ -148,7 +148,7 @@ export default function Admin() {
           <Link
             key={card.label}
             href={card.href}
-            className="group relative rounded-xl border border-slate-200/90 bg-white p-5 shadow-2xs hover:border-slate-300 transition-colors"
+            className="group relative rounded-xl border border-slate-200/90 bg-white p-5 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-slate-600 border border-slate-200/60">
@@ -317,7 +317,7 @@ function Latest({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200/90 bg-white p-5 shadow-2xs">
+    <section className="rounded-xl border border-slate-200/90 bg-white p-5 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-slate-500" />

@@ -470,10 +470,10 @@ export async function POST(request: NextRequest) {
       if (autoWithdrawal) {
         // Auto-Pay is ON: directly deduct balance and mark COMPLETED immediately without manual admin approval
         const deducted = await tx.$executeRaw(
-          Prisma.sql`UPDATE "Wallet"
-            SET "balance" = "balance" - ${parsed.data.amount}
-            WHERE "id" = ${wallet.id}
-              AND "balance" - "pendingBalance" >= ${parsed.data.amount}`,
+          Prisma.sql`UPDATE wallets
+            SET balance = balance - ${parsed.data.amount}
+            WHERE id = ${wallet.id}
+              AND balance - pending_balance >= ${parsed.data.amount}`,
         );
         if (deducted !== 1) throw new Error("Withdrawal amount exceeds your available balance.");
 
@@ -533,10 +533,10 @@ export async function POST(request: NextRequest) {
       } else {
         // Auto-Pay is OFF: reserve funds and set status to PENDING for admin review
         const reserved = await tx.$executeRaw(
-          Prisma.sql`UPDATE "Wallet"
-            SET "pendingBalance" = "pendingBalance" + ${parsed.data.amount}
-            WHERE "id" = ${wallet.id}
-              AND "balance" - "pendingBalance" >= ${parsed.data.amount}`,
+          Prisma.sql`UPDATE wallets
+            SET pending_balance = pending_balance + ${parsed.data.amount}
+            WHERE id = ${wallet.id}
+              AND balance - pending_balance >= ${parsed.data.amount}`,
         );
         if (reserved !== 1) throw new Error("Withdrawal amount exceeds your available balance.");
 

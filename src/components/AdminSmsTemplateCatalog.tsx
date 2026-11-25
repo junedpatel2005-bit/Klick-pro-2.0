@@ -170,7 +170,7 @@ export function AdminSmsTemplateCatalog() {
 
           {/* Quick Metrics Bar */}
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Total SMS Templates
@@ -180,7 +180,7 @@ export function AdminSmsTemplateCatalog() {
               <p className="mt-2 text-2xl font-bold text-slate-900">{templates.length}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Client Alerts
@@ -190,7 +190,7 @@ export function AdminSmsTemplateCatalog() {
               <p className="mt-2 text-2xl font-bold text-slate-900">{clientCount}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Professional Leads
@@ -200,7 +200,7 @@ export function AdminSmsTemplateCatalog() {
               <p className="mt-2 text-2xl font-bold text-slate-900">{profCount}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Customized Overrides
@@ -303,7 +303,7 @@ export function AdminSmsTemplateCatalog() {
               return (
                 <div
                   key={tpl.key}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md"
                 >
                   <div>
                     {/* Header: Audience badge & status */}

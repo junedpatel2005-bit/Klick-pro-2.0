@@ -220,13 +220,13 @@ export async function verifyPhoneOtp(
     const isCorrectCode = record.codeHash === hashCode(trimmedCode);
     const result = await db.$executeRaw(
       Prisma.sql`
-        UPDATE "OtpCode"
-        SET "attempts" = "attempts" + 1,
-            "consumedAt" = CASE WHEN ${isCorrectCode} THEN NOW() ELSE "consumedAt" END
-        WHERE "id" = ${record.id}
-          AND "consumedAt" IS NULL
-          AND ("expiresAt" > NOW() OR "expiresAt" > (NOW() AT TIME ZONE 'UTC'))
-          AND "attempts" < ${MAX_ATTEMPTS}
+        UPDATE otp_codes
+        SET attempts = attempts + 1,
+            consumed_at = CASE WHEN ${isCorrectCode} THEN NOW() ELSE consumed_at END
+        WHERE id = ${record.id}
+          AND consumed_at IS NULL
+          AND (expires_at > NOW() OR expires_at > (NOW() AT TIME ZONE 'UTC'))
+          AND attempts < ${MAX_ATTEMPTS}
       `,
     );
     if (result === 1 && isCorrectCode) {

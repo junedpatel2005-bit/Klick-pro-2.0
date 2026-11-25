@@ -59,17 +59,17 @@ async function auditDatabase() {
   const orphanedWallets = await db.$queryRawUnsafe<
     { id: number; userId: number; balance: number }[]
   >(
-    'SELECT w.id, w."userId", w.balance FROM "Wallet" w LEFT JOIN "User" u ON w."userId" = u.id WHERE u.id IS NULL',
+    'SELECT w.id, w.user_id AS "userId", w.balance FROM wallets w LEFT JOIN users u ON w.user_id = u.id WHERE u.id IS NULL',
   );
   console.log(`    Orphaned Wallets (no user): ${orphanedWallets.length}`, orphanedWallets);
 
   const orphanedWT = await db.$queryRawUnsafe<{ id: number }[]>(
-    'SELECT wt.id FROM "WalletTransaction" wt LEFT JOIN "Wallet" w ON wt."walletId" = w.id WHERE w.id IS NULL',
+    'SELECT wt.id FROM wallet_transactions wt LEFT JOIN wallets w ON wt.wallet_id = w.id WHERE w.id IS NULL',
   );
   console.log(`    Orphaned Wallet Transactions (no wallet): ${orphanedWT.length}`);
 
   const orphanedMilestones = await db.$queryRawUnsafe<{ id: number }[]>(
-    'SELECT pm.id FROM "ProjectMilestone" pm LEFT JOIN "ProjectTracking" pt ON pm."trackingId" = pt.id WHERE pt.id IS NULL',
+    'SELECT pm.id FROM project_milestones pm LEFT JOIN project_trackings pt ON pm.tracking_id = pt.id WHERE pt.id IS NULL',
   );
   console.log(`    Orphaned Milestones (no tracking): ${orphanedMilestones.length}`);
 

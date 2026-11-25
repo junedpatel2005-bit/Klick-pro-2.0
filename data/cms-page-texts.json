@@ -1,0 +1,13 @@
+{
+  "about": {
+    "goal.title": "Make finding, hiring, and working with the right professional easier.",
+    "goal.eyebrow": "Our goal",
+    "hero.btn.browseServices": "Browse Services",
+    "why.eyebrow": "Why we exist",
+    "why.title": "The gap was everywhere.",
+    "why.description": "Klick-Pro was created to bring two worlds together: customers who need work done, and professionals who are ready to do it.",
+    "whyCards.item_0.title": "For customers",
+    "whyCards.item_1.title": "For professionals",
+    "__group.whyCards": "[{\"id\":\"0\",\"tplIdx\":0},{\"id\":\"1\",\"tplIdx\":1},{\"id\":\"2\",\"tplIdx\":2}]"
+  }
+}

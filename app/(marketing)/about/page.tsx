@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import MarketingVisualPage from "@/components/MarketingVisualPage";
-import { readMarketingContent } from "@/lib/marketing-cms";
+import About from "@/routes/about";
+import { readCmsContent } from "@/lib/cms-file";
+import { readPageTexts } from "@/lib/cms-page-texts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -9,6 +12,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const content = await readMarketingContent("about");
-  return <MarketingVisualPage page="about" content={content} />;
+  const [content, pageTexts] = await Promise.all([readCmsContent(), readPageTexts("about")]);
+  return <About cmsContent={content} pageTexts={pageTexts} />;
 }

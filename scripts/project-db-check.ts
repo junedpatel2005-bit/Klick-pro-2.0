@@ -71,22 +71,22 @@ async function runAudit() {
   // 4. Orphan & Integrity Checks
   console.log("--- Relational Integrity & Orphan Checks ---");
   const orphanPayments = await db.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-    SELECT p.id FROM "Payment" p LEFT JOIN "User" u ON u.id = p."clientId" WHERE u.id IS NULL;
+    SELECT p.id FROM payments p LEFT JOIN users u ON u.id = p.client_id WHERE u.id IS NULL;
   `);
   console.log(`  Orphan Payments (Missing Client): ${orphanPayments.length}`);
 
   const orphanTrackings = await db.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-    SELECT t.id FROM "ProjectTracking" t LEFT JOIN "ProjectRequest" r ON r.id = t."requestId" WHERE r.id IS NULL;
+    SELECT t.id FROM project_trackings t LEFT JOIN project_requests r ON r.id = t.request_id WHERE r.id IS NULL;
   `);
   console.log(`  Orphan Trackings (Missing Request): ${orphanTrackings.length}`);
 
   const orphanMilestones = await db.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-    SELECT m.id FROM "ProjectMilestone" m LEFT JOIN "ProjectTracking" t ON t.id = m."trackingId" WHERE t.id IS NULL;
+    SELECT m.id FROM project_milestones m LEFT JOIN project_trackings t ON t.id = m.tracking_id WHERE t.id IS NULL;
   `);
   console.log(`  Orphan Milestones (Missing Tracking): ${orphanMilestones.length}`);
 
   const orphanProfiles = await db.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-    SELECT p.id FROM "ClientProfile" p LEFT JOIN "User" u ON u.id = p."userId" WHERE u.id IS NULL;
+    SELECT p.id FROM client_profiles p LEFT JOIN users u ON u.id = p.user_id WHERE u.id IS NULL;
   `);
   console.log(`  Orphan Client Profiles (Missing User): ${orphanProfiles.length}`);
   console.log("");
@@ -97,19 +97,19 @@ async function runAudit() {
     Array<{ normalized_email: string; count: number }>
   >(Prisma.sql`
     SELECT lower(email) AS normalized_email, count(*) AS count
-    FROM "User" WHERE email IS NOT NULL GROUP BY lower(email) HAVING count(*) > 1;
+    FROM users WHERE email IS NOT NULL GROUP BY lower(email) HAVING count(*) > 1;
   `);
   console.log(`  Duplicate User Emails: ${duplicateEmails.length}`);
 
   const duplicateProfiles = await db.$queryRaw<Array<{ userId: number; count: number }>>(Prisma.sql`
-    SELECT "userId", count(*) AS count FROM "ClientProfile" GROUP BY "userId" HAVING count(*) > 1;
+    SELECT user_id AS "userId", count(*) AS count FROM client_profiles GROUP BY user_id HAVING count(*) > 1;
   `);
   console.log(`  Duplicate Client Profiles per User: ${duplicateProfiles.length}`);
 
   const duplicatePrimaryLocations = await db.$queryRaw<
     Array<{ clientProfileId: number; count: number }>
   >(Prisma.sql`
-    SELECT "clientProfileId", count(*) AS count FROM "ClientSavedLocation" WHERE "isPrimary" = true GROUP BY "clientProfileId" HAVING count(*) > 1;
+    SELECT client_profile_id AS "clientProfileId", count(*) AS count FROM client_saved_locations WHERE is_primary = true GROUP BY client_profile_id HAVING count(*) > 1;
   `);
   console.log(`  Duplicate Primary Locations per Profile: ${duplicatePrimaryLocations.length}`);
   console.log("");
@@ -117,14 +117,14 @@ async function runAudit() {
   // 6. Financial Integrity Checks
   console.log("--- Financial Consistency Checks ---");
   const negativePayments = await db.$queryRaw<Array<{ id: number }>>(Prisma.sql`
-    SELECT id FROM "Payment"
+    SELECT id FROM payments
     WHERE amount < 0 OR base_amount < 0 OR client_fee_amount < 0
        OR professional_payout_amount < 0 OR admin_net_amount < 0;
   `);
   console.log(`  Negative Payment Fields: ${negativePayments.length}`);
 
   const negativeWallets = await db.$queryRaw<Array<{ id: number; balance: number }>>(Prisma.sql`
-    SELECT id, balance FROM "Wallet" WHERE balance < 0 OR "pendingBalance" < 0;
+    SELECT id, balance FROM wallets WHERE balance < 0 OR pending_balance < 0;
   `);
   console.log(`  Negative Wallet Balances: ${negativeWallets.length}`);
 
@@ -137,7 +137,7 @@ async function runAudit() {
       status: string;
     }>
   >(Prisma.sql`
-    SELECT id, amount, base_amount, client_fee_amount, status FROM "Payment"
+    SELECT id, amount, base_amount, client_fee_amount, status FROM payments
     WHERE amount <> base_amount + client_fee_amount
        OR professional_payout_amount + admin_net_amount <> amount;
   `);

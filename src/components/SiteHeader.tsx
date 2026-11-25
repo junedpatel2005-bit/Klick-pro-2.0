@@ -11,6 +11,7 @@ import { Menu, X, Mail, Phone, ChevronRight } from "lucide-react";
 
 const desktopLinks = [
   { to: "/", label: "Home" },
+  { to: "/about", label: "About Us" },
   { to: "/how-it-works", label: "How It Works" },
   { to: "/services", label: "Services" },
   { to: "/for-clients", label: "For Clients" },
@@ -87,10 +88,12 @@ export function SiteHeader({
       }
       className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/90 backdrop-blur-md"
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
-          <Logo preview={preview} />
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Desktop Navigation">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-5 xl:gap-8">
+          <div className="shrink-0">
+            <Logo preview={preview} />
+          </div>
+          <nav className="hidden items-center gap-4 xl:gap-5 lg:flex" aria-label="Desktop Navigation">
             {desktopLinks.map((l) => {
               const active =
                 l.to === "/"
@@ -102,7 +105,7 @@ export function SiteHeader({
                   href={l.to === "/" ? homeHref : l.to}
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
-                  className={`relative px-1 py-2 text-sm transition-colors after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:transition-transform ${
+                  className={`relative whitespace-nowrap px-1 py-2 text-sm transition-colors after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:transition-transform ${
                     active
                       ? "font-semibold text-primary after:scale-x-100 after:bg-primary"
                       : "text-muted-foreground after:scale-x-0 hover:text-foreground hover:after:scale-x-100 hover:after:bg-primary/40"
@@ -116,7 +119,7 @@ export function SiteHeader({
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
           {user ? (
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
@@ -233,7 +236,7 @@ export function SiteHeader({
                   <Button
                     asChild
                     size="default"
-                    className="w-full bg-brand text-brand-foreground hover:bg-brand-hover shadow-soft"
+                    className="w-full bg-cta text-cta-foreground hover:bg-cta/90 shadow-soft"
                   >
                     <Link href="/signup" prefetch={false} onClick={() => setOpen(false)}>
                       Sign up

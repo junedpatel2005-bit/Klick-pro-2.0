@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import {
@@ -60,9 +61,16 @@ export async function PUT(request: Request) {
     // Support both direct CmsPageData or legacy { page, content } payload
     let pageData: CmsPageData;
 
-    if (("slug" in body && "hero" in body && "boxes" in body) || ("slug" in body && "homeContent" in body)) {
+    if (
+      ("slug" in body && "hero" in body && "boxes" in body) ||
+      ("slug" in body && "homeContent" in body) ||
+      ("slug" in body && "pageTexts" in body)
+    ) {
       pageData = body as unknown as CmsPageData;
       if (!pageData.boxes) pageData.boxes = [];
+      if (!pageData.hero) {
+        pageData.hero = { eyebrow: "", title: "", description: "" };
+      }
     } else if ("page" in body && "content" in body) {
       const rawPage = String(body.page);
       const content = body.content as Record<string, unknown>;
@@ -89,6 +97,12 @@ export async function PUT(request: Request) {
     }
 
     await saveCmsPage(pageData);
+    try {
+      revalidatePath(pageData.slug === "home" ? "/" : `/${pageData.slug}`);
+      revalidatePath(`/p/${pageData.slug}`);
+    } catch {
+      // ignore revalidation errors in non-Next contexts
+    }
     return NextResponse.json({ success: true, page: pageData.slug });
   } catch (err) {
     console.error("Failed to save CMS content:", err);

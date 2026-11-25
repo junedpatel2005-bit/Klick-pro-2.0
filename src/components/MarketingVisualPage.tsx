@@ -554,7 +554,9 @@ function ServicesJobsSection({ cmsMode }: { cmsMode: boolean }) {
                                     return;
                                   }
                                 }
-                              } catch {}
+                              } catch {
+                                /* Fall back to generic location label below */
+                              }
                               setLocation("Near Me");
                             },
                             () => {

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import MarketingVisualPage from "@/components/MarketingVisualPage";
-import { readMarketingContent } from "@/lib/marketing-cms";
+import Services from "@/routes/services";
+import { readPageTexts } from "@/lib/cms-page-texts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Service Directory",
@@ -9,6 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ServicesPage() {
-  const content = await readMarketingContent("services");
-  return <MarketingVisualPage page="services" content={content} />;
+  const pageTexts = await readPageTexts("services");
+  return <Services pageTexts={pageTexts} />;
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
+import { CmsBoxGroup, CmsPageProvider, CmsText, type PageTextsMap } from "@/components/cms/CmsText";
 import {
   Sparkles,
   Search,
@@ -12,6 +13,39 @@ import {
   HelpCircle,
   ArrowRight,
 } from "lucide-react";
+
+const HELP_CARDS = [
+  {
+    legacyPrefix: "help.c1",
+    href: "/contact",
+    icon: "headset" as const,
+    defaults: {
+      title: "Contact Support",
+      desc: "Talk to a member of our team about your account, milestone status, or dispute.",
+      link: "Get in Touch",
+    },
+  },
+  {
+    legacyPrefix: "help.c2",
+    href: "/how-it-works",
+    icon: "route" as const,
+    defaults: {
+      title: "How It Works",
+      desc: "See the complete end-to-end journey for clients and professionals.",
+      link: "Explore Guide",
+    },
+  },
+  {
+    legacyPrefix: "help.c3",
+    href: "/services",
+    icon: "grid" as const,
+    defaults: {
+      title: "Browse Services",
+      desc: "Explore hundreds of trade, technical, and digital categories across six sectors.",
+      link: "View Catalog",
+    },
+  },
+];
 
 export type FAQItem = {
   id?: number;
@@ -142,7 +176,17 @@ export const DEFAULT_FAQ_DATA: FAQCategory[] = [
   },
 ];
 
-export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
+export default function FAQ({
+  initialData,
+  cmsMode = false,
+  pageTexts,
+  onTextChange,
+}: {
+  initialData?: FAQCategory[];
+  cmsMode?: boolean;
+  pageTexts?: PageTextsMap;
+  onTextChange?: (id: string, value: string) => void;
+}) {
   const [categories, setCategories] = useState<FAQCategory[]>(
     initialData && initialData.length > 0 ? initialData : DEFAULT_FAQ_DATA,
   );
@@ -152,6 +196,7 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
 
   // Sync client with database / admin updates
   useEffect(() => {
+    if (cmsMode) return;
     let isMounted = true;
     fetch("/api/faq", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -166,7 +211,7 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [cmsMode]);
 
   const toggleItem = (key: string) => {
     setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -200,31 +245,36 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
   );
 
   return (
-    <div className="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-[#1748b5]">
-      {/* 1. HERO */}
-      <section className="gradient-hero border-b border-slate-200/60">
-        <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
-          <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
-            <HelpCircle className="h-3.5 w-3.5" /> Help Center
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
-            Frequently Asked Questions
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
-            Quick answers about hiring, working, payments and staying safe on Klick-Pro. Cannot find what you need? Our team is always one click away.
-          </p>
-          <div className="relative mx-auto mt-8 max-w-xl">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search questions, e.g. escrow, cash, verification, milestone..."
-              className="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-12 pr-4 text-sm shadow-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-            />
+    <CmsPageProvider cmsMode={cmsMode} pageTexts={pageTexts} onTextChange={onTextChange}>
+      <div className="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-[#1748b5]">
+        {/* 1. HERO */}
+        <section className="gradient-hero border-b border-slate-200/60">
+          <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6">
+            <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
+              <HelpCircle className="h-3.5 w-3.5" />{" "}
+              <CmsText id="hero.label" defaultText="Help Center" />
+            </p>
+            <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
+              <CmsText id="hero.title" defaultText="Frequently Asked Questions" />
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
+              <CmsText
+                id="hero.description"
+                defaultText="Quick answers about hiring, working, payments and staying safe on Klick-Pro. Cannot find what you need? Our team is always one click away."
+              />
+            </p>
+            <div className="relative mx-auto mt-8 max-w-xl">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search questions, e.g. escrow, cash, verification, milestone..."
+                className="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-12 pr-4 text-sm shadow-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* 2. CATEGORY TABS & FAQ ACCORDIONS */}
       <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
@@ -235,8 +285,8 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
               onClick={() => setActiveCategory(cat)}
               className={`rounded-full border px-4 py-2 text-sm font-semibold transition cursor-pointer ${
                 activeCategory === cat
-                  ? "border-brand bg-brand text-white shadow-sm"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-brand hover:text-brand"
+                  ? "border-cta bg-cta text-cta-foreground shadow-sm"
+                  : "border-slate-300 bg-white text-slate-600 hover:border-cta hover:text-cta"
               }`}
             >
               {cat}
@@ -253,7 +303,7 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
             </p>
             <Link
               href="/contact"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-hover"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-2.5 text-sm font-bold text-cta-foreground shadow-sm transition hover:bg-cta/90"
             >
               Contact Support
             </Link>
@@ -305,56 +355,37 @@ export default function FAQ({ initialData }: { initialData?: FAQCategory[] }) {
 
       {/* 3. STILL NEED HELP */}
       <section id="disputes" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8 scroll-mt-20">
-        <div className="grid gap-6 md:grid-cols-3">
-          <Link
-            href="/contact"
-            className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
-          >
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand">
-              <Headset className="h-6 w-6" />
-            </div>
-            <h2 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">Contact Support</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Talk to a member of our team about your account, milestone status, or dispute.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand">
-              Get in Touch <ArrowRight className="h-4 w-4" />
-            </span>
-          </Link>
-
-          <Link
-            href="/how-it-works"
-            className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
-          >
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand">
-              <Route className="h-6 w-6" />
-            </div>
-            <h2 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">How It Works</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              See the complete end-to-end journey for clients and professionals.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand">
-              Explore Guide <ArrowRight className="h-4 w-4" />
-            </span>
-          </Link>
-
-          <Link
-            href="/services"
-            className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
-          >
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand">
-              <LayoutGrid className="h-6 w-6" />
-            </div>
-            <h2 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">Browse Services</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Explore hundreds of trade, technical, and digital categories across six sectors.
-            </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand">
-              View Catalog <ArrowRight className="h-4 w-4" />
-            </span>
-          </Link>
-        </div>
+        <CmsBoxGroup
+          groupId="helpCards"
+          templates={HELP_CARDS}
+          gridClassName="grid gap-6 md:grid-cols-3"
+          renderItem={(tpl) => {
+            const Icon =
+              tpl.icon === "route" ? Route : tpl.icon === "grid" ? LayoutGrid : Headset;
+            return (
+              <Link
+                href={tpl.href}
+                className="rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md block"
+              >
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h2 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">
+                  <CmsText id="title" defaultText={tpl.defaults.title} />
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  <CmsText id="desc" defaultText={tpl.defaults.desc} />
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-brand">
+                  <CmsText id="link" defaultText={tpl.defaults.link} />{" "}
+                  <ArrowRight className="h-4 w-4" />
+                </span>
+              </Link>
+            );
+          }}
+        />
       </section>
-    </div>
+      </div>
+    </CmsPageProvider>
   );
 }

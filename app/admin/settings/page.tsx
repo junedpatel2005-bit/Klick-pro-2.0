@@ -175,7 +175,7 @@ export default function AdminSettingsPage() {
         <div className="grid gap-6">
           {/* Quick Stat Pill Preview */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3.5">
+            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3.5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
                 Min Withdrawal
               </p>
@@ -185,7 +185,7 @@ export default function AdminSettingsPage() {
               <p className="text-[10px] text-emerald-600 mt-0.5">Professional payout minimum</p>
             </div>
             <div
-              className={`rounded-xl border p-3.5 ${
+              className={`rounded-xl border p-3.5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                 isAutoWithdrawalEnabled
                   ? "border-emerald-200/80 bg-emerald-50/50"
                   : "border-slate-200/80 bg-slate-50/50"

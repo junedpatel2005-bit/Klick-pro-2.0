@@ -412,7 +412,7 @@ export default function Landing({
               <div className="mt-8 flex flex-wrap gap-3.5">
                 {cmsMode ? (
                   <div
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft transition cursor-text ring-1 ring-white/20 hover:ring-2 hover:ring-blue-400"
+                    className="inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-3 text-sm font-semibold text-cta-foreground shadow-soft transition cursor-text ring-1 ring-white/20 hover:ring-2 hover:ring-cta"
                     title="Click text to edit button"
                   >
                     <Search className="h-4 w-4 shrink-0 pointer-events-none" />
@@ -429,7 +429,7 @@ export default function Landing({
                   <Button
                     asChild
                     size="lg"
-                    className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                    className="rounded-xl bg-cta px-6 py-3 text-sm font-semibold text-cta-foreground shadow-soft hover:bg-cta/90 transition"
                   >
                     <Link href="/services">
                       <Search className="mr-2 h-4 w-4" />
@@ -600,7 +600,7 @@ export default function Landing({
                   {/* Direct Link to Services */}
                   <div className="mt-5 w-full">
                     {cmsMode ? (
-                      <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white shadow-sm cursor-text hover:ring-2 hover:ring-blue-400">
+                      <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-cta py-2.5 text-xs font-semibold text-cta-foreground shadow-sm cursor-text hover:ring-2 hover:ring-cta/60">
                         <span
                           contentEditable={true}
                           suppressContentEditableWarning={true}
@@ -614,7 +614,7 @@ export default function Landing({
                     ) : (
                       <Link
                         href="/services"
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-xs font-semibold text-white transition hover:bg-slate-800 shadow-sm"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-cta py-2.5 text-xs font-semibold text-cta-foreground transition hover:bg-cta/90 shadow-sm"
                       >
                         <span>{content.heroShowcase?.ctaText}</span>
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -725,6 +725,7 @@ export default function Landing({
                   {/* Floating Action Toolbar on Selected Category */}
                   {isSelected && (
                     <div
+                      data-cms-toolbar="true"
                       className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg z-20"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={(event) => event.stopPropagation()}
@@ -790,7 +791,7 @@ export default function Landing({
                 <Link
                   key={idx}
                   href={cat.href || fallbackCat.href}
-                  className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft hover:shadow-md transition flex flex-col justify-between"
+                  className="group rounded-2xl border border-slate-200/80 bg-white p-7 shadow-soft hover:shadow-md transition duration-200 hover:-translate-y-0.5 flex flex-col justify-between"
                 >
                   <div>
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:scale-105">
@@ -1015,7 +1016,7 @@ export default function Landing({
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-6 md:grid-cols-2">
               {/* For Clients CTA */}
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div>
                   <span className="inline-flex rounded-lg bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
                     <span
@@ -1050,7 +1051,7 @@ export default function Landing({
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   {cmsMode ? (
-                    <div className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-2.5 text-xs font-semibold text-cta-foreground shadow-soft cursor-text hover:ring-2 hover:ring-cta/60">
                       <Briefcase className="h-4 w-4 pointer-events-none" />
                       <span
                         contentEditable={true}
@@ -1064,7 +1065,7 @@ export default function Landing({
                   ) : (
                     <Link
                       href="/post-job"
-                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-blue-700 transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-2.5 text-xs font-semibold text-cta-foreground shadow-soft hover:bg-cta/90 transition"
                     >
                       <Briefcase className="h-4 w-4" />
                       <span>{content.ctaDualBanner?.client.primaryCta}</span>
@@ -1096,7 +1097,7 @@ export default function Landing({
               </div>
 
               {/* For Professionals CTA */}
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-soft flex flex-col justify-between transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div>
                   <span className="inline-flex rounded-lg bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                     <span
@@ -1131,8 +1132,8 @@ export default function Landing({
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   {cmsMode ? (
-                    <div className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft cursor-text hover:ring-2 hover:ring-blue-400">
-                      <ShieldCheck className="h-4 w-4 text-emerald-400 pointer-events-none" />
+                    <div className="inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-2.5 text-xs font-semibold text-cta-foreground shadow-soft cursor-text hover:ring-2 hover:ring-cta/60">
+                      <ShieldCheck className="h-4 w-4 text-white pointer-events-none" />
                       <span
                         contentEditable={true}
                         suppressContentEditableWarning={true}
@@ -1145,9 +1146,9 @@ export default function Landing({
                   ) : (
                     <Link
                       href="/signup?role=PROFESSIONAL"
-                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-soft hover:bg-slate-800 transition"
+                      className="inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-2.5 text-xs font-semibold text-cta-foreground shadow-soft hover:bg-cta/90 transition"
                     >
-                      <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                      <ShieldCheck className="h-4 w-4 text-white" />
                       <span>{content.ctaDualBanner?.pro.primaryCta}</span>
                     </Link>
                   )}
@@ -1247,7 +1248,7 @@ function HomeFeature({
       style={drag?.style}
       {...(drag?.handleProps ?? {})}
       onClick={cmsMode ? onSelect : undefined}
-      className={`relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-soft hover:shadow-md transition flex flex-col justify-between ${
+      className={`relative rounded-2xl border border-slate-200/80 bg-white p-8 shadow-soft hover:shadow-md transition duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
         cmsMode ? "cursor-grab active:cursor-grabbing hover:border-blue-300" : ""
       } ${selected ? "ring-2 ring-blue-600 ring-offset-2 ring-offset-white" : ""} ${
         drag?.isDragging ? "z-10 scale-[1.02] opacity-70 shadow-2xl" : ""
@@ -1296,6 +1297,7 @@ function HomeFeature({
 
       {cmsMode && selected && (
         <div
+          data-cms-toolbar="true"
           className="absolute -top-3 right-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs shadow-lg z-20"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}

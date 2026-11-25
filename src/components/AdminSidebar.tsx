@@ -82,7 +82,7 @@ const linkGroups = [
       { href: "/admin/templates", label: "Email templates", icon: Mail },
       { href: "/admin/sms-templates", label: "SMS templates", icon: Smartphone },
       { href: "/admin/support", label: "Support & FAQs", icon: FileText },
-      { href: "/admin/cms", label: "Website content", icon: FileText },
+      { href: "/admin/cms", label: "Webpage editor", icon: FileText },
       { href: "/admin/settings", label: "Platform settings", icon: Sliders },
       { href: "/admin/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare, badge: "messages" },

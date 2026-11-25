@@ -59,80 +59,80 @@ ORDER BY started_at, migration_name;
 
 -- 07 Relationship/orphan checks
 SELECT 'Payment.clientId' AS check_name, p.id AS row_id, p."clientId" AS reference_id
-FROM "Payment" p LEFT JOIN "User" u ON u.id = p."clientId"
+FROM payments p LEFT JOIN users u ON u.id = p."clientId"
 WHERE u.id IS NULL;
 
 SELECT 'Payment.professionalId' AS check_name, p.id AS row_id, p."professionalId" AS reference_id
-FROM "Payment" p LEFT JOIN "User" u ON u.id = p."professionalId"
+FROM payments p LEFT JOIN users u ON u.id = p."professionalId"
 WHERE u.id IS NULL;
 
 SELECT 'Payment.jobId' AS check_name, p.id AS row_id, p."jobId" AS reference_id
-FROM "Payment" p LEFT JOIN "ClientJob" j ON j.id = p."jobId"
+FROM payments p LEFT JOIN client_jobs j ON j.id = p."jobId"
 WHERE p."jobId" IS NOT NULL AND j.id IS NULL;
 
 SELECT 'Payment.projectTrackingId' AS check_name, p.id AS row_id, p.project_tracking_id AS reference_id
-FROM "Payment" p LEFT JOIN "ProjectTracking" t ON t.id = p.project_tracking_id
+FROM payments p LEFT JOIN project_trackings t ON t.id = p.project_tracking_id
 WHERE p.project_tracking_id IS NOT NULL AND t.id IS NULL;
 
 SELECT 'ProjectRequest.clientId' AS check_name, r.id AS row_id, r."clientId" AS reference_id
-FROM "ProjectRequest" r LEFT JOIN "User" u ON u.id = r."clientId"
+FROM project_requests r LEFT JOIN users u ON u.id = r."clientId"
 WHERE u.id IS NULL;
 
 SELECT 'ProjectRequest.professionalId' AS check_name, r.id AS row_id, r."professionalId" AS reference_id
-FROM "ProjectRequest" r LEFT JOIN "User" u ON u.id = r."professionalId"
+FROM project_requests r LEFT JOIN users u ON u.id = r."professionalId"
 WHERE u.id IS NULL;
 
 SELECT 'ProjectRequest.jobId' AS check_name, r.id AS row_id, r."jobId" AS reference_id
-FROM "ProjectRequest" r LEFT JOIN "ClientJob" j ON j.id = r."jobId"
+FROM project_requests r LEFT JOIN client_jobs j ON j.id = r."jobId"
 WHERE j.id IS NULL;
 
 SELECT 'ProjectTracking.requestId' AS check_name, t.id AS row_id, t."requestId" AS reference_id
-FROM "ProjectTracking" t LEFT JOIN "ProjectRequest" r ON r.id = t."requestId"
+FROM project_trackings t LEFT JOIN project_requests r ON r.id = t."requestId"
 WHERE r.id IS NULL;
 
 SELECT 'ProjectTracking.jobId' AS check_name, t.id AS row_id, t."jobId" AS reference_id
-FROM "ProjectTracking" t LEFT JOIN "ClientJob" j ON j.id = t."jobId"
+FROM project_trackings t LEFT JOIN client_jobs j ON j.id = t."jobId"
 WHERE j.id IS NULL;
 
 SELECT 'ProjectMilestone.trackingId' AS check_name, m.id AS row_id, m."trackingId" AS reference_id
-FROM "ProjectMilestone" m LEFT JOIN "ProjectTracking" t ON t.id = m."trackingId"
+FROM project_milestones m LEFT JOIN project_trackings t ON t.id = m."trackingId"
 WHERE t.id IS NULL;
 
 SELECT 'ProjectTimelineEvent.trackingId' AS check_name, e.id AS row_id, e."trackingId" AS reference_id
-FROM "ProjectTimelineEvent" e LEFT JOIN "ProjectTracking" t ON t.id = e."trackingId"
+FROM project_timeline_events e LEFT JOIN project_trackings t ON t.id = e."trackingId"
 WHERE t.id IS NULL;
 
 SELECT 'ProjectWorkUpload.trackingId' AS check_name, w.id AS row_id, w."trackingId" AS reference_id
-FROM "ProjectWorkUpload" w LEFT JOIN "ProjectTracking" t ON t.id = w."trackingId"
+FROM project_work_uploads w LEFT JOIN project_trackings t ON t.id = w."trackingId"
 WHERE t.id IS NULL;
 
 SELECT 'ProjectWorkUpload.milestoneId' AS check_name, w.id AS row_id, w."milestoneId" AS reference_id
-FROM "ProjectWorkUpload" w LEFT JOIN "ProjectMilestone" m ON m.id = w."milestoneId"
+FROM project_work_uploads w LEFT JOIN project_milestones m ON m.id = w."milestoneId"
 WHERE w."milestoneId" IS NOT NULL AND m.id IS NULL;
 
 SELECT 'ClientProfile.userId' AS check_name, p.id AS row_id, p."userId" AS reference_id
-FROM "ClientProfile" p LEFT JOIN "User" u ON u.id = p."userId"
+FROM client_profiles p LEFT JOIN users u ON u.id = p."userId"
 WHERE u.id IS NULL;
 
 SELECT 'Service.categoryId' AS check_name, s.id AS row_id, s."categoryId" AS reference_id
-FROM "Service" s LEFT JOIN "ServiceCategory" c ON c.id = s."categoryId"
+FROM services s LEFT JOIN service_categories c ON c.id = s."categoryId"
 WHERE c.id IS NULL;
 
 -- 08 Duplicate checks
 SELECT 'User duplicate email' AS check_name, lower(email) AS normalized_email, count(*) AS row_count
-FROM "User"
+FROM users
 WHERE email IS NOT NULL
 GROUP BY lower(email)
 HAVING count(*) > 1;
 
 SELECT 'ClientProfile duplicate user' AS check_name, "userId", count(*) AS row_count
-FROM "ClientProfile"
+FROM client_profiles
 GROUP BY "userId"
 HAVING count(*) > 1;
 
 SELECT 'ClientSavedLocation duplicate primary' AS check_name,
        "clientProfileId", count(*) AS row_count
-FROM "ClientSavedLocation"
+FROM client_saved_locations
 WHERE "isPrimary" = true
 GROUP BY "clientProfileId"
 HAVING count(*) > 1;
@@ -140,54 +140,54 @@ HAVING count(*) > 1;
 -- 09 Financial integrity
 SELECT 'Payment negative money' AS check_name, id, amount, base_amount,
        client_fee_amount, professional_payout_amount, admin_net_amount
-FROM "Payment"
+FROM payments
 WHERE amount < 0 OR base_amount < 0 OR client_fee_amount < 0
    OR professional_payout_amount < 0 OR admin_net_amount < 0;
 
 SELECT 'Payment unexpected required NULL' AS check_name, id
-FROM "Payment"
+FROM payments
 WHERE amount IS NULL OR base_amount IS NULL OR client_fee_amount IS NULL
    OR professional_payout_amount IS NULL OR admin_net_amount IS NULL;
 
 SELECT 'Payment charge reconciliation' AS check_name, id, amount, base_amount,
        client_fee_amount, professional_payout_amount, admin_net_amount
-FROM "Payment"
+FROM payments
 WHERE amount <> base_amount + client_fee_amount
    OR professional_payout_amount + admin_net_amount <> amount;
 
 -- 10 Range/business-rule checks
 SELECT 'ProjectTracking invalid progress' AS check_name, id, progress
-FROM "ProjectTracking"
+FROM project_trackings
 WHERE progress IS NULL OR progress < 0 OR progress > 100;
 
 SELECT 'ProjectReview invalid rating' AS check_name, id, rating
-FROM "ProjectReview"
+FROM project_reviews
 WHERE rating IS NULL OR rating < 1 OR rating > 5;
 
 SELECT 'User invalid rating aggregate' AS check_name, id, "averageRating", "reviewCount"
-FROM "User"
+FROM users
 WHERE "averageRating" IS NULL OR "averageRating" < 0 OR "averageRating" > 5
    OR "reviewCount" IS NULL OR "reviewCount" < 0;
 
 SELECT 'ClientJob invalid budget' AS check_name, id, "budgetMin", "budgetMax"
-FROM "ClientJob"
+FROM client_jobs
 WHERE "budgetMin" < 0 OR "budgetMax" < 0
    OR ("budgetMin" IS NOT NULL AND "budgetMax" IS NOT NULL AND "budgetMin" > "budgetMax");
 
 SELECT 'ProjectTracking invalid lifecycle dates' AS check_name, id, "startedAt", "completedAt"
-FROM "ProjectTracking"
+FROM project_trackings
 WHERE "startedAt" IS NOT NULL AND "completedAt" IS NOT NULL
   AND "completedAt" < "startedAt";
 
 -- 11 Status inventories
 SELECT 'ProjectTracking status inventory' AS check_name, status, count(*) AS row_count
-FROM "ProjectTracking" GROUP BY status ORDER BY status;
+FROM project_trackings GROUP BY status ORDER BY status;
 
 SELECT 'Payment status inventory' AS check_name, status, count(*) AS row_count
-FROM "Payment" GROUP BY status ORDER BY status;
+FROM payments GROUP BY status ORDER BY status;
 
 SELECT 'WalletTransaction status inventory' AS check_name, status, count(*) AS row_count
-FROM "WalletTransaction" GROUP BY status ORDER BY status;
+FROM wallet_transactions GROUP BY status ORDER BY status;
 
 -- 12 RLS
 SELECT n.nspname AS schemaname, c.relname AS tablename,

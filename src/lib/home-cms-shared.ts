@@ -194,3 +194,136 @@ export const defaultHomeContent: HomeContent = {
     },
   },
 };
+
+export const defaultProfessionalHomeContent: HomeContent = {
+  hero: {
+    eyebrow: "Grow your professional business",
+    title: "Find projects that match your skills",
+    description:
+      "Browse available projects, bid on work, and build your reputation with satisfied clients worldwide.",
+    primaryCta: "Find Projects",
+    secondaryCta: "Professional Dashboard",
+  },
+  heroShowcase: {
+    badge: "Verified Professional Workspace",
+    title: "Klick-Pro",
+    description:
+      "Browse verified client requirements, send transparent quotes, and receive 100% milestone escrow payouts directly.",
+    metrics: [
+      { label: "Escrow", value: "100% Protected" },
+      { label: "Platform Cut", value: "Zero Fees" },
+      { label: "Clients", value: "Verified KYC" },
+    ],
+    ctaText: "Find Projects",
+  },
+  categoriesSection: {
+    eyebrow: "OPEN WORK ACROSS EVERY SECTOR",
+    title: "Residential, Commercial, Industrial & more",
+    description:
+      "Discover active client requirements matching your trade, city, and hourly or fixed project rates.",
+    items: [
+      {
+        title: "Residential",
+        description: "Electricians, plumbers, cleaners, painters, carpenters, tutors and home care.",
+        ctaText: "Find Residential Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+      {
+        title: "Commercial",
+        description: "Office fit-outs, facility upkeep, photography, marketing, accounting and legal help.",
+        ctaText: "Find Commercial Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+      {
+        title: "Industrial",
+        description: "Machinery maintenance, industrial wiring, welding, safety audits and logistics.",
+        ctaText: "Find Industrial Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+      {
+        title: "Health Care",
+        description: "Nurses, caregivers, physiotherapists, therapists, medical technicians and wellness support.",
+        ctaText: "Find Health Care Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+      {
+        title: "Personal Care & Home Services",
+        description: "Salon and grooming, spa and massage, beauty, fitness trainers, laundry and home help.",
+        ctaText: "Find Personal Care Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+      {
+        title: "Education",
+        description: "Tutors, coaches, language teachers, test prep, skill training and online courses.",
+        ctaText: "Find Education Jobs",
+        href: "/professional/my-jobs?tab=find",
+      },
+    ],
+  },
+  whyChooseUsSection: {
+    eyebrow: "WHY PROFESSIONALS CHOOSE US",
+    title: "Everything you need to grow",
+    description: "Find quality projects, get paid safely, and build a reputation clients trust.",
+  },
+  features: [
+    {
+      id: "grow",
+      title: "Grow",
+      description: "Find quality projects near you or remotely and grow your independent business.",
+      icon: "trend",
+    },
+    {
+      id: "safe",
+      title: "Get paid safely",
+      description: "Work with funded milestone escrow and receive full net disbursements directly.",
+      icon: "shield",
+    },
+    {
+      id: "reputation",
+      title: "Build your reputation",
+      description: "Deliver great work on clear milestones and earn verified reviews clients trust.",
+      icon: "star",
+    },
+    {
+      id: "matching",
+      title: "Smart Job Matching",
+      description: "See open client requirements tailored to your category, service radius, and availability.",
+      icon: "users",
+    },
+    {
+      id: "messages",
+      title: "Direct Client Chat",
+      description: "Clarify scope, share site photos, and confirm milestones cleanly in one workspace.",
+      icon: "message",
+    },
+    {
+      id: "zero-fees",
+      title: "Zero Commission Default",
+      description: "Keep what you quote with transparent milestone schedules and automated receipts.",
+      icon: "wallet",
+    },
+  ],
+  featuredProsSection: {
+    eyebrow: "Featured",
+    title: "Jobs ready for you",
+    ctaText: "Browse all",
+  },
+  ctaDualBanner: {
+    client: {
+      badge: "Open Requirements",
+      title: "Looking for your next client project?",
+      description:
+        "Filter live local and remote jobs by budget, skill category, and location, then send a tailored quote in seconds.",
+      primaryCta: "Find Projects",
+      secondaryCta: "Explore how it works",
+    },
+    pro: {
+      badge: "Professional Workspace",
+      title: "Manage active jobs, milestones & earnings",
+      description:
+        "Track running contracts, request milestone releases, chat with clients, and keep your profile verified.",
+      primaryCta: "Professional Dashboard",
+      secondaryCta: "Update profile & skills",
+    },
+  },
+};

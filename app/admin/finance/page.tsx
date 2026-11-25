@@ -1109,7 +1109,7 @@ export default function AdminFinancePage() {
       {/* KPI Cards Grid (Boxes following searchbar) */}
       <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {/* Card 1: Total Business Done (Gross Volume) */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-slate-500">
@@ -1141,7 +1141,7 @@ export default function AdminFinancePage() {
 
         {/* Card 2: Platform Earnings (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
         {isCommissionOn && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-semibold text-emerald-800">
@@ -1173,7 +1173,7 @@ export default function AdminFinancePage() {
         )}
 
         {/* Card 3: Paid to Professionals */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-slate-500">
@@ -1208,7 +1208,7 @@ export default function AdminFinancePage() {
         {/* Card 4: Money on Hold (Escrow) */}
         <div
           onClick={() => setActiveTab("escrow")}
-          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             activeTab === "escrow"
               ? "border-amber-400 bg-amber-50/60"
               : "border-slate-200/90 bg-white hover:border-slate-300"
@@ -1255,7 +1255,7 @@ export default function AdminFinancePage() {
         {/* Card 5: Platform Safe (Treasury Wallet) */}
         <div
           onClick={() => setActiveTab("ledger")}
-          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             activeTab === "ledger"
               ? "border-slate-400 bg-slate-50"
               : "border-slate-200/90 bg-white hover:border-slate-300"

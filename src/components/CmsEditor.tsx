@@ -33,8 +33,19 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Landing from "@/routes/index";
+import About from "@/routes/about";
+import HowItWorks from "@/routes/how-it-works";
+import { ServicesCatalog } from "@/components/ServicesCatalog";
+import ForClients from "@/routes/for-clients";
+import ForPros from "@/routes/for-professionals";
+import Pricing from "@/routes/pricing";
+import FAQ, { type FAQCategory } from "@/routes/faq";
+import Contact from "@/routes/contact";
+import ProfessionalHome from "@/routes/professional-home";
 import MarketingVisualPage from "@/components/MarketingVisualPage";
 import type { HomeContent, HomeFeature } from "@/lib/home-cms-shared";
+import type { CompleteCategoryHierarchy } from "@/lib/queries/categories-hierarchy";
+import type { PageTextsMap } from "@/components/cms/CmsText";
 import type {
   MarketingPageContent,
   MarketingItem,
@@ -132,7 +143,13 @@ const fallbackMarketingContent: MarketingPageContent = {
   ],
 };
 
-export default function CmsEditor() {
+export default function CmsEditor({
+  serviceHierarchy,
+  faqCategories,
+}: {
+  serviceHierarchy?: CompleteCategoryHierarchy;
+  faqCategories?: FAQCategory[];
+} = {}) {
   const [pagesList, setPagesList] = useState<PageOption[]>(DEFAULT_PAGES);
   const [selectedSlug, setSelectedSlug] = useState<string>("home");
   const [status, setStatus] = useState<"loading" | "ready" | "saving" | "saved" | "error">("loading");
@@ -140,9 +157,10 @@ export default function CmsEditor() {
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [selectedBoxId, setSelectedBoxId] = useState<string | null>(null);
 
-  // Content state for home vs marketing/custom
+  // Content state for home vs marketing/custom & full-page texts
   const [homeContent, setHomeContent] = useState<HomeContent>(fallbackHomeContent);
   const [marketingContent, setMarketingContent] = useState<MarketingPageContent>(fallbackMarketingContent);
+  const [pageTexts, setPageTexts] = useState<PageTextsMap>({});
 
   // Modals
   const [addBoxOpen, setAddBoxOpen] = useState(false);
@@ -187,7 +205,7 @@ export default function CmsEditor() {
         if (!res.ok) throw new Error("Load failed");
         const data = await res.json();
 
-        if (selectedSlug === "home") {
+        if (selectedSlug === "home" || selectedSlug === "professional-home") {
           if (data.homeContent) {
             setHomeContent(data.homeContent);
           } else {
@@ -199,6 +217,7 @@ export default function CmsEditor() {
                 : fallbackHomeContent.features;
             setHomeContent({ hero, features });
           }
+          setPageTexts(data.pageTexts && typeof data.pageTexts === "object" ? data.pageTexts : {});
           setMetaDescription(data.hero?.description || "");
         } else {
           const hero = {
@@ -230,6 +249,7 @@ export default function CmsEditor() {
             secondaryLink: "/signup",
           };
           setMarketingContent({ hero, items, cta });
+          setPageTexts(data.pageTexts && typeof data.pageTexts === "object" ? data.pageTexts : {});
           setMetaDescription(hero.description || "");
         }
 
@@ -250,13 +270,14 @@ export default function CmsEditor() {
     try {
       let payload: Record<string, unknown>;
 
-      if (selectedSlug === "home") {
+      if (selectedSlug === "home" || selectedSlug === "professional-home") {
         payload = {
-          slug: "home",
-          title: "Home",
+          slug: selectedSlug,
+          title: selectedSlug === "home" ? "Home" : "Professional Home",
           hero: homeContent.hero,
           boxes: homeContent.features,
           homeContent: homeContent,
+          pageTexts,
           seo: {
             metaTitle,
             metaDescription,
@@ -265,15 +286,17 @@ export default function CmsEditor() {
         };
       } else {
         const activePage = pagesList.find((p) => p.slug === selectedSlug);
+        const syncedHero = {
+          eyebrow: pageTexts["hero.label"] ?? marketingContent.hero.label,
+          title: pageTexts["hero.title"] ?? marketingContent.hero.title,
+          description: pageTexts["hero.description"] ?? marketingContent.hero.description,
+        };
         payload = {
           slug: selectedSlug,
           title: activePage?.title || selectedSlug,
-          hero: {
-            eyebrow: marketingContent.hero.label,
-            title: marketingContent.hero.title,
-            description: marketingContent.hero.description,
-          },
+          hero: syncedHero,
           boxes: marketingContent.items,
+          pageTexts,
           cta: marketingContent.cta,
           seo: {
             metaTitle,
@@ -299,23 +322,19 @@ export default function CmsEditor() {
     }
   };
 
-  // Add Box to current page
+  // Add Box to current page (without adding extra button or link defaults)
   const handleAddBox = (preset?: Partial<MarketingItem>) => {
     const newId = `box-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const newTitle = preset?.title || "New Service Guarantee";
     const newDesc = preset?.description || "Click directly here to change this text.";
     const newIcon = preset?.icon || "shield";
-    const newBtn = preset?.buttonText || "Learn more";
-    const newLink = preset?.buttonLink || "/services";
 
-    if (selectedSlug === "home") {
+    if (selectedSlug === "home" || selectedSlug === "professional-home") {
       const newFeature: HomeFeature = {
         id: newId,
         title: newTitle,
         description: newDesc,
         icon: newIcon,
-        buttonText: newBtn,
-        buttonLink: newLink,
       };
       setHomeContent({
         ...homeContent,
@@ -327,8 +346,6 @@ export default function CmsEditor() {
         title: newTitle,
         description: newDesc,
         icon: newIcon,
-        buttonText: newBtn,
-        buttonLink: newLink,
       };
       setMarketingContent({
         ...marketingContent,
@@ -401,6 +418,13 @@ export default function CmsEditor() {
 
   const activePage = pagesList.find((p) => p.slug === selectedSlug);
   const liveWebsiteUrl = activePage?.href || (activePage?.isCustom ? `/p/${selectedSlug}` : `/${selectedSlug}`);
+  const supportsDynamicBoxes =
+    selectedSlug === "home" || selectedSlug === "professional-home" || Boolean(activePage?.isCustom);
+
+  const handlePageTextChange = (key: string, value: string) => {
+    setPageTexts((prev) => ({ ...prev, [key]: value }));
+    setDirty(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -410,12 +434,12 @@ export default function CmsEditor() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
               <Layers className="h-3.5 w-3.5" />
-              Live Visual CMS
+              Live Webpage Editor
             </span>
             <span className="text-xs font-medium text-slate-400">· Click text to edit &middot; Move boxes</span>
           </div>
           <h1 className="mt-2 font-display text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Visual Website Editor
+            Webpage Editor
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-500">
             Edit text directly, add/remove/move boxes, and publish changes straight to the website.
@@ -456,15 +480,17 @@ export default function CmsEditor() {
             <span>New Page</span>
           </button>
 
-          {/* Add Box Modal Trigger */}
-          <button
-            type="button"
-            onClick={() => setAddBoxOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add Box</span>
-          </button>
+          {/* Add Box Modal Trigger (only on pages with dynamic box grids) */}
+          {supportsDynamicBoxes && (
+            <button
+              type="button"
+              onClick={() => setAddBoxOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Box</span>
+            </button>
+          )}
 
           {/* SEO Modal Trigger */}
           <button
@@ -580,19 +606,22 @@ export default function CmsEditor() {
           <div
             onClickCapture={(e) => {
               const target = e.target as HTMLElement;
-              // If user is editing text (contentEditable), allow natural typing, clicks, and caret placement
+              // Always allow CMS toolbar buttons, icon selectors, and interactive CMS controls
+              if (target.closest("[data-cms-toolbar='true']")) {
+                return;
+              }
+              // Allow text editing inside contentEditable while preventing link navigation / submit
               if (target.isContentEditable || target.closest("[contenteditable='true']")) {
-                const linkOrButton = target.closest("a, button, input[type='submit'], input[type='button']");
-                if (linkOrButton && linkOrButton.tagName.toLowerCase() === "a") {
+                const linkOrSubmit = target.closest("a, button[type='submit'], input[type='submit']");
+                if (linkOrSubmit) {
                   e.preventDefault();
                 }
                 return;
               }
-              // Prevent all functional buttons, links, or form submissions in CMS mode so buttons don't navigate
+              // Prevent link navigation or form submissions while letting clicks bubble for box selection
               const interactive = target.closest("a, button, input[type='submit'], input[type='button']");
               if (interactive) {
                 e.preventDefault();
-                e.stopPropagation();
               }
             }}
             onSubmitCapture={(e) => {
@@ -610,7 +639,7 @@ export default function CmsEditor() {
             {/* Visual Canvas Notice Bar */}
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-100/90 px-4 py-2 text-[11px] font-bold text-slate-600">
               <span>CANVAS &middot; {activePage?.title || selectedSlug} (Live Website View &middot; Header/Footer Hidden)</span>
-              <span className="text-blue-600 font-semibold">Editable CMS Mode</span>
+              <span className="text-blue-600 font-semibold">Editable Webpage Mode</span>
             </div>
 
             {/* RENDER ACTUAL WEBSITE PAGE (SAME TO SAME, NO HEADER & NO FOOTER) */}
@@ -623,6 +652,98 @@ export default function CmsEditor() {
                   setHomeContent(newContent);
                   setDirty(true);
                 }}
+                selectedFeatureId={selectedBoxId}
+                onFeatureSelect={setSelectedBoxId}
+                onFeatureDelete={(id) => {
+                  if (homeContent.features.length <= 1) return;
+                  setHomeContent({
+                    ...homeContent,
+                    features: homeContent.features.filter((f) => f.id !== id),
+                  });
+                  setDirty(true);
+                  toast.success("Box removed");
+                }}
+                onFeatureDuplicate={(id) => {
+                  const idx = homeContent.features.findIndex((f) => f.id === id);
+                  if (idx < 0) return;
+                  const source = homeContent.features[idx];
+                  if (!source) return;
+                  const newId = `feature-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                  const copy = { ...source, id: newId, title: `${source.title} (Copy)` };
+                  const next = [...homeContent.features];
+                  next.splice(idx + 1, 0, copy);
+                  setHomeContent({ ...homeContent, features: next });
+                  setDirty(true);
+                  toast.success("Box duplicated");
+                }}
+              />
+            ) : selectedSlug === "about" ? (
+              <About
+                cmsMode={true}
+                cmsContent={{
+                  hero: marketingContent.hero,
+                  cards: [],
+                  sectionOrder: ["hero", "features"],
+                  updatedAt: null,
+                }}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "how-it-works" ? (
+              <HowItWorks
+                cmsMode={true}
+                cmsContent={marketingContent}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "services" ? (
+              <ServicesCatalog
+                data={serviceHierarchy}
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "for-clients" ? (
+              <ForClients
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "for-professionals" ? (
+              <ForPros
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "pricing" ? (
+              <Pricing
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "faq" ? (
+              <FAQ
+                initialData={faqCategories}
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "contact" ? (
+              <Contact
+                cmsMode={true}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
+              />
+            ) : selectedSlug === "professional-home" ? (
+              <ProfessionalHome
+                homeContent={homeContent}
+                cmsMode={true}
+                onHomeChange={(newContent) => {
+                  setHomeContent(newContent);
+                  setDirty(true);
+                }}
+                pageTexts={pageTexts}
+                onTextChange={handlePageTextChange}
                 selectedFeatureId={selectedBoxId}
                 onFeatureSelect={setSelectedBoxId}
                 onFeatureDelete={(id) => {

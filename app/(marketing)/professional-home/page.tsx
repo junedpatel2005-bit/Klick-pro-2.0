@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import ProfessionalHome from "@/routes/professional-home";
-import { readMarketingContent } from "@/lib/marketing-cms";
+import { readProfessionalHomeContent } from "@/lib/home-cms-file";
+import { readPageTexts } from "@/lib/cms-page-texts";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Professional Workspace Home",
@@ -43,5 +46,9 @@ export default async function ProfessionalHomePage() {
     redirect("/professional/setup?profileSetup=1");
   }
 
-  return <ProfessionalHome cmsContent={await readMarketingContent("professional-home")} />;
+  const [homeContent, pageTexts] = await Promise.all([
+    readProfessionalHomeContent(),
+    readPageTexts("professional-home"),
+  ]);
+  return <ProfessionalHome homeContent={homeContent} pageTexts={pageTexts} />;
 }

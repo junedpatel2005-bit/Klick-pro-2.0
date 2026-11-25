@@ -16,7 +16,7 @@ const pageTitles: Record<string, string> = {
   "/admin/finance": "Finance & Payouts",
   "/admin/reports": "Reports & Analytics",
   "/admin/support": "Support & Knowledge Base",
-  "/admin/cms": "Visual CMS Editor",
+  "/admin/cms": "Webpage Editor",
   "/admin/notifications": "Notifications & Alerts",
   "/admin/messages": "Admin Communications",
   "/admin/templates": "Email Template Library",

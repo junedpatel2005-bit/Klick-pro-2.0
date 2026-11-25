@@ -140,7 +140,7 @@ export default function AdminEscrowLedgerPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Total Escrow Secured</p>
           {loading ? (
             <div className="mt-2 h-8 w-28 animate-pulse rounded-lg bg-slate-200" />
@@ -152,7 +152,7 @@ export default function AdminEscrowLedgerPage() {
           <p className="mt-1 text-[11px] text-slate-400">Held in platform escrow</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-slate-500">Active Escrow Contracts</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-slate-200" />
@@ -162,7 +162,7 @@ export default function AdminEscrowLedgerPage() {
           <p className="mt-1 text-[11px] text-slate-400">Funded & awaiting delivery</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-amber-700">Aging Funds (&gt;14 Days)</p>
           {loading ? (
             <div className="mt-2 h-8 w-16 animate-pulse rounded-lg bg-amber-100" />
@@ -172,7 +172,7 @@ export default function AdminEscrowLedgerPage() {
           <p className="mt-1 text-[11px] text-slate-400">Needs review or release</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <p className="text-xs font-semibold text-rose-700">Disputed Escrow At-Risk</p>
           {loading ? (
             <div className="mt-2 h-8 w-24 animate-pulse rounded-lg bg-rose-100" />

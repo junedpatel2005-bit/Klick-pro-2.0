@@ -10,49 +10,49 @@ ORDER BY table_name;
 
 -- Read-only preflight for relationship constraints.
 SELECT p.id
-FROM "Payment" p
-LEFT JOIN "User" c ON c.id = p."clientId"
+FROM payments p
+LEFT JOIN users c ON c.id = p."clientId"
 WHERE c.id IS NULL;
 
 SELECT p.id
-FROM "Payment" p
-LEFT JOIN "User" u ON u.id = p."professionalId"
+FROM payments p
+LEFT JOIN users u ON u.id = p."professionalId"
 WHERE u.id IS NULL;
 
 SELECT pt.id
-FROM "ProjectTracking" pt
-LEFT JOIN "ProjectRequest" pr ON pr.id = pt."requestId"
+FROM project_trackings pt
+LEFT JOIN project_requests pr ON pr.id = pt."requestId"
 WHERE pr.id IS NULL;
 
 SELECT pm.id
-FROM "ProjectMilestone" pm
-LEFT JOIN "ProjectTracking" pt ON pt.id = pm."trackingId"
+FROM project_milestones pm
+LEFT JOIN project_trackings pt ON pt.id = pm."trackingId"
 WHERE pt.id IS NULL;
 
-SELECT e.id FROM "ProjectTimelineEvent" e
-LEFT JOIN "ProjectTracking" pt ON pt.id = e."trackingId"
+SELECT e.id FROM project_timeline_events e
+LEFT JOIN project_trackings pt ON pt.id = e."trackingId"
 WHERE pt.id IS NULL;
 
-SELECT w.id FROM "ProjectWorkUpload" w
-LEFT JOIN "ProjectTracking" pt ON pt.id = w."trackingId"
+SELECT w.id FROM project_work_uploads w
+LEFT JOIN project_trackings pt ON pt.id = w."trackingId"
 WHERE pt.id IS NULL;
 
-SELECT w.id FROM "ProjectWorkUpload" w
-LEFT JOIN "ProjectMilestone" pm ON pm.id = w."milestoneId"
+SELECT w.id FROM project_work_uploads w
+LEFT JOIN project_milestones pm ON pm.id = w."milestoneId"
 WHERE w."milestoneId" IS NOT NULL AND pm.id IS NULL;
 
-SELECT s.id FROM "Service" s
-LEFT JOIN "ServiceCategory" c ON c.id = s."categoryId"
+SELECT s.id FROM services s
+LEFT JOIN service_categories c ON c.id = s."categoryId"
 WHERE c.id IS NULL;
 
 SELECT "clientProfileId", COUNT(*) AS primary_count
-FROM "ClientSavedLocation"
+FROM client_saved_locations
 WHERE "isPrimary" = true
 GROUP BY "clientProfileId"
 HAVING COUNT(*) > 1;
 
 SELECT "userId", COUNT(*) AS profile_count
-FROM "ClientProfile"
+FROM client_profiles
 GROUP BY "userId"
 HAVING COUNT(*) > 1;
 
@@ -90,28 +90,28 @@ FROM legacy_professional_details
 WHERE "fixedRate" IS NOT NULL AND "fixedRate" <> trunc("fixedRate");
 
 -- CHECK preflight queries.
-SELECT id FROM "Payment"
+SELECT id FROM payments
 WHERE amount < 0
    OR "base_amount" < 0
    OR "client_fee_amount" < 0
    OR "professional_payout_amount" < 0
    OR "admin_net_amount" < 0;
 
-SELECT id FROM "ProjectTracking" WHERE progress NOT BETWEEN 0 AND 100;
-SELECT id FROM "ProjectReview" WHERE rating NOT BETWEEN 1 AND 5;
-SELECT id FROM "User"
+SELECT id FROM project_trackings WHERE progress NOT BETWEEN 0 AND 100;
+SELECT id FROM project_reviews WHERE rating NOT BETWEEN 1 AND 5;
+SELECT id FROM users
 WHERE "averageRating" NOT BETWEEN 0 AND 5 OR "reviewCount" < 0;
-SELECT id, "budgetMin", "budgetMax" FROM "ClientJob"
+SELECT id, "budgetMin", "budgetMax" FROM client_jobs
 WHERE "budgetMin" IS NOT NULL AND "budgetMax" IS NOT NULL AND "budgetMin" > "budgetMax";
 
 -- Stored-value inventory for stable/internal lifecycle values and providers.
-SELECT 'User.role' AS field, role AS value, count(*) FROM "User" GROUP BY role
-UNION ALL SELECT 'ClientJob.status', status, count(*) FROM "ClientJob" GROUP BY status
-UNION ALL SELECT 'ClientJob.paymentMethod', "paymentMethod", count(*) FROM "ClientJob" GROUP BY "paymentMethod"
-UNION ALL SELECT 'ProjectTracking.status', status, count(*) FROM "ProjectTracking" GROUP BY status
-UNION ALL SELECT 'ProjectMilestone.status', status, count(*) FROM "ProjectMilestone" GROUP BY status
-UNION ALL SELECT 'Payment.status', status, count(*) FROM "Payment" GROUP BY status
-UNION ALL SELECT 'Payment.provider', provider, count(*) FROM "Payment" GROUP BY provider
-UNION ALL SELECT 'Payment.currency', currency, count(*) FROM "Payment" GROUP BY currency
-UNION ALL SELECT 'ProjectDispute.status', status, count(*) FROM "ProjectDispute" GROUP BY status
-UNION ALL SELECT 'ProjectDispute.priority', priority, count(*) FROM "ProjectDispute" GROUP BY priority;
+SELECT 'User.role' AS field, role AS value, count(*) FROM users GROUP BY role
+UNION ALL SELECT 'ClientJob.status', status, count(*) FROM client_jobs GROUP BY status
+UNION ALL SELECT 'ClientJob.paymentMethod', "paymentMethod", count(*) FROM client_jobs GROUP BY "paymentMethod"
+UNION ALL SELECT 'ProjectTracking.status', status, count(*) FROM project_trackings GROUP BY status
+UNION ALL SELECT 'ProjectMilestone.status', status, count(*) FROM project_milestones GROUP BY status
+UNION ALL SELECT 'Payment.status', status, count(*) FROM payments GROUP BY status
+UNION ALL SELECT 'Payment.provider', provider, count(*) FROM payments GROUP BY provider
+UNION ALL SELECT 'Payment.currency', currency, count(*) FROM payments GROUP BY currency
+UNION ALL SELECT 'ProjectDispute.status', status, count(*) FROM project_disputes GROUP BY status
+UNION ALL SELECT 'ProjectDispute.priority', priority, count(*) FROM project_disputes GROUP BY priority;

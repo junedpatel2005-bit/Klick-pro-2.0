@@ -3,7 +3,14 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { db } from "@/lib/db";
 import { readCmsContent, writeCmsContent, defaultContent as defaultAbout } from "@/lib/cms-file";
-import { readHomeContent, writeHomeContent, type HomeContent, type HomeFeature } from "@/lib/home-cms-file";
+import {
+  readHomeContent,
+  writeHomeContent,
+  readProfessionalHomeContent,
+  writeProfessionalHomeContent,
+  type HomeContent,
+  type HomeFeature,
+} from "@/lib/home-cms-file";
 import {
   marketingPageIds,
   readMarketingContent,
@@ -11,6 +18,7 @@ import {
   marketingDefaults,
   type MarketingPageId,
 } from "@/lib/marketing-cms";
+import { readPageTexts, writePageTexts } from "@/lib/cms-page-texts";
 
 export type CmsBox = {
   id: string;
@@ -52,6 +60,7 @@ export type CmsPageData = {
   boxes: CmsBox[];
   sections?: CmsSection[];
   homeContent?: HomeContent;
+  pageTexts?: Record<string, string>;
   cta?: {
     title?: string;
     primaryBtn?: string;
@@ -193,9 +202,53 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
     };
   }
 
+  // 1B. PROFESSIONAL HOME PAGE (mirrors Client Home UI with Professional data & buttons)
+  if (slug === "professional-home") {
+    const [profHome, pageTexts] = await Promise.all([
+      readProfessionalHomeContent(),
+      readPageTexts("professional-home"),
+    ]);
+    return {
+      slug: "professional-home",
+      title: "Professional Home",
+      isCustom: false,
+      hero: {
+        eyebrow: profHome.hero.eyebrow,
+        title: profHome.hero.title,
+        description: profHome.hero.description,
+        primaryCta: profHome.hero.primaryCta,
+        primaryCtaLink: "/professional/my-jobs?tab=find",
+        secondaryCta: profHome.hero.secondaryCta,
+        secondaryCtaLink: "/professional/dashboard",
+      },
+      homeContent: profHome,
+      pageTexts,
+      boxesSection: {
+        title: profHome.whyChooseUsSection?.title || "Everything you need to grow",
+        subtitle:
+          profHome.whyChooseUsSection?.description ||
+          "Find quality projects, get paid safely, and build a reputation clients trust.",
+      },
+      boxes: (profHome.features || []).map((f: HomeFeature) => ({
+        id: f.id,
+        title: f.title,
+        description: f.description,
+        icon: f.icon,
+      })),
+      seo: {
+        metaTitle: "Professional Workspace Home | Klick-Pro",
+        metaDescription:
+          "Discover open client requirements, submit quotes, track ongoing projects, and manage your earnings with zero platform deductions.",
+        keywords: "klick-pro, professional home, find jobs, milestone escrow",
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
   // 2. ABOUT US PAGE
   if (slug === "about") {
     const about = await readCmsContent().catch(() => defaultAbout);
+    const pageTexts = await readPageTexts("about");
     return {
       slug: "about",
       title: "About Us",
@@ -219,6 +272,7 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
         description: c.description,
         icon: c.icon,
       })),
+      pageTexts,
       seo: {
         metaTitle: "About Klick-Pro | Mission, Values & Platform Verification",
         metaDescription:
@@ -233,6 +287,7 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
   if (marketingPageIds.includes(slug as MarketingPageId)) {
     const pageId = slug as MarketingPageId;
     const m = await readMarketingContent(pageId).catch(() => marketingDefaults[pageId]);
+    const pageTexts = await readPageTexts(slug);
     const def = STANDARD_CMS_PAGES.find((p) => p.slug === slug);
     return {
       slug,
@@ -259,6 +314,7 @@ export async function getCmsPage(slugInput: string): Promise<CmsPageData> {
         buttonText: item.buttonText,
         buttonLink: item.buttonLink,
       })),
+      pageTexts,
       cta: m.cta,
       seo: {
         metaTitle: `${def?.title || slug} | Klick-Pro Verified Marketplace`,
@@ -410,8 +466,49 @@ export async function saveCmsPage(data: CmsPageData): Promise<boolean> {
     return true;
   }
 
+  // 1B. PROFESSIONAL HOME PAGE
+  if (slug === "professional-home") {
+    if (data.pageTexts && typeof data.pageTexts === "object") {
+      await writePageTexts("professional-home", data.pageTexts);
+    }
+    const existing = await readProfessionalHomeContent();
+    const homePayload = data.homeContent;
+    await writeProfessionalHomeContent({
+      hero: {
+        eyebrow: homePayload?.hero?.eyebrow || data.hero.eyebrow || existing.hero.eyebrow,
+        title: homePayload?.hero?.title || data.hero.title || existing.hero.title,
+        description:
+          homePayload?.hero?.description || data.hero.description || existing.hero.description,
+        primaryCta:
+          homePayload?.hero?.primaryCta || data.hero.primaryCta || existing.hero.primaryCta,
+        secondaryCta:
+          homePayload?.hero?.secondaryCta || data.hero.secondaryCta || existing.hero.secondaryCta,
+      },
+      heroShowcase: homePayload?.heroShowcase ?? existing.heroShowcase,
+      categoriesSection: homePayload?.categoriesSection ?? existing.categoriesSection,
+      whyChooseUsSection: homePayload?.whyChooseUsSection ?? existing.whyChooseUsSection,
+      features:
+        homePayload?.features && homePayload.features.length > 0
+          ? homePayload.features
+          : data.boxes && data.boxes.length > 0
+            ? data.boxes.map((b) => ({
+                id: b.id,
+                title: b.title,
+                description: b.description,
+                icon: b.icon,
+              }))
+            : existing.features,
+      featuredProsSection: homePayload?.featuredProsSection ?? existing.featuredProsSection,
+      ctaDualBanner: homePayload?.ctaDualBanner ?? existing.ctaDualBanner,
+    });
+    return true;
+  }
+
   // 2. ABOUT US PAGE
   if (slug === "about") {
+    if (data.pageTexts && typeof data.pageTexts === "object") {
+      await writePageTexts("about", data.pageTexts);
+    }
     await writeCmsContent({
       hero: {
         label: data.hero.eyebrow,
@@ -432,6 +529,9 @@ export async function saveCmsPage(data: CmsPageData): Promise<boolean> {
   // 3. MARKETING PAGES
   if (marketingPageIds.includes(slug as MarketingPageId)) {
     const pageId = slug as MarketingPageId;
+    if (data.pageTexts && typeof data.pageTexts === "object") {
+      await writePageTexts(slug, data.pageTexts);
+    }
     await writeMarketingContent(pageId, {
       hero: {
         label: data.hero.eyebrow,

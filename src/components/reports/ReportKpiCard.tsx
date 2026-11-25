@@ -42,7 +42,7 @@ export function ReportKpiCard({
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-colors relative ${
+      className={`bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4.5 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md relative ${
         cardClassName || ""
       }`}
     >

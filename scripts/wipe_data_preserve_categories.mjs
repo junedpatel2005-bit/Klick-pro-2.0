@@ -82,70 +82,70 @@ const pool = new Pool({ connectionString: databaseUrl });
 const TABLES_TO_WIPE = [
   // Disputes & Claims
   'project_dispute_messages',
-  'ProjectDispute',
+  'project_disputes',
   
   // Reviews & Feedback
-  'ProjectReviewRequest',
-  'ProjectRevisionRequest',
-  'ProjectCompletionRequest',
-  'ProjectReview',
+  'project_review_requests',
+  'project_revision_requests',
+  'project_completion_requests',
+  'project_reviews',
   
   // Milestones & Work Submissions
-  'ProjectWorkUpload',
-  'ProjectTimelineEvent',
-  'ProjectMilestone',
-  'ClientJobMilestone',
+  'project_work_uploads',
+  'project_timeline_events',
+  'project_milestones',
+  'client_job_milestones',
   
   // Proposals & Negotiations
-  'ProjectNegotiation',
-  'ProjectRequest',
-  'ProjectTracking',
+  'project_negotiations',
+  'project_requests',
+  'project_trackings',
   
   // Jobs & Attachments
-  'FavoriteJob',
-  'ClientJobAttachment',
-  'ClientJob',
-  'ClientHiringNeed',
-  'SavedProfessional',
+  'favorite_jobs',
+  'client_job_attachments',
+  'client_jobs',
+  'client_hiring_needs',
+  'saved_professionals',
   
   // Transactions, Escrow & Wallets
-  'ProjectTransaction',
-  'Payment',
+  'project_transactions',
+  'payments',
   'razorpay_webhook_events',
-  'ProjectWithdrawal',
-  'WalletTransaction',
-  'Wallet',
+  'project_withdrawals',
+  'wallet_transactions',
+  'wallets',
   'invoices',
   
   // Communications & Live Chat
-  'SocketMessage',
-  'SocketConversationClear',
-  'SocketConversation',
-  'CallSession',
-  'Message',
-  'MessageConversation',
+  'socket_messages',
+  'socket_conversation_clears',
+  'socket_conversations',
+  'call_sessions',
+  'messages',
+  'message_conversations',
   
   // Notifications & Subscriptions
-  'UserNotificationState',
-  'UserNotification',
-  'BrowserSubscription',
+  'user_notification_states',
+  'user_notifications',
+  'browser_subscriptions',
   
   // Verifications & KYC
   'verification_document_reviews',
   'persona_verifications',
   'persona_webhook_events',
-  'ProfessionalVerification',
+  'professional_verifications',
   
   // User Sessions & Auth Logs
-  'StoredFile',
+  'stored_files',
   'audit_logs',
-  'ApiToken',
-  'OtpCode',
+  'api_tokens',
+  'otp_codes',
   'sessions',
   'user_linked_accounts',
-  'ClientSavedLocation',
-  'ClientProfile',
-  'ContactRequest',
+  'client_saved_locations',
+  'client_profiles',
+  'contact_requests',
 ];
 
 async function main() {
@@ -160,13 +160,13 @@ async function main() {
   let adminAccounts = [];
 
   try {
-    const catRes = await client.query('SELECT COUNT(*)::int AS count FROM "ServiceCategory";');
+    const catRes = await client.query('SELECT COUNT(*)::int AS count FROM service_categories;');
     preCategoriesCount = catRes.rows[0].count;
 
-    const userRes = await client.query('SELECT COUNT(*)::int AS count FROM "User";');
+    const userRes = await client.query('SELECT COUNT(*)::int AS count FROM users;');
     preUsersCount = userRes.rows[0].count;
 
-    const adminRes = await client.query('SELECT id, email, username FROM "User" WHERE role = \'ADMIN\';');
+    const adminRes = await client.query('SELECT id, email, username FROM users WHERE role = \'ADMIN\';');
     adminAccounts = adminRes.rows;
   } catch (err) {
     console.error('\x1b[31m[ERROR] Failed to query database:\x1b[0m', err.message);
@@ -212,7 +212,7 @@ async function main() {
 
     // Step A: Disconnect foreign key references from User to ServiceCategory
     console.log(' • Disconnecting category foreign references from test users...');
-    await client.query('UPDATE "User" SET "professional_primary_category_id" = NULL;');
+    await client.query('UPDATE users SET professional_category_id = NULL;');
 
     // Step B: Clean operational tables
     let totalDeletedTables = 0;
@@ -229,11 +229,11 @@ async function main() {
 
     // Step C: Delete all non-admin users (preserve admin accounts)
     console.log(' • Removing test clients and professionals (preserving admin)...');
-    const userDelRes = await client.query("DELETE FROM \"User\" WHERE role != 'ADMIN';");
+    const userDelRes = await client.query("DELETE FROM users WHERE role != 'ADMIN';");
     console.log(`   ✔ Removed ${userDelRes.rowCount ?? 0} test user accounts. Admin account(s) preserved.`);
 
     // Step D: Strictly verify that ServiceCategory count has NOT changed
-    const postCatRes = await client.query('SELECT COUNT(*)::int AS count FROM "ServiceCategory";');
+    const postCatRes = await client.query('SELECT COUNT(*)::int AS count FROM service_categories;');
     const postCategoriesCount = postCatRes.rows[0].count;
 
     if (postCategoriesCount !== preCategoriesCount) {

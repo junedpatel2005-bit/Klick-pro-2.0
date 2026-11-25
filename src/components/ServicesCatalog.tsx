@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import { CmsBoxGroup, CmsPageProvider, CmsText, type PageTextsMap } from "@/components/cms/CmsText";
 import {
   Sparkles,
   Search,
@@ -27,6 +28,33 @@ import {
 } from "lucide-react";
 import type { CompleteCategoryHierarchy, HierarchyCategory } from "@/lib/queries/categories-hierarchy";
 import { capitalizeWords } from "@/lib/utils";
+
+const BOTTOM_FEATURE_CARDS = [
+  {
+    legacyPrefix: "bottom.c1",
+    icon: "map" as const,
+    defaults: {
+      title: "On-Site",
+      desc: "Professionals who visit your home, shop, facility or industrial plant.",
+    },
+  },
+  {
+    legacyPrefix: "bottom.c2",
+    icon: "globe" as const,
+    defaults: {
+      title: "Remote",
+      desc: "Specialized digital and consulting experts who deliver online from anywhere.",
+    },
+  },
+  {
+    legacyPrefix: "bottom.c3",
+    icon: "wallet" as const,
+    defaults: {
+      title: "Online or Offline Pay",
+      desc: "Milestone escrow protection for online jobs, or settle in person on completion.",
+    },
+  },
+];
 
 const MASTER_SECTIONS = [
   {
@@ -222,7 +250,17 @@ export type CatalogSectionItem = {
   categories: CatalogCategoryItem[];
 };
 
-export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } = {}) {
+export function ServicesCatalog({
+  data,
+  cmsMode = false,
+  pageTexts,
+  onTextChange,
+}: {
+  data?: CompleteCategoryHierarchy;
+  cmsMode?: boolean;
+  pageTexts?: PageTextsMap;
+  onTextChange?: (id: string, value: string) => void;
+} = {}) {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Map subcategories by categoryId for fast lookup
@@ -331,19 +369,30 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
   const isSearching = searchQuery.trim().length > 0;
 
   return (
-    <div className="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-[#1748b5]">
-      {/* 1. HERO WITH LIVE SEARCH BAR */}
-      <section className="gradient-hero border-b border-slate-200/60">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:py-20 text-center sm:px-6">
-          <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
-            <Sparkles className="h-3.5 w-3.5" /> Service Directory
-          </p>
-          <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
-            Every Service, <span className="text-brand">One Marketplace</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
-            Browse residential, commercial, industrial, health care, personal care and education services. Pick a category, choose a specialty and post your job in minutes.
-          </p>
+    <CmsPageProvider cmsMode={cmsMode} pageTexts={pageTexts} onTextChange={onTextChange}>
+      <div className="bg-slate-50 text-slate-900 antialiased selection:bg-blue-100 selection:text-[#1748b5]">
+        {/* 1. HERO WITH LIVE SEARCH BAR */}
+        <section className="gradient-hero border-b border-slate-200/60">
+          <div className="mx-auto max-w-4xl px-4 py-16 sm:py-20 text-center sm:px-6">
+            <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#1748b5]">
+              <Sparkles className="h-3.5 w-3.5" />{" "}
+              <CmsText id="hero.label" defaultText="Service Directory" />
+            </p>
+            <h1 className="mt-4 font-display text-4xl font-bold tracking-tight text-[#0b1f4d] md:text-5xl">
+              {cmsMode || pageTexts?.["hero.title"] ? (
+                <CmsText id="hero.title" defaultText="Every Service, One Marketplace" />
+              ) : (
+                <>
+                  Every Service, <span className="text-brand">One Marketplace</span>
+                </>
+              )}
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-slate-500 sm:text-lg">
+              <CmsText
+                id="hero.description"
+                defaultText="Browse residential, commercial, industrial, health care, personal care and education services. Pick a category, choose a specialty and post your job in minutes."
+              />
+            </p>
 
           {/* Interactive Search Bar */}
           <form
@@ -396,28 +445,34 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
       {/* 2. MASTER CATEGORIES TOP GRID (Shown when NOT actively filtering so user gets full overview) */}
       {!isSearching && (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {MASTER_SECTIONS.map((sec) => {
-              const Icon = sec.icon;
+          <CmsBoxGroup
+            groupId="sectorCards"
+            templates={MASTER_SECTIONS.map((sec) => ({
+              ...sec,
+              legacyPrefix: `sector.${sec.id}`,
+              defaults: { title: sec.title, blurb: sec.blurb },
+            }))}
+            gridClassName="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            renderItem={(tpl) => {
+              const Icon = tpl.icon;
               return (
                 <a
-                  key={sec.id}
-                  href={`#${sec.id}`}
-                  className="group rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition hover:border-brand hover:shadow-md"
+                  href={`#${tpl.id}`}
+                  className="group rounded-2xl border border-slate-200/90 bg-white p-7 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md block"
                 >
                   <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-brand transition group-hover:bg-brand group-hover:text-white">
                     <Icon className="h-6 w-6" />
                   </div>
                   <h2 className="mt-5 font-display text-lg font-bold text-[#0b1f4d] group-hover:text-brand transition">
-                    {sec.title}
+                    <CmsText id="title" defaultText={tpl.title} />
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    {sec.blurb}
+                    <CmsText id="blurb" defaultText={tpl.blurb} />
                   </p>
                 </a>
               );
-            })}
-          </div>
+            }}
+          />
         </section>
       )}
 
@@ -443,7 +498,7 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
                 </button>
                 <Link
                   href="/contact"
-                  className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-brand-hover"
+                  className="rounded-xl bg-cta px-5 py-2.5 text-sm font-bold text-cta-foreground shadow-sm hover:bg-cta/90"
                 >
                   Tell Us What You Need
                 </Link>
@@ -466,10 +521,10 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
                     </span>
                     <div>
                       <h2 className="font-display text-3xl font-bold tracking-tight text-[#0b1f4d] md:text-4xl">
-                        {sec.title}
+                        <CmsText id={`sector.${sec.id}.title`} defaultText={sec.title} />
                       </h2>
                       <p className="mt-1 text-sm leading-6 text-slate-500">
-                        {sec.blurb}
+                        <CmsText id={`sector.${sec.id}.blurb`} defaultText={sec.blurb} />
                       </p>
                     </div>
                   </div>
@@ -480,7 +535,7 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
                       return (
                         <article
                           key={cat.id}
-                          className={`rounded-2xl border border-slate-200/90 ${cardBg} p-6 transition hover:border-slate-300 hover:shadow-md`}
+                          className={`rounded-2xl border border-slate-200/90 ${cardBg} p-6 transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md`}
                         >
                           <div className="flex items-center gap-3">
                             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-brand">
@@ -522,47 +577,47 @@ export function ServicesCatalog({ data }: { data?: CompleteCategoryHierarchy } =
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-3xl font-bold tracking-tight text-[#0b1f4d] md:text-4xl">
-              Not Sure Where Your Job Fits?
+              <CmsText id="bottom.title" defaultText="Not Sure Where Your Job Fits?" />
             </h2>
             <p className="mt-3 text-slate-500">
-              Post it anyway. Describe what you need and matching verified professionals will reach out with itemized proposals.
+              <CmsText
+                id="bottom.desc"
+                defaultText="Post it anyway. Describe what you need and matching verified professionals will reach out with itemized proposals."
+              />
             </p>
           </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-7 text-center">
-              <MapPin className="mx-auto h-7 w-7 text-brand" />
-              <h3 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">On-Site</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Professionals who visit your home, shop, facility or industrial plant.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-7 text-center">
-              <Globe className="mx-auto h-7 w-7 text-brand" />
-              <h3 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">Remote</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Specialized digital and consulting experts who deliver online from anywhere.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-7 text-center">
-              <Wallet className="mx-auto h-7 w-7 text-brand" />
-              <h3 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">Online or Offline Pay</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Milestone escrow protection for online jobs, or settle in person on completion.
-              </p>
-            </div>
-          </div>
+          <CmsBoxGroup
+            groupId="bottomCards"
+            templates={BOTTOM_FEATURE_CARDS}
+            gridClassName="mt-10 grid gap-6 sm:grid-cols-3"
+            renderItem={(tpl) => {
+              const Icon = tpl.icon === "globe" ? Globe : tpl.icon === "wallet" ? Wallet : MapPin;
+              return (
+                <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-7 text-center transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:border-slate-300 hover:shadow-md">
+                  <Icon className="mx-auto h-7 w-7 text-brand" />
+                  <h3 className="mt-4 font-display text-lg font-bold text-[#0b1f4d]">
+                    <CmsText id="title" defaultText={tpl.defaults.title} />
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    <CmsText id="desc" defaultText={tpl.defaults.desc} />
+                  </p>
+                </div>
+              );
+            }}
+          />
 
           <div className="mt-10 text-center">
             <Link
               href="/post-job"
               className="inline-flex items-center gap-2 rounded-xl bg-cta px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-cta/90"
             >
-              Post a Job &mdash; It&apos;s Free <ArrowRight className="h-4 w-4" />
+              <CmsText id="bottom.btn" defaultText="Post a Job — It's Free" /> <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </CmsPageProvider>
   );
 }
 

@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import CmsEditor from "@/components/CmsEditor";
+import { getCompleteCategoryHierarchy } from "@/lib/queries/categories-hierarchy";
+import { getPublishedFaqCategories } from "@/lib/queries/faq";
 
 export default async function CmsPage() {
   const token = (await cookies()).get(sessionCookie)?.value;
@@ -11,5 +13,9 @@ export default async function CmsPage() {
   } catch {
     redirect("/admin/login");
   }
-  return <CmsEditor />;
+  const [serviceHierarchy, faqCategories] = await Promise.all([
+    getCompleteCategoryHierarchy().catch(() => undefined),
+    getPublishedFaqCategories().catch(() => []),
+  ]);
+  return <CmsEditor serviceHierarchy={serviceHierarchy} faqCategories={faqCategories} />;
 }
