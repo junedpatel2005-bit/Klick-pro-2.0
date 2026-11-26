@@ -6,7 +6,6 @@ import { sessionCookie, verifySession } from "@/lib/auth";
 const profileSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required.").max(80),
   lastName: z.string().trim().min(1, "Last name is required.").max(80),
-  companyName: z.string().trim().max(160).optional().or(z.literal("")),
   address: z
     .string({ required_error: "Address is required." })
     .trim()
@@ -101,13 +100,11 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
   }
-  const companyName = data.companyName || null;
   const profilePhotoUrl = data.profilePhotoUrl || null;
   const fullName = `${data.firstName} ${data.lastName}`;
   const profileData = {
     fullName,
     phone: data.phone || user.phone || "",
-    companyName,
     address: data.address,
     profilePhotoUrl,
   };
@@ -123,7 +120,6 @@ export async function POST(request: NextRequest) {
       data: {
         firstName: data.firstName,
         lastName: data.lastName,
-        companyName,
         address: data.address,
         avatarUrl: profilePhotoUrl,
         phone: data.phone || null,

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   Building2,
@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
+import { PaginationControl } from "@/components/ui/pagination-control";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
 import type {
   PublicClientProfile,
@@ -64,6 +65,22 @@ export default function ClientProfilePage() {
   const [client, setClient] = useState<PublicClientProfile | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
   const [avatarError, setAvatarError] = useState(false);
+
+  const PAGE_SIZE = 12;
+  const [jobsPage, setJobsPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
+
+  const paginatedJobs = useMemo(() => {
+    if (!client?.openJobs) return [];
+    const start = (jobsPage - 1) * PAGE_SIZE;
+    return client.openJobs.slice(start, start + PAGE_SIZE);
+  }, [client?.openJobs, jobsPage]);
+
+  const paginatedReviews = useMemo(() => {
+    if (!client?.reviewsList) return [];
+    const start = (reviewsPage - 1) * PAGE_SIZE;
+    return client.reviewsList.slice(start, start + PAGE_SIZE);
+  }, [client?.reviewsList, reviewsPage]);
 
   useEffect(() => {
     const rawId = Array.isArray(clientId) ? clientId[0] : clientId;
@@ -173,10 +190,10 @@ export default function ClientProfilePage() {
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild variant="default">
-              <Link href="/jobs">Browse Jobs</Link>
+              <Link href="/services">Browse Services</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/professionals">Find Professionals</Link>
+              <Link href="/discover">Find Professionals</Link>
             </Button>
           </div>
         </div>
@@ -297,12 +314,6 @@ export default function ClientProfilePage() {
                     Verified Client
                   </span>
                 )}
-                {client.companyName && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    <Building2 className="h-3 w-3" />
-                    {capitalizeWords(client.companyName)}
-                  </span>
-                )}
                 {client.industry && (
                   <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">
                     {capitalizeWords(client.industry)}
@@ -352,24 +363,17 @@ export default function ClientProfilePage() {
             </div>
           </div>
 
-          {/* About / Company Information Section */}
+          {/* About Client Section */}
           <section className="mt-8 grid gap-6 sm:grid-cols-2">
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2">About the Client</h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {capitalizeFirst(client.companyDescription) ||
-                  "This client has not added a detailed company description yet. They actively hire qualified professionals on Klick-Pro."}
+                Verified client active on Klick-Pro. They hire qualified professionals for residential, commercial, and specialist projects.
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-muted/40 p-5">
               <h2 className="text-lg font-semibold">Client details</h2>
               <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                {client.companyName && (
-                  <div>
-                    <p className="font-medium text-foreground">Company</p>
-                    <p>{capitalizeWords(client.companyName)}</p>
-                  </div>
-                )}
                 {client.industry && (
                   <div>
                     <p className="font-medium text-foreground">Industry</p>
@@ -380,25 +384,6 @@ export default function ClientProfilePage() {
                   <div>
                     <p className="font-medium text-foreground">Team size</p>
                     <p>{client.teamSize}</p>
-                  </div>
-                )}
-                {client.companyWebsite && (
-                  <div>
-                    <p className="font-medium text-foreground">Website</p>
-                    <a
-                      href={
-                        client.companyWebsite.startsWith("http")
-                          ? client.companyWebsite
-                          : `https://${client.companyWebsite}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                      {client.companyWebsite.replace(/^https?:\/\//, "")}
-                      <ExternalLink className="h-3 w-3 opacity-70" />
-                    </a>
                   </div>
                 )}
                 <div>
@@ -425,8 +410,8 @@ export default function ClientProfilePage() {
                 </p>
               </div>
               <Button asChild variant="outline" size="sm">
-                <Link href="/jobs" className="gap-1.5">
-                  Browse All Marketplace Jobs
+                <Link href="/services" className="gap-1.5">
+                  Browse All Marketplace Services
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
@@ -441,12 +426,13 @@ export default function ClientProfilePage() {
                   explore other opportunities.
                 </p>
                 <Button asChild size="sm" className="mt-4">
-                  <Link href="/jobs">Explore Marketplace Jobs</Link>
+                  <Link href="/services">Explore Marketplace Services</Link>
                 </Button>
               </div>
             ) : (
-              <div className="mt-6 space-y-3.5">
-                {client.openJobs.map((job: PublicClientJobItem) => (
+              <>
+                <div className="mt-6 space-y-3.5">
+                  {paginatedJobs.map((job: PublicClientJobItem) => (
                   <div
                     key={job.id}
                     className="group relative flex flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-md sm:flex-row sm:items-center"
@@ -506,7 +492,18 @@ export default function ClientProfilePage() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {client.openJobs.length > 0 && (
+                <PaginationControl
+                  currentPage={jobsPage}
+                  totalItems={client.openJobs.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setJobsPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
 
           {/* Professional Reviews Section */}
@@ -540,8 +537,9 @@ export default function ClientProfilePage() {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
-                {client.reviewsList.map((review: PublicReviewItem) => (
+              <>
+                <div className="mt-6 space-y-4">
+                  {paginatedReviews.map((review: PublicReviewItem) => (
                   <div
                     key={review.id}
                     className="rounded-xl border border-border/80 bg-muted/20 p-4 transition-colors hover:border-border"
@@ -606,7 +604,18 @@ export default function ClientProfilePage() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {client.reviewsList.length > 0 && (
+                <PaginationControl
+                  currentPage={reviewsPage}
+                  totalItems={client.reviewsList.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setReviewsPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
 
           {/* Safety & Trust Footer */}
@@ -618,7 +627,7 @@ export default function ClientProfilePage() {
                 Klick-Pro.
               </span>
             </div>
-            <Link href="/privacy" className="text-primary hover:underline">
+            <Link href="/privacy-policy" className="text-primary hover:underline">
               Privacy & Trust Policy
             </Link>
           </div>

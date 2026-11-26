@@ -94,7 +94,6 @@ export async function GET(request: NextRequest) {
         { professionalCategory: { contains: normalizedQuery, mode: "insensitive" } },
         { professionalCity: { contains: normalizedQuery, mode: "insensitive" } },
         { professionalSkillsJson: { contains: normalizedQuery, mode: "insensitive" } },
-        { companyName: { contains: normalizedQuery, mode: "insensitive" } },
       ],
     },
     select: {

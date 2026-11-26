@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 export const metadata: Metadata = {
   title: "Account Settings & Profile",
   description:
-    "Manage your personal identity, company information, billing address, and account preferences.",
+    "Manage your personal identity, billing address, and account preferences.",
 };
 
 async function getCookieValue(name: string) {

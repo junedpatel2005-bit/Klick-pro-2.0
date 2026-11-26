@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         professionalLatitude: true,
         professionalLongitude: true,
         workMode: true,
-        companyDescription: true,
+        bio: true,
         professionalSkillsJson: true,
         phone: true,
         phoneVerifiedAt: true,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         professionalLatitude: parsed.data.latitude,
         professionalLongitude: parsed.data.longitude,
         workMode: parsed.data.workMode,
-        companyDescription: parsed.data.bio || null,
+        bio: parsed.data.bio || null,
         professionalSkillsJson: JSON.stringify(parsed.data.skills),
       },
     });

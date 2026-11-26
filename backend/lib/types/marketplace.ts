@@ -22,8 +22,6 @@ export type DetailedProfessional = MarketplaceProfessional & {
   lastName: string;
   email: string;
   phone: string | null;
-  companyName: string | null;
-  companyWebsite: string | null;
   industry: string | null;
   teamSize: string | null;
   experienceYears: number | null;
@@ -173,11 +171,8 @@ export type PublicClientProfile = {
   reviewCount: number;
   verified: boolean;
   memberSince: string;
-  companyName: string | null;
-  companyWebsite: string | null;
   industry: string | null;
   teamSize: string | null;
-  companyDescription: string | null;
   location: string | null;
   totalJobsPosted: number;
   completedProjectsCount: number;

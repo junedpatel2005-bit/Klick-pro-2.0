@@ -63,7 +63,6 @@ export async function GET(
           lastName: true,
           email: true,
           phone: true,
-          companyName: true,
           address: true,
         },
       },
@@ -250,7 +249,6 @@ export async function GET(
     client: {
       name: clientName,
       role: "Client",
-      company: job.user.companyName || undefined,
       email: isAdmin || isOwner ? job.user.email : undefined,
       phone: isAdmin || isOwner ? job.user.phone || undefined : undefined,
       location: job.user.address || undefined,

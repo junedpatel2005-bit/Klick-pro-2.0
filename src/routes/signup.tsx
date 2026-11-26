@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { GoogleMark } from "@/components/GoogleMark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { FullPageLogoLoader } from "@/components/FullPageLogoLoader";
+import { LegalDocumentDialog } from "@/components/LegalDocumentDialog";
 import { invalidateCurrentUser } from "@/lib/current-user";
+import { isValidEmailFormat } from "@/lib/email-validation";
+import type { LegalDocumentKey } from "@/lib/legal-content";
 
 function SignupContent() {
   const router = useRouter();
@@ -31,7 +34,13 @@ function SignupContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalDocumentKey | null>(null);
+  const [emailCheckStatus, setEmailCheckStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
   const oauthError = searchParams.get("oauthError");
+  const emailCheckSeqRef = useRef(0);
+  const emailCheckAbortRef = useRef<AbortController | null>(null);
+  const emailErrorCacheRef = useRef<Map<string, string>>(new Map());
+  const checkedValidEmailsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const rawRole = searchParams.get("role")?.toLowerCase();
@@ -48,26 +57,95 @@ function SignupContent() {
     setError(null);
   }
 
-  async function checkAvailability(field: "email", value: string) {
+  const checkEmail = useCallback(async (value: string, immediateInvalid = false) => {
     const trimmed = value.trim();
-    if (!trimmed) return;
-    const response = await fetch("/api/v1/auth/check-availability", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ [field]: trimmed }),
-    });
-    if (!response.ok) return;
-    const result =
-      response.status === 204
-        ? { fields: {} }
-        : ((await response.json()) as { fields?: Record<string, string> });
-    setFieldErrors((current) => {
-      const next = { ...current };
-      if (result.fields?.[field]) next[field] = result.fields[field];
-      else delete next[field];
-      return next;
-    });
-  }
+    if (!trimmed) {
+      emailCheckAbortRef.current?.abort();
+      setEmailCheckStatus("idle");
+      return;
+    }
+
+    if (!isValidEmailFormat(trimmed)) {
+      emailCheckAbortRef.current?.abort();
+      if (immediateInvalid) {
+        setEmailCheckStatus("invalid");
+        setFieldErrors((current) => ({ ...current, email: "Enter a valid email address." }));
+      }
+      return;
+    }
+
+    const normalized = trimmed.toLowerCase();
+    const cachedErr = emailErrorCacheRef.current.get(normalized);
+    if (cachedErr) {
+      setEmailCheckStatus("invalid");
+      setFieldErrors((current) => ({ ...current, email: cachedErr }));
+      return;
+    }
+    if (checkedValidEmailsRef.current.has(normalized)) {
+      setEmailCheckStatus("valid");
+      setFieldErrors((current) => {
+        const next = { ...current };
+        delete next.email;
+        return next;
+      });
+      return;
+    }
+
+    emailCheckAbortRef.current?.abort();
+    const controller = new AbortController();
+    emailCheckAbortRef.current = controller;
+    const seq = ++emailCheckSeqRef.current;
+    setEmailCheckStatus("checking");
+
+    try {
+      const response = await fetch("/api/v1/auth/check-availability", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+        signal: controller.signal,
+      });
+      if (!response.ok || seq !== emailCheckSeqRef.current) {
+        if (seq === emailCheckSeqRef.current) setEmailCheckStatus("idle");
+        return;
+      }
+      const result =
+        response.status === 204
+          ? { fields: {} }
+          : ((await response.json()) as { fields?: Record<string, string> });
+      if (seq !== emailCheckSeqRef.current) return;
+
+      const emailErr = result.fields?.email;
+      if (emailErr) {
+        emailErrorCacheRef.current.set(normalized, emailErr);
+        setEmailCheckStatus("invalid");
+      } else {
+        checkedValidEmailsRef.current.add(normalized);
+        setEmailCheckStatus("valid");
+      }
+      setFieldErrors((current) => {
+        const next = { ...current };
+        if (emailErr) next.email = emailErr;
+        else delete next.email;
+        return next;
+      });
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      if (seq === emailCheckSeqRef.current) setEmailCheckStatus("idle");
+    }
+  }, []);
+
+  useEffect(() => {
+    const trimmed = draft.email.trim();
+    if (!trimmed) {
+      emailCheckAbortRef.current?.abort();
+      setEmailCheckStatus("idle");
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void checkEmail(trimmed, true);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [draft.email, checkEmail]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,8 +163,12 @@ function SignupContent() {
     if (!firstName) nextErrors.firstName = "First name is required.";
     if (!lastName) nextErrors.lastName = "Last name is required.";
     if (!email) nextErrors.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+    else if (!isValidEmailFormat(email))
       nextErrors.email = "Enter a valid email address.";
+    else {
+      const cachedErr = emailErrorCacheRef.current.get(email.toLowerCase());
+      if (cachedErr) nextErrors.email = cachedErr;
+    }
     if (!password) nextErrors.password = "Password is required.";
     else if (password.length < 8) nextErrors.password = "Password must be at least 8 characters.";
     else if (!/[A-Z]/.test(password))
@@ -126,6 +208,11 @@ function SignupContent() {
         setFieldErrors(result.fields ?? {});
         setError(result.error ?? "Unable to create your account.");
       } else {
+        try {
+          window.localStorage.removeItem("klick_skip_setup");
+        } catch {
+          // Ignore storage access errors
+        }
         invalidateCurrentUser();
         router.push(result.redirect ?? "/verify");
       }
@@ -255,21 +342,35 @@ function SignupContent() {
             id="email"
             name="email"
             label="Work email"
-            placeholder="you@company.com"
+            placeholder="you@example.com"
             type="email"
             required
             disabled={pending}
             error={fieldErrors.email}
+            statusNote={
+              !fieldErrors.email && emailCheckStatus === "checking" ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Checking email address…
+                </span>
+              ) : !fieldErrors.email && emailCheckStatus === "valid" ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Valid email address.
+                </span>
+              ) : null
+            }
             value={draft.email}
             onValueChange={(value) => {
               setDraft({ ...draft, email: value });
+              setEmailCheckStatus("idle");
               setFieldErrors((current) => {
                 const next = { ...current };
                 delete next.email;
                 return next;
               });
             }}
-            onBlur={() => checkAvailability("email", draft.email)}
+            onBlur={() => void checkEmail(draft.email, true)}
           />
           <Field
             id="password"
@@ -315,28 +416,34 @@ function SignupContent() {
             />
             <span>
               I agree to the{" "}
-              <Link
-                href="/terms"
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc("terms");
+                }}
                 className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
               >
                 Terms and Conditions
-              </Link>{" "}
+              </button>{" "}
               and{" "}
-              <Link
-                href="/privacy-policy"
-                target="_blank"
-                onClick={(e) => e.stopPropagation()}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalDoc("privacy");
+                }}
                 className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
               >
                 Privacy Policy
-              </Link>
+              </button>
               .
             </span>
           </label>
-          {fieldErrors.terms && <p className="text-sm text-destructive">{fieldErrors.terms}</p>}
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {fieldErrors.terms && <p className="text-sm font-bold text-destructive">{fieldErrors.terms}</p>}
+          {error && <p className="text-sm font-bold text-destructive">{error}</p>}
           <Button
             type="submit"
             className="h-11 w-full transition-all duration-200"
@@ -354,6 +461,7 @@ function SignupContent() {
           </Button>
         </form>
       </AuthLayout>
+      <LegalDocumentDialog document={legalDoc} onClose={() => setLegalDoc(null)} />
     </>
   );
 }
@@ -375,6 +483,7 @@ function Field({
   required = false,
   disabled = false,
   error,
+  statusNote,
   value,
   onValueChange,
   onBlur,
@@ -388,6 +497,7 @@ function Field({
   required?: boolean;
   disabled?: boolean;
   error?: string;
+  statusNote?: ReactNode;
   value?: string;
   onValueChange?: (value: string) => void;
   onBlur?: () => void;
@@ -422,10 +532,12 @@ function Field({
           </button>
         )}
       </div>
-      {error && (
-        <p id={`${name}-error`} className="text-sm text-destructive">
+      {error ? (
+        <p id={`${name}-error`} className="text-sm font-bold text-destructive">
           {error}
         </p>
+      ) : (
+        statusNote ?? null
       )}
     </div>
   );

@@ -6,12 +6,12 @@ import { Prisma } from "@generated/prisma/client";
 import { sendSms } from "@/lib/sms/engine";
 
 export type PhoneOtpResult =
-  | { ok: true; devHint?: string; devCode?: string }
+  | { ok: true }
   | { ok: false; error: string; status: number };
 export type AccountRole = "CLIENT" | "PROFESSIONAL";
 
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 100;
 
 function providerName() {
   return (process.env.PHONE_OTP_PROVIDER ?? "development").trim().toLowerCase();
@@ -57,12 +57,13 @@ async function invalidatePriorCodes(phone: string, role: AccountRole) {
   });
 }
 
-async function createCode(phone: string, role: AccountRole, code: string) {
+async function createCode(phone: string, role: AccountRole, code: string, initialAttempts = 0) {
   await db.otpCode.create({
     data: {
       phone,
       codeHash: hashCode(code),
       role,
+      attempts: initialAttempts,
       expiresAt: new Date(Date.now() + OTP_EXPIRY_MS),
     },
   });
@@ -80,9 +81,30 @@ export async function requestPhoneOtp(phone: string, role: AccountRole): Promise
   const normalised = normalisePhone(phone);
   if (!normalised) return { ok: false, status: 400, error: "Enter a valid phone number." };
 
+  // Query prior active unexpired code for this phone and role to preserve attempt count across resends
+  const priorActive = await db.otpCode.findFirst({
+    where: {
+      phone: normalised,
+      role,
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { attempts: true },
+  });
+
+  const carryOverAttempts = priorActive ? priorActive.attempts : 0;
+  if (carryOverAttempts >= MAX_ATTEMPTS) {
+    return {
+      ok: false,
+      status: 429,
+      error: "Too many verification attempts. Please wait before requesting a new code.",
+    };
+  }
+
   const code = developmentCode() ?? randomCode();
   await invalidatePriorCodes(normalised, role);
-  await createCode(normalised, role, code);
+  await createCode(normalised, role, code, carryOverAttempts);
 
   if (process.env.NODE_ENV !== "production") {
     console.log(`[phone-otp] code for ${normalised} (${role}): ${code}`);
@@ -121,15 +143,9 @@ export async function requestPhoneOtp(phone: string, role: AccountRole): Promise
       // Gracefully fall back to local development OTP so testing and sign-up flows are never blocked!
       if (isDevOrPreview || isTrialRestriction) {
         console.warn(
-          `[phone-otp] Twilio delivery was restricted for ${normalised} (${twilioErr?.message ?? "Error"}). Falling back to local OTP code: ${code}`,
+          `[phone-otp] Twilio delivery was restricted for ${normalised} (${twilioErr?.message ?? "Error"}). Falling back to local OTP code.`,
         );
-        return {
-          ok: true,
-          devCode: code,
-          devHint: isTrialRestriction
-            ? `Twilio Trial active: To receive live SMS, add ${normalised} as a verified caller in Twilio Console. For testing, use code: ${code}`
-            : `Test verification code: ${code}`,
-        };
+        return { ok: true };
       }
 
       return {
@@ -142,11 +158,7 @@ export async function requestPhoneOtp(phone: string, role: AccountRole): Promise
     }
   }
 
-  return {
-    ok: true,
-    devCode: code,
-    devHint: process.env.NODE_ENV !== "production" ? `Development mode: Use verification code ${code}` : undefined,
-  };
+  return { ok: true };
 }
 
 /** Verifies an OTP without exposing provider configuration to the client. */

@@ -12,7 +12,10 @@ const secret = new TextEncoder().encode(authSecret);
 // db-free module that the proxy uses.
 export { sessionCookie } from "./session-token";
 export type Session = { userId: number; role: UserRole; emailVerifiedAt?: Date | null };
-export async function createSession(session: Session) {
+export async function createSession(
+  session: Session,
+  options?: { updateLastLogin?: boolean },
+) {
   const sessionId = randomUUID();
   const expiresAt = new Date(Date.now() + sessionOptions.maxAge * 1000);
   const token = await new SignJWT({ userId: session.userId, role: session.role, sessionId })
@@ -21,13 +24,15 @@ export async function createSession(session: Session) {
     .setExpirationTime("7d")
     .sign(secret);
   await db.session.create({ data: { id: sessionId, userId: session.userId, expiresAt } });
-  // Ensure user.lastLoginAt reflects the latest login timestamp
-  await db.user
-    .update({
-      where: { id: session.userId },
-      data: { lastLoginAt: new Date() },
-    })
-    .catch(() => {});
+  // Only stamp lastLoginAt on actual sign-in sessions, not initial registration/verification
+  if (options?.updateLastLogin !== false) {
+    await db.user
+      .update({
+        where: { id: session.userId },
+        data: { lastLoginAt: new Date() },
+      })
+      .catch(() => {});
+  }
   return token;
 }
 // Memoized per render pass so a navigation that passes through several layouts

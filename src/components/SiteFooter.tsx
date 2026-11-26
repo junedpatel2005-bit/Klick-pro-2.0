@@ -95,9 +95,9 @@ export function SiteFooter() {
           ]}
         />
 
-        {/* Company Links */}
+        {/* Platform Links */}
         <FooterCol
-          title="Company"
+          title="About"
           links={[
             { l: "About Us", to: "/about" },
             { l: "Careers", to: "/careers" },

@@ -68,7 +68,6 @@ async function main() {
         firstName: true,
         lastName: true,
         email: true,
-        companyName: true,
         address: true,
       },
       orderBy: { id: "asc" },

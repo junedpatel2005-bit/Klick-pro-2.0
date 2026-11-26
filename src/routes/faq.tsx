@@ -123,7 +123,7 @@ export const DEFAULT_FAQ_DATA: FAQCategory[] = [
           "Create a profile with your services, rates, service area, and previous work portfolio, then submit your identity verification. Once approved, you can browse open jobs and submit custom proposals immediately.",
       },
       {
-        question: "Do I need to be an incorporated company to join?",
+        question: "Do I need a registered business to join?",
         answer:
           "No. Independent tradespeople, individual freelancers, small teams, and registered enterprise businesses are all welcome on Klick-Pro.",
       },

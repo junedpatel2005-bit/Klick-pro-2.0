@@ -48,11 +48,9 @@ type UserDetail = {
   fixedRate: number | null;
   averageRating: number;
   reviewCount: number;
-  companyName: string | null;
-  companyWebsite: string | null;
   industry: string | null;
   teamSize: string | null;
-  companyDescription: string | null;
+  bio: string | null;
   address: string | null;
   serviceArea: string | null;
   workMode: string;
@@ -64,11 +62,8 @@ type UserDetail = {
     fullName: string;
     email: string;
     phone: string;
-    companyName: string | null;
-    companyWebsite: string | null;
     industry: string | null;
     teamSize: string | null;
-    companyDescription: string | null;
     address: string;
     savedLocations?: { label: string; address: string; isPrimary: boolean }[];
   }[];
@@ -632,16 +627,10 @@ export default function AdminUserDetailPage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
               <h2 className="font-semibold text-slate-900 text-sm border-b border-slate-100 pb-3 flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-sky-600" />
-                Company & Client Information
+                Client Information
               </h2>
 
               <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-500 block">Company Name</span>
-                  <span className="mt-1 font-semibold text-slate-800 block text-sm">
-                    {user.companyName || clientProfile?.companyName || "Individual Client"}
-                  </span>
-                </div>
                 <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
                   <span className="text-slate-500 block">Industry</span>
                   <span className="mt-1 font-semibold text-slate-800 block text-sm">
@@ -654,34 +643,7 @@ export default function AdminUserDetailPage() {
                     {user.teamSize || clientProfile?.teamSize || "—"}
                   </span>
                 </div>
-                <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-                  <span className="text-slate-500 block">Website</span>
-                  <span className="mt-1 font-semibold text-slate-800 block text-sm">
-                    {user.companyWebsite || clientProfile?.companyWebsite ? (
-                      <a
-                        href={user.companyWebsite || clientProfile?.companyWebsite || "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-indigo-600 hover:underline inline-flex items-center gap-1"
-                      >
-                        {user.companyWebsite || clientProfile?.companyWebsite}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </span>
-                </div>
               </div>
-
-              {(user.companyDescription || clientProfile?.companyDescription) && (
-                <div className="pt-2 text-xs">
-                  <span className="text-slate-500 block mb-1">About Company</span>
-                  <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    {user.companyDescription || clientProfile?.companyDescription}
-                  </p>
-                </div>
-              )}
             </section>
           )}
 

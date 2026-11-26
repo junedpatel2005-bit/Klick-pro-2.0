@@ -169,19 +169,13 @@ function PhoneTab() {
       const result = (await response.json().catch(() => null)) as {
         error?: string;
         message?: string;
-        devHint?: string;
-        devCode?: string;
       } | null;
       if (!response.ok) {
         setError(result?.error ?? "Your phone number is not registered.");
         return;
       }
       setOtpOpen(true);
-      if (result?.devCode) {
-        const digits = result.devCode.split("").slice(0, 6);
-        setOtp(digits.concat(Array(Math.max(0, 6 - digits.length)).fill("")));
-      }
-      setMessage(result?.devHint ?? result?.message ?? "Verification code sent to your phone.");
+      setMessage(result?.message ?? "Verification code sent to your phone.");
       requestAnimationFrame(() => otpRefs.current[0]?.focus());
     } catch {
       setError("Unable to send verification code. Please check your connection.");

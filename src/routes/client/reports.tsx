@@ -117,7 +117,6 @@ type ProjectApiRecord = {
   client?: {
     firstName?: string | null;
     lastName?: string | null;
-    companyName?: string | null;
     email?: string | null;
     phone?: string | null;
     address?: string | null;
@@ -406,7 +405,6 @@ export default function ClientReports() {
           client: client
             ? {
                 name: `${client.firstName || ""} ${client.lastName || ""}`.trim(),
-                companyName: client.companyName,
                 email: client.email,
                 phone: client.phone,
                 address: client.address,

@@ -117,11 +117,9 @@ model User {
   passwordHash                        String?
   googleId                            String?                   @unique
   avatarUrl                           String?
-  companyName                         String?
-  companyWebsite                      String?
   industry                            String?
   teamSize                            String?
-  companyDescription                  String?
+  bio                                 String?
   address                             String?
   professionalCategory                String?
   professionalCity                    String?
@@ -204,11 +202,8 @@ model ClientProfile {
   fullName           String
   email              String
   phone              String
-  companyName        String?
-  companyWebsite     String?
   industry           String?
   teamSize           String?
-  companyDescription String?
   address            String
   profilePhotoUrl    String?
   createdAt          DateTime             @default(now())
@@ -1058,7 +1053,6 @@ model LegacyUser {
 model LegacyUserProfile {
   userId       String  @id
   fullName     String?
-  companyName  String?
   profilePhoto String?
   address      String?
   bio          String?

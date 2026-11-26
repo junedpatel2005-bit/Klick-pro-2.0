@@ -263,9 +263,6 @@ export function SingleClientActivityDossierDocument({ data }: { data: ClientActi
           <View style={styles.heroTop}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.heroTitle}>{capitalizeWords(data.fullName)}</Text>
-              <Text style={{ fontSize: 8, color: reportTheme.ink, marginTop: 1, fontWeight: "bold" }}>
-                {capitalizeWords(data.companyName)}
-              </Text>
               <Text style={{ fontSize: 7.5, color: reportTheme.muted, marginTop: 2 }}>
                 Registered on {data.createdAt} · {data.daysActive} days active on platform
               </Text>

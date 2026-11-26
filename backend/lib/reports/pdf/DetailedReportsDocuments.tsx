@@ -448,7 +448,6 @@ function SharedReportFooter() {
 export type ClientRegistrationRow = {
   id: number | string;
   name: string;
-  company: string;
   email: string;
   phone: string;
   industry: string;
@@ -497,14 +496,14 @@ export function ClientRegistrationsDetailedDocument({
 
         {rows.map((r, i) => (
           <View key={i} style={styles.card} wrap={false}>
-            {/* Card Header: Client Identity, Company, KYC & Date */}
+            {/* Card Header: Client Identity, KYC & Date */}
             <View style={styles.cardHeader}>
               <View>
                 <Text style={styles.cardTitle}>
-                  {capitalizeWords(r.name)} {r.company ? `· ${capitalizeWords(r.company)}` : ""}
+                  {capitalizeWords(r.name)}
                 </Text>
                 <Text style={styles.cardSub}>
-                  ID: #{r.id} · {r.accountType || (r.company?.toLowerCase().includes("individual") ? "Individual Client" : "Corporate Enterprise")} · Registered: {formatReportDate(r.createdAt)}
+                  ID: #{r.id} · {r.accountType || "Client"} · Registered: {formatReportDate(r.createdAt)}
                 </Text>
               </View>
               <View style={{ flexDirection: "row", gap: 5, alignItems: "center" }}>
@@ -593,7 +592,6 @@ export function ClientRegistrationsDetailedDocument({
 export type ClientActivityDetailedRow = {
   id: number | string;
   name: string;
-  company: string;
   email: string;
   phone: string;
   location: string;
@@ -646,11 +644,11 @@ export function ClientActivityDetailedDocument({
           const isActive = r.workingStatus?.toLowerCase().includes("active") || r.status === "Active";
           return (
             <View key={i} style={styles.card} wrap={false}>
-              {/* Card Header: Client Name, Company, Status & Tier */}
+              {/* Card Header: Client Name, Status & Tier */}
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.cardTitle}>
-                    {capitalizeWords(r.name)} {r.company ? `· ${capitalizeWords(r.company)}` : ""}
+                    {capitalizeWords(r.name)}
                   </Text>
                   <Text style={styles.cardSub}>
                     ID: #{r.id} · Location: {capitalizeWords(r.location)} · Sector: {capitalizeWords(r.category)} · Registered: {r.createdAt}
@@ -735,7 +733,6 @@ export function ClientActivityDetailedDocument({
 export type ClientEngagementItemized = {
   id: number | string;
   name: string;
-  company: string;
   email: string;
   phone: string;
   location: string;
@@ -785,7 +782,7 @@ export function ClientEngagementDetailedDocument({
               <View>
                 <Text style={styles.cardTitle}>{capitalizeWords(c.name)}</Text>
                 <Text style={styles.cardSub}>
-                  {capitalizeWords(c.company)} · {c.email}
+                  {c.email}
                   {c.phone && c.phone !== "—" && c.phone !== "-" ? ` · ${c.phone}` : ""} · Location: {capitalizeWords(c.location)}
                 </Text>
               </View>
@@ -1327,7 +1324,7 @@ export function ClientGrowthDetailedDocument({
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
                     <View>
                       <Text style={[styles.value, { fontSize: 8.5 }]}>{capitalizeWords(r.name)}</Text>
-                      <Text style={[styles.itemTextMuted, { fontSize: 6.5 }]}>{capitalizeWords(r.company || "Individual Client")}</Text>
+                      <Text style={[styles.itemTextMuted, { fontSize: 6.5 }]}>{r.email}</Text>
                     </View>
                     <View style={{ flexDirection: "row", gap: 4 }}>
                       <Text

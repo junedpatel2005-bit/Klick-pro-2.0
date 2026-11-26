@@ -43,7 +43,6 @@ type User = {
   closedProjects: number;
   totalProjects: number;
   location: string;
-  companyName: string | null;
 };
 
 type DateFilterPreset =
@@ -148,9 +147,6 @@ function UserGroup({
                   <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition">
                     {capitalizeWords(`${user.firstName} ${user.lastName}`)}
                   </p>
-                  {user.companyName && (
-                    <span className="text-xs text-slate-500 font-medium">({capitalizeWords(user.companyName)})</span>
-                  )}
                   {user.isVerified && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       <CheckCircle2 className="h-3 w-3" />

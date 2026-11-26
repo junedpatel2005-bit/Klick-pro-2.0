@@ -361,7 +361,7 @@ export function SingleClientEngagementDossierDocument({
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={styles.heroTitle}>{capitalizeWords(client.name)}</Text>
               <Text style={styles.heroSubtitle}>
-                {capitalizeWords(client.company)} · {client.email}
+                {client.email}
                 {phoneText ? ` · ${phoneText}` : ""} · Location: {capitalizeWords(client.location)}
               </Text>
             </View>

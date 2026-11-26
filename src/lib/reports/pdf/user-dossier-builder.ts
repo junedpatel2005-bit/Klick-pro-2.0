@@ -54,11 +54,6 @@ export async function fetchUserDossierData(userId: number): Promise<UserDossierD
   const category = capitalizeWords(user.industry || user.clientProfiles?.industry || user.professionalCategory || "General Services");
   const fullName = capitalizeWords(`${user.firstName || ""} ${user.lastName || ""}`.trim()) || "Client";
 
-  const companyName =
-    user.companyName ||
-    user.clientProfiles?.companyName ||
-    null;
-
   const jobs: UserDossierJob[] = user.clientJobs.map((j) => {
     const budget = j.budgetMax || j.budgetMin || 0;
     return {
@@ -95,7 +90,6 @@ export async function fetchUserDossierData(userId: number): Promise<UserDossierD
     location: state,
     state,
     category,
-    companyName: companyName ? capitalizeWords(companyName) : null,
     walletBalance: wallet?.balance ?? 0,
     totalTopUp: wallet?.pendingBalance ?? 0,
     totalWithdrawals: 0,
@@ -118,7 +112,6 @@ export function generateUserDossierCsv(data: UserDossierData): string {
   // Table 1: Client Profile (Headers at Row 1 for perfect Excel & Notepad viewing)
   const clientHeaders = [
     "Client Full Name",
-    "Company Name",
     "Account Type",
     "Email Address",
     "Phone Number",
@@ -135,8 +128,7 @@ export function generateUserDossierCsv(data: UserDossierData): string {
 
   const clientRow = [
     data.fullName || `${data.firstName} ${data.lastName}`.trim(),
-    data.companyName || "Individual Client",
-    data.role === "CLIENT" ? (data.companyName ? "Corporate Company" : "Individual Client") : data.role,
+    data.role === "CLIENT" ? "Client" : data.role,
     data.email,
     data.phone || "—",
     data.state || data.location || "Maharashtra",
@@ -209,7 +201,6 @@ export type ClientActivitySession = {
 export type ClientActivityDossierData = {
   userId: number;
   fullName: string;
-  companyName: string;
   email: string;
   phone: string;
   role: string;
@@ -305,7 +296,6 @@ export async function fetchClientActivityDossierData(userId: number): Promise<Cl
   const state = extractStateOnly(rawLocation, user.professionalState || user.clientJobs[0]?.locationState);
   const category = capitalizeWords(user.industry || user.clientProfiles?.industry || user.professionalCategory || "General Services");
   const fullName = capitalizeWords(`${user.firstName || ""} ${user.lastName || ""}`.trim()) || "Client";
-  const companyName = user.companyName || user.clientProfiles?.companyName || "Individual Client";
 
   const jobs: UserDossierJob[] = user.clientJobs.map((j) => {
     const budget = j.budgetMax || j.budgetMin || 0;
@@ -358,7 +348,6 @@ export async function fetchClientActivityDossierData(userId: number): Promise<Cl
   return {
     userId: user.id,
     fullName,
-    companyName: capitalizeWords(companyName),
     email: user.email,
     phone: user.phone || "—",
     role: user.role,
@@ -401,7 +390,6 @@ export function generateClientActivityDossierCsv(data: ClientActivityDossierData
   // Table 1: Client Overview & Working Activity Telemetry (Row 1 = Headers)
   const headers1 = [
     "Client Full Name",
-    "Company Name",
     "Account Type",
     "Email Address",
     "Phone Number",
@@ -424,8 +412,7 @@ export function generateClientActivityDossierCsv(data: ClientActivityDossierData
 
   const row1 = [
     data.fullName,
-    data.companyName,
-    data.companyName.toLowerCase().includes("individual") ? "Individual Client" : "Corporate Company",
+    "Client",
     data.email,
     data.phone,
     data.state,
@@ -492,7 +479,6 @@ export function generateClientActivityDossierCsv(data: ClientActivityDossierData
 // ---------------------------------------------------------------------------
 export function generateClientEngagementDossierCsv(client: {
   name: string;
-  company: string;
   email: string;
   phone: string;
   location: string;
@@ -508,7 +494,6 @@ export function generateClientEngagementDossierCsv(client: {
   // Table 1: Client Overview & Engagement Score
   const headers1 = [
     "Client Full Name",
-    "Company Name",
     "Email Address",
     "Phone Number",
     "Location (State)",
@@ -523,7 +508,6 @@ export function generateClientEngagementDossierCsv(client: {
 
   const row1 = [
     capitalizeWords(client.name),
-    capitalizeWords(client.company),
     client.email,
     client.phone || "—",
     capitalizeWords(client.location),

@@ -79,7 +79,6 @@ export type AdminDirectoryUser = {
   closedProjects: number;
   totalProjects: number;
   location: string;
-  companyName: string | null;
 };
 
 export type AccountStateType = "ONLINE" | "ACTIVE" | "IDLE" | "NEVER_LOGGED_IN" | "DISABLED";
@@ -279,8 +278,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
         const matches =
           fullName.includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q)) ||
-          (u.companyName && u.companyName.toLowerCase().includes(q));
+          (u.phone && u.phone.includes(q));
         if (!matches) return false;
       }
       return true;
@@ -311,8 +309,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
         const matches =
           fullName.includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q)) ||
-          (u.companyName && u.companyName.toLowerCase().includes(q));
+          (u.phone && u.phone.includes(q));
         if (!matches) return false;
       }
       return true;
@@ -369,7 +366,7 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
             <Search className="absolute left-3 top-2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder={`Search ${activeGroup} by name, email, phone, company...`}
+              placeholder={`Search ${activeGroup} by name, email, phone...`}
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
               className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800 py-1.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
@@ -526,9 +523,9 @@ export function UserManagementView({ onInspectUser }: UserManagementViewProps) {
 
                   <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-[11px]">
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Company / Business</span>
+                      <span className="text-slate-400 block text-[10px]">Account Type</span>
                       <span className="font-semibold text-slate-700 dark:text-slate-300 truncate block">
-                        {capitalizeWords(user.companyName || (user.role === "PROFESSIONAL" ? "Freelance Pro" : "Individual Client"))}
+                        {user.role === "PROFESSIONAL" ? "Professional" : "Client"}
                       </span>
                     </div>
                     <div>

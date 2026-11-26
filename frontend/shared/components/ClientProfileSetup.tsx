@@ -24,7 +24,6 @@ type AccountData = {
 };
 
 type ProfileData = {
-  companyName: string | null;
   address: string;
   profilePhotoUrl: string | null;
 } | null;
@@ -35,7 +34,6 @@ export function ClientProfileSetup() {
   const [account, setAccount] = useState<AccountData | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [address, setAddress] = useState("");
   const [state, setState] = useState("");
   const [district, setDistrict] = useState("");
@@ -85,7 +83,6 @@ export function ClientProfileSetup() {
         setAccount(acc);
         setFirstName(acc.firstName || "");
         setLastName(acc.lastName || "");
-        setCompanyName(prof?.companyName || "");
         const currentAddr = prof?.address || acc.address || "";
         setAddress(currentAddr);
         setAvatarUrl(prof?.profilePhotoUrl || acc.avatarUrl || null);
@@ -175,7 +172,6 @@ export function ClientProfileSetup() {
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          companyName: companyName.trim() || undefined,
           address: finalAddress,
           profilePhotoUrl: avatarUrl,
           phone: account?.phone || undefined,
@@ -322,17 +318,6 @@ export function ClientProfileSetup() {
             </div>
 
             <PhoneVerification role="CLIENT" initialPhone={account?.phone} />
-
-            <div className="space-y-1.5">
-              <Label htmlFor="companyName">Company name (optional)</Label>
-              <Input
-                id="companyName"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Acme Inc. or Business name"
-                className="h-11"
-              />
-            </div>
 
             <div className="space-y-4 pt-2">
               <div className="space-y-1.5">

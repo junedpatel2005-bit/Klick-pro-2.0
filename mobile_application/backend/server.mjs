@@ -235,9 +235,9 @@ app.get("/api/v1/mobile/professionals", async (req, res) => {
     if (pool) {
       const dbQuery = `
         SELECT u.id, u.first_name, u.last_name, u.email, u.avatar_url, u.is_verified,
-               u.hourly_rate, u.average_rating, u.review_count, u.company_description,
+               u.hourly_rate, u.average_rating, u.review_count, u.bio,
                u.professional_skills_json, u.professional_category
-        FROM "User" u
+        FROM "users" u
         WHERE u.role = 'PROFESSIONAL' AND u.is_active = true
         ORDER BY u.average_rating DESC, u.review_count DESC
         LIMIT 20
@@ -261,7 +261,7 @@ app.get("/api/v1/mobile/professionals", async (req, res) => {
           isVerified: r.is_verified ?? true,
           hourlyRate: Number(r.hourly_rate || 85),
           skills: skills.slice(0, 3),
-          bio: r.company_description || "Specializing in creating high-conversion interfaces and digital solutions.",
+          bio: r.bio || "Specializing in creating high-conversion interfaces and digital solutions.",
           avatarUrl: r.avatar_url || `https://i.pravatar.cc/150?u=${r.id}`,
         };
       });

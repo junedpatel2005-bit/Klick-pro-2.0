@@ -130,7 +130,7 @@ function fuzzyMatch(corpus: string, query: string): boolean {
       "payout",
     ],
     wallet: ["walet", "money", "balance", "add money", "withdraw", "deposit"],
-    about: ["abowt", "abut", "about us", "company", "mission", "story", "info", "klick pro"],
+    about: ["abowt", "abut", "about us", "mission", "story", "info", "klick pro"],
     help: ["support", "faq", "contact", "issue", "guide"],
     professional: [
       "profesional",
@@ -272,7 +272,7 @@ export function AppHeader({
       {
         id: "about-klickpro",
         label: "About Klick-Pro",
-        hint: "Our mission, company story, leadership, and trust standards",
+        hint: "Our mission, brand story, leadership, and trust standards",
         badge: "About",
         category: "About & Guides",
         icon: Info,
@@ -282,7 +282,6 @@ export function AppHeader({
           "about us",
           "abowt",
           "abut",
-          "company",
           "mission",
           "klick pro",
           "story",
@@ -655,7 +654,7 @@ export function AppHeader({
         fuzzyMatch("payment wallet earnings money paymnet deposit withdraw", queryLower)
       ) {
         router.push("/earnings");
-      } else if (fuzzyMatch("about us mission company who we are story", queryLower)) {
+      } else if (fuzzyMatch("about us mission who we are story", queryLower)) {
         router.push("/about");
       } else if (fuzzyMatch("report reports invoice billing gst", queryLower)) {
         router.push(role === "PROFESSIONAL" ? "/professional/reports" : "/reports");

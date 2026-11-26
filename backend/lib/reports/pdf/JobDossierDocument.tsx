@@ -10,7 +10,6 @@ export type DossierParty = {
   role: string;
   email?: string;
   phone?: string;
-  company?: string;
   category?: string;
   location?: string;
   rating?: string;
@@ -333,12 +332,6 @@ export function JobDossierPage({ data }: { data: JobDossierData }) {
             <Text style={styles.partyTitle}>Client (Job Poster)</Text>
             <Text style={styles.label}>Name</Text>
             <Text style={styles.value}>{capitalizeWords(data.client.name)}</Text>
-            {data.client.company ? (
-              <>
-                <Text style={[styles.label, { marginTop: 3 }]}>Company</Text>
-                <Text style={styles.value}>{capitalizeWords(data.client.company)}</Text>
-              </>
-            ) : null}
             {data.client.email ? (
               <>
                 <Text style={[styles.label, { marginTop: 3 }]}>Email</Text>

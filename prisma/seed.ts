@@ -1096,7 +1096,7 @@ async function createProfessionals(passwordHash: string) {
           address: professional.address,
           teamSize: professional.teamSize,
           professionalSkillsJson: JSON.stringify(professional.skills),
-          companyDescription: faker.company.catchPhrase(),
+          bio: faker.lorem.sentence(),
           isVerified: index % 3 !== 0,
           availabilityStatus: index % 2 === 0 ? "available" : "this_week",
           averageRating: faker.number.float({ min: 4.1, max: 5, fractionDigits: 1 }),
@@ -1111,7 +1111,7 @@ async function createProfessionals(passwordHash: string) {
 
 async function createJobs(clientId: number) {
   const jobs = Array.from({ length: 8 }, (_, index) => ({
-    title: `Seed marketplace job ${index + 1}: ${faker.company.catchPhrase()}`,
+    title: `Seed marketplace job ${index + 1}: ${faker.commerce.productName()}`,
     category: categories[index % categories.length] ?? "Development",
     description: faker.lorem.paragraphs(2),
   }));
@@ -1491,15 +1491,6 @@ const DEMO_REVIEW_NOTES = [
   "Handled a small rework without arguing about it. Would hire again.",
 ];
 
-const DEMO_COMPANY_SUFFIXES = [
-  "Enterprises",
-  "Industries",
-  "Traders",
-  "Infratech",
-  "Services LLP",
-  "Solutions Pvt Ltd",
-];
-
 const DEMO_TEAM_SIZES = ["Just me", "2-5", "6-10", "11-50"];
 
 /**
@@ -1555,15 +1546,11 @@ async function createIndianDemoClients(passwordHash: string): Promise<DemoClient
     const lastName = fakerEN_IN.person.lastName();
     const email = `demo.client.${index + 1}@${DEMO_DOMAIN}`;
     const address = demoStreetAddress(location);
-    // Every third client is an individual homeowner rather than a business.
-    const hasCompany = index % 3 !== 0;
-    const companyName = hasCompany
-      ? `${lastName} ${location.city} ${DEMO_COMPANY_SUFFIXES[index % DEMO_COMPANY_SUFFIXES.length]!}`
-      : null;
+    const hasOrg = index % 3 !== 0;
     const createdAt = fakerEN_IN.date.recent({ days: 75 });
     const needs = fakerEN_IN.helpers.arrayElements(DEMO_HIRING_NEEDS, { min: 2, max: 3 });
     const savedLocation = {
-      label: hasCompany ? "Office / Primary site" : "Home",
+      label: hasOrg ? "Office / Primary site" : "Home",
       address,
       city: location.city,
       state: location.state,
@@ -1576,13 +1563,8 @@ async function createIndianDemoClients(passwordHash: string): Promise<DemoClient
       firstName,
       lastName,
       phone: demoPhone(4, index),
-      companyName,
-      companyWebsite: companyName
-        ? `https://www.${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.in`
-        : null,
-      industry: hasCompany ? "Home & Facility Maintenance" : null,
-      teamSize: hasCompany ? DEMO_TEAM_SIZES[index % DEMO_TEAM_SIZES.length]! : "Just me",
-      companyDescription: hasCompany ? fakerEN_IN.company.catchPhrase() : null,
+      industry: hasOrg ? "Home & Facility Maintenance" : null,
+      teamSize: hasOrg ? DEMO_TEAM_SIZES[index % DEMO_TEAM_SIZES.length]! : "Just me",
       address,
       hiringNeedsJson: JSON.stringify(needs),
       savedLocationsJson: JSON.stringify([savedLocation]),
@@ -1607,11 +1589,8 @@ async function createIndianDemoClients(passwordHash: string): Promise<DemoClient
       fullName: `${firstName} ${lastName}`,
       email,
       phone: shared.phone,
-      companyName: shared.companyName,
-      companyWebsite: shared.companyWebsite,
       industry: shared.industry,
       teamSize: shared.teamSize,
-      companyDescription: shared.companyDescription,
       address,
     };
     const profile = await db.clientProfile.upsert({
@@ -1748,7 +1727,7 @@ async function createIndianDemoProfessionals(
         authProvider: "LOCAL",
         emailVerifiedAt: createdAt,
         phoneVerifiedAt: createdAt,
-        companyDescription: `${category.name} specialist serving ${location.city} for ${experienceYears} years.`,
+        bio: `${category.name} specialist serving ${location.city} for ${experienceYears} years.`,
         isVerified: index % 4 !== 0,
         availabilityStatus: index % 2 === 0 ? "available" : "this_week",
         averageRating: fakerEN_IN.number.float({ min: 4, max: 5, fractionDigits: 1 }),

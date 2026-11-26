@@ -314,12 +314,6 @@ export default function ClientProfilePage() {
                     Verified Client
                   </span>
                 )}
-                {client.companyName && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    <Building2 className="h-3 w-3" />
-                    {capitalizeWords(client.companyName)}
-                  </span>
-                )}
                 {client.industry && (
                   <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">
                     {capitalizeWords(client.industry)}
@@ -369,24 +363,17 @@ export default function ClientProfilePage() {
             </div>
           </div>
 
-          {/* About / Company Information Section */}
+          {/* About Client Section */}
           <section className="mt-8 grid gap-6 sm:grid-cols-2">
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2">About the Client</h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {capitalizeFirst(client.companyDescription) ||
-                  "This client has not added a detailed company description yet. They actively hire qualified professionals on Klick-Pro."}
+                Verified client active on Klick-Pro. They hire qualified professionals for residential, commercial, and specialist projects.
               </p>
             </div>
             <div className="rounded-2xl border border-border bg-muted/40 p-5">
               <h2 className="text-lg font-semibold">Client details</h2>
               <div className="mt-4 space-y-3 text-sm text-muted-foreground">
-                {client.companyName && (
-                  <div>
-                    <p className="font-medium text-foreground">Company</p>
-                    <p>{capitalizeWords(client.companyName)}</p>
-                  </div>
-                )}
                 {client.industry && (
                   <div>
                     <p className="font-medium text-foreground">Industry</p>
@@ -397,25 +384,6 @@ export default function ClientProfilePage() {
                   <div>
                     <p className="font-medium text-foreground">Team size</p>
                     <p>{client.teamSize}</p>
-                  </div>
-                )}
-                {client.companyWebsite && (
-                  <div>
-                    <p className="font-medium text-foreground">Website</p>
-                    <a
-                      href={
-                        client.companyWebsite.startsWith("http")
-                          ? client.companyWebsite
-                          : `https://${client.companyWebsite}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                      {client.companyWebsite.replace(/^https?:\/\//, "")}
-                      <ExternalLink className="h-3 w-3 opacity-70" />
-                    </a>
                   </div>
                 )}
                 <div>

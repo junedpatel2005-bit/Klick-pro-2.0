@@ -267,9 +267,9 @@ export default async function ProfessionalProfilePage() {
                     Verified Pro
                   </span>
                 )}
-                {(professional.companyName || professional.industry) && (
+                {professional.industry && (
                   <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    {professional.companyName ?? professional.industry}
+                    {professional.industry}
                   </span>
                 )}
               </div>
@@ -436,19 +436,6 @@ export default async function ProfessionalProfilePage() {
                   </a>
                 </div>
               )}
-              {professional.companyWebsite && (
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  <a
-                    href={professional.companyWebsite}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    {professional.companyWebsite}
-                  </a>
-                </div>
-              )}
               {professional.address && (
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 mt-1" />
@@ -459,12 +446,8 @@ export default async function ProfessionalProfilePage() {
           </article>
 
           <article className="rounded-3xl border border-border/80 bg-card p-6 shadow-soft">
-            <h2 className="text-lg font-semibold">Company</h2>
+            <h2 className="text-lg font-semibold">Practice Details</h2>
             <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Company</p>
-                <p className="mt-2 font-medium">{professional.companyName ?? "Not provided"}</p>
-              </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Industry</p>
                 <p className="mt-2 font-medium">{professional.industry ?? "Not provided"}</p>

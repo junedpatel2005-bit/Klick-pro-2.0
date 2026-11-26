@@ -161,7 +161,6 @@ export type ProjectDossierCsvParams = {
   createdAt?: string | null;
   client?: {
     name?: string | null;
-    companyName?: string | null;
     email?: string | null;
     phone?: string | null;
     address?: string | null;
@@ -216,7 +215,6 @@ export function exportProjectDossierCsv(params: ProjectDossierCsvParams): void {
 
   // 2. Engagement Parties (Client & Professional)
   const clientName = capitalizeWords(params.client?.name || "Direct Client");
-  const clientCompany = capitalizeWords(params.client?.companyName || "Private Client");
   const clientContact = [params.client?.email, params.client?.phone, capitalizeWords(params.client?.address || "")]
     .filter(Boolean)
     .join(" · ") || "Verified Client Profile";
@@ -229,9 +227,9 @@ export function exportProjectDossierCsv(params: ProjectDossierCsvParams): void {
 
   sections.push({
     title: "Engagement Parties & Counterparts",
-    headers: ["Party Role", "Full Name", "Company / Trade Specialization", "Contact Information & Location"],
+    headers: ["Party Role", "Full Name", "Role / Trade Specialization", "Contact Information & Location"],
     rows: [
-      ["Client / Employer", clientName, clientCompany, clientContact],
+      ["Client / Employer", clientName, "Client", clientContact],
       ["Professional Contractor", proName, proTrade, proContact],
     ],
   });
@@ -298,7 +296,6 @@ export type PaymentReceiptCsvParams = {
   paymentMethod?: string | null;
   razorpayPaymentId?: string | null;
   clientName?: string | null;
-  clientCompany?: string | null;
   clientEmail?: string | null;
   professionalName?: string | null;
   professionalTrade?: string | null;
@@ -326,12 +323,12 @@ export function exportPaymentReceiptCsv(params: PaymentReceiptCsvParams): void {
   // 2. Transaction Parties
   sections.push({
     title: "Parties to Transaction",
-    headers: ["Transaction Role", "Full Name", "Company / Trade", "Contact Information"],
+    headers: ["Transaction Role", "Full Name", "Role / Trade", "Contact Information"],
     rows: [
       [
         "Billed To (Client)",
         capitalizeWords(params.clientName || "Direct Client"),
-        capitalizeWords(params.clientCompany || "Client Employer"),
+        "Client",
         params.clientEmail || "—",
       ],
       [

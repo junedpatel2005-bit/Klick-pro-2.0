@@ -8,6 +8,7 @@ import {
   Activity,
   Layers,
   ShieldAlert,
+  ShieldCheck,
   Cpu,
   TrendingUp,
   Briefcase,
@@ -360,10 +361,7 @@ function AdminReportsContent() {
 
       // Sub-filter checks
       if (subFilter !== "ALL" && subFilter !== "DETAILS") {
-        if (activeTab === "client-registrations") {
-          if (subFilter === "COMPANIES" && !r.isCompany) return false;
-          if (subFilter === "INDIVIDUALS" && r.isCompany) return false;
-        } else if (activeTab === "client-activity") {
+        if (activeTab === "client-activity") {
           if (r.status !== subFilter) return false;
         } else if (activeTab === "client-engagement") {
           if (subFilter === "HIGH" && r.engagementScore < 10) return false;
@@ -473,7 +471,6 @@ function AdminReportsContent() {
       filename = `klick-pro-client-registrations-full.csv`;
       headers = [
         "Client Full Name",
-        "Company Name",
         "Account Type",
         "Email Address",
         "Phone Number",
@@ -485,8 +482,7 @@ function AdminReportsContent() {
       ];
       rowsData = rowsToExport.map((r) => [
         capitalizeWords(r.name || "Client"),
-        capitalizeWords(r.companyName || r.company || (r.isCompany ? "Corporate Client" : "Individual Client")),
-        r.isCompany ? "Corporate Company" : "Individual Client",
+        r.roleDisplay || (r.role === "PROFESSIONAL" ? "Professional" : "Client"),
         r.email || "—",
         r.phone || "—",
         capitalizeWords(r.industryType || r.category || "General Services"),
@@ -499,7 +495,6 @@ function AdminReportsContent() {
       filename = `klick-pro-client-activity-full.csv`;
       headers = [
         "Client Full Name",
-        "Company Name",
         "Email Address",
         "Phone Number",
         "Location (State)",
@@ -515,7 +510,6 @@ function AdminReportsContent() {
       ];
       rowsData = rowsToExport.map((r) => [
         capitalizeWords(r.name || "Client"),
-        capitalizeWords(r.company || "Individual Client"),
         r.email || "—",
         r.phone || "—",
         capitalizeWords(r.state || r.location || "Maharashtra"),
@@ -533,7 +527,6 @@ function AdminReportsContent() {
       filename = `klick-pro-client-engagement-full.csv`;
       headers = [
         "Client Full Name",
-        "Company Name",
         "Email Address",
         "Phone Number",
         "Location (State)",
@@ -550,7 +543,6 @@ function AdminReportsContent() {
       ];
       rowsData = rowsToExport.map((r) => [
         capitalizeWords(r.name || "Client"),
-        capitalizeWords(r.company || "Individual Client"),
         r.email || "—",
         r.phone || "—",
         capitalizeWords(r.state || r.location || "Maharashtra"),
@@ -651,7 +643,6 @@ function AdminReportsContent() {
       if (isDetailsMode && detailedList.length > 0) {
         headers = [
           "Client Full Name",
-          "Company Name",
           "Account Type",
           "Email Address",
           "Phone Number",
@@ -666,8 +657,7 @@ function AdminReportsContent() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rowsData = detailedList.map((c: any) => [
           capitalizeWords(c.name || "Client"),
-          capitalizeWords(c.company || c.companyName || "Individual Client"),
-          c.isCompany ? "Corporate Company" : "Individual Client",
+          c.roleDisplay || (c.role === "PROFESSIONAL" ? "Professional" : "Client"),
           c.email || "—",
           c.phone || "—",
           capitalizeWords(c.location || c.state || "Maharashtra"),
@@ -1061,12 +1051,6 @@ function AdminReportsContent() {
                     className="bg-transparent border-none text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
                   >
                     <option value="ALL">All Records</option>
-                    {activeTab === "client-registrations" && (
-                      <>
-                        <option value="COMPANIES">Companies Only</option>
-                        <option value="INDIVIDUALS">Individuals Only</option>
-                      </>
-                    )}
                     {activeTab === "client-activity" && (
                       <>
                         <option value="ONLINE">Online Today</option>
@@ -1236,12 +1220,12 @@ function AdminReportsContent() {
             />
 
             <ReportKpiCard
-              title="New Companies"
-              value={summaryData.newCompaniesRegistered ?? 0}
-              subtitle={<div className="text-xs text-slate-500 mt-1">Corporate & business accounts</div>}
-              icon={Building2}
+              title="Verified Accounts"
+              value={summaryData.verifiedUsersCount ?? 0}
+              subtitle={<div className="text-xs text-slate-500 mt-1">KYC verified profiles</div>}
+              icon={ShieldCheck}
               iconBgColor="bg-purple-500/10 text-purple-600"
-              definition="This metric counts verified corporate entities and commercial business accounts registered during the period, helping distinguish high-value enterprise clients from individual homeowners."
+              definition="This metric counts verified client and professional accounts registered during the period."
             />
 
             <ReportKpiCard
@@ -1710,7 +1694,6 @@ function AdminReportsContent() {
                   {activeTab === "client-registrations" && (
                     <>
                       <th className="py-3 px-4">Client Name</th>
-                      <th className="py-3 px-4">Company Name</th>
                       <th className="py-3 px-4">Industry Type</th>
                       <th className="py-3 px-4">Location (State)</th>
                       <th className="py-3 px-4">Jobs Posted</th>
@@ -1732,7 +1715,7 @@ function AdminReportsContent() {
 
                   {activeTab === "client-engagement" && (
                     <>
-                      <th className="py-3 px-4">Client & Company</th>
+                      <th className="py-3 px-4">Client</th>
                       <th className="py-3 px-4">Documents Uploaded</th>
                       <th className="py-3 px-4">Jobs Posted</th>
                       <th className="py-3 px-4">Milestones Completed</th>
@@ -1767,7 +1750,6 @@ function AdminReportsContent() {
                     subFilter === "DETAILS" ? (
                       <>
                         <th className="py-3 px-4">Client Full Name</th>
-                        <th className="py-3 px-4">Company Name</th>
                         <th className="py-3 px-4">Location (State)</th>
                         <th className="py-3 px-4">Industry Category</th>
                         <th className="py-3 px-4">KYC Status</th>
@@ -1853,9 +1835,6 @@ function AdminReportsContent() {
                               {row.phone !== "—" && <span>· {row.phone}</span>}
                             </div>
                           </td>
-                          <td className="py-3 px-4 font-medium capitalize text-slate-700 dark:text-slate-300">
-                            {row.companyName}
-                          </td>
                           <td className="py-3 px-4 capitalize text-slate-600 dark:text-slate-400">
                             {row.industryType}
                           </td>
@@ -1894,7 +1873,7 @@ function AdminReportsContent() {
                               {row.phone !== "—" && <span>· {row.phone}</span>}
                             </div>
                             <div className="text-[10px] text-slate-400 capitalize mt-0.5">
-                              {row.company} · {row.category}
+                              {row.category}
                             </div>
                           </td>
                           <td className="py-3 px-4 capitalize font-medium text-slate-700 dark:text-slate-300">
@@ -1957,7 +1936,6 @@ function AdminReportsContent() {
                             <div className="font-semibold text-slate-900 dark:text-white capitalize">
                               {row.name}
                             </div>
-                            <div className="text-[11px] text-slate-500 capitalize">{row.company}</div>
                             <div className="text-[10px] text-slate-400 mt-0.5">
                               {row.email} {row.phone !== "—" && `· ${row.phone}`}
                             </div>
@@ -2121,9 +2099,6 @@ function AdminReportsContent() {
                                 <span>{row.email}</span>
                                 {row.phone !== "—" && <span>· {row.phone}</span>}
                               </div>
-                            </td>
-                            <td className="py-3 px-4 font-medium capitalize text-slate-700 dark:text-slate-300">
-                              {row.company}
                             </td>
                             <td className="py-3 px-4 capitalize font-medium text-slate-700 dark:text-slate-300">
                               {row.state || row.location}

@@ -549,7 +549,6 @@ export async function POST(
           createdAt: true,
           professionalCity: true,
           address: true,
-          companyName: true,
         },
         orderBy: { createdAt: "desc" },
         take: selectedOnly ? undefined : 500,
@@ -1012,15 +1011,10 @@ export async function POST(
           take: selectedOnly ? undefined : 300,
         });
 
-        let companiesCount = 0;
         const industryMap: Record<string, number> = {};
         const stateMap: Record<string, number> = {};
 
         const rows: ClientRegistrationRow[] = clients.map((c) => {
-          const rawComp = c.companyName?.trim() || c.clientProfiles?.companyName?.trim() || "";
-          const isComp = Boolean(rawComp && rawComp.toLowerCase() !== "individual");
-          if (isComp) companiesCount++;
-
           const ind = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
           industryMap[ind] = (industryMap[ind] || 0) + 1;
 
@@ -1050,8 +1044,7 @@ export async function POST(
           return {
             id: c.id,
             name: fullName,
-            company: isComp ? capitalizeWords(rawComp) : "Individual Client",
-            accountType: isComp ? "Corporate Enterprise" : "Individual Client",
+            accountType: c.role === "PROFESSIONAL" ? "Professional" : "Client",
             email: c.email,
             phone: c.phone || "—",
             industry: capitalizeWords(ind),
@@ -1077,7 +1070,6 @@ export async function POST(
           };
           const headers = [
             "Client Full Name",
-            "Company Name",
             "Account Type",
             "Email Address",
             "Phone Number",
@@ -1092,8 +1084,7 @@ export async function POST(
             ...rows.map((r) =>
               [
                 r.name,
-                r.company,
-                r.company.toLowerCase().includes("individual") ? "Individual Client" : "Corporate Company",
+                r.accountType || "Client",
                 r.email,
                 r.phone,
                 r.industry,
@@ -1124,8 +1115,8 @@ export async function POST(
         }
 
         const summaryStats: ReportSummaryStat[] = [
-          { label: "Total Clients", value: String(rows.length) },
-          { label: "Companies Registered", value: String(companiesCount) },
+          { label: "Total Accounts", value: String(rows.length) },
+          { label: "Verified KYC", value: String(rows.filter((r) => r.kyc === "Verified").length) },
           { label: "Top Industry", value: capitalizeWords(topInd) },
           { label: "Top State", value: capitalizeWords(topState) },
         ];
@@ -1176,7 +1167,6 @@ export async function POST(
             address: true,
             industry: true,
             professionalState: true,
-            companyName: true,
             lastLoginAt: true,
             createdAt: true,
             clientProfiles: true,
@@ -1231,7 +1221,6 @@ export async function POST(
           return {
             id: c.id,
             name: fullName,
-            company: c.companyName ? capitalizeWords(c.companyName) : "Individual",
             email: c.email,
             phone: c.phone || "—",
             location: capitalizeWords(stateLoc),
@@ -1268,7 +1257,6 @@ export async function POST(
           };
           const headers = [
             "Client Full Name",
-            "Company Name",
             "Email Address",
             "Phone Number",
             "Location (State)",
@@ -1286,7 +1274,6 @@ export async function POST(
             ...rows.map((r) =>
               [
                 r.name,
-                r.company,
                 r.email,
                 r.phone,
                 r.location,
@@ -1347,7 +1334,6 @@ export async function POST(
             phone: true,
             address: true,
             professionalState: true,
-            companyName: true,
             clientProfiles: true,
             clientJobs: {
               select: {
@@ -1457,7 +1443,6 @@ export async function POST(
           return {
             id: c.id,
             name: fullName,
-            company: c.companyName ? capitalizeWords(c.companyName) : "Individual Client",
             email: c.email,
             phone: c.phone || "—",
             location: capitalizeWords(stateLoc),
@@ -1489,7 +1474,6 @@ export async function POST(
           };
           const headers = [
             "Client Full Name",
-            "Company Name",
             "Email Address",
             "Phone Number",
             "Location (State)",
@@ -1511,7 +1495,6 @@ export async function POST(
               const tasksItemized = cl.tasks.map((t, i) => `[${i + 1}] ${t.title} (${t.projectRef} · INR ${t.amount})`).join(" | ") || "None";
               return [
                 cl.name,
-                cl.company,
                 cl.email,
                 cl.phone,
                 cl.location,
@@ -2009,7 +1992,6 @@ export async function POST(
             address: true,
             industry: true,
             professionalState: true,
-            companyName: true,
             createdAt: true,
             isVerified: true,
             clientProfiles: true,
@@ -2069,12 +2051,10 @@ export async function POST(
           const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
           const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "Client";
           const industry = c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
-          const company = c.companyName ? capitalizeWords(c.companyName) : "Individual Client";
 
           return {
             id: c.id,
             name: fullName,
-            company,
             email: c.email,
             phone: c.phone || "—",
             location: capitalizeWords(stateLoc),
@@ -2094,8 +2074,6 @@ export async function POST(
           };
           const headers = [
             "Client Full Name",
-            "Company Name",
-            "Account Type",
             "Email Address",
             "Phone Number",
             "Location (State)",
@@ -2109,8 +2087,6 @@ export async function POST(
             ...newClientsRoster.map((r) =>
               [
                 r.name,
-                r.company,
-                r.company.toLowerCase().includes("individual") ? "Individual Client" : "Corporate Company",
                 r.email,
                 r.phone,
                 r.state,

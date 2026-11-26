@@ -94,7 +94,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
   // Core account state
   const [firstName, setFirstName] = useState(data.account.firstName);
   const [lastName, setLastName] = useState(data.account.lastName);
-  const [companyName, setCompanyName] = useState(data.profile?.companyName || "");
   const [avatarUrl, setAvatarUrl] = useState(data.account.avatarUrl);
   const [phone, setPhone] = useState(data.account.phone);
   const [phoneVerifiedAt, setPhoneVerifiedAt] = useState(data.account.phoneVerifiedAt);
@@ -123,7 +122,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
   // Form draft states for Personal Info
   const [draftFirstName, setDraftFirstName] = useState(firstName);
   const [draftLastName, setDraftLastName] = useState(lastName);
-  const [draftCompanyName, setDraftCompanyName] = useState(companyName);
 
   // Form draft states for Primary Address
   const [draftAddress, setDraftAddress] = useState(primaryAddress || "");
@@ -160,7 +158,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
   function startEditPersonal() {
     setDraftFirstName(firstName);
     setDraftLastName(lastName);
-    setDraftCompanyName(companyName);
     setEditingPersonal(true);
   }
 
@@ -213,7 +210,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
         body: JSON.stringify({
           firstName: draftFirstName.trim(),
           lastName: draftLastName.trim(),
-          companyName: draftCompanyName.trim() || null,
           address: primaryAddress || "Default location",
           profilePhotoUrl: avatarUrl || null,
           phone: phone || undefined,
@@ -227,7 +223,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
 
       setFirstName(draftFirstName.trim());
       setLastName(draftLastName.trim());
-      setCompanyName(draftCompanyName.trim());
       setEditingPersonal(false);
       toast.success("Personal details updated successfully!");
       window.dispatchEvent(new Event("servio:profile-updated"));
@@ -257,7 +252,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          companyName: companyName.trim() || null,
           address: finalAddress,
           profilePhotoUrl: avatarUrl || null,
           phone: phone || undefined,
@@ -519,12 +513,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                       Verified Client
                     </span>
                   </div>
-                  {companyName && (
-                    <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 mt-1 font-medium">
-                      <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>{companyName}</span>
-                    </p>
-                  )}
                   <p className="text-xs text-muted-foreground mt-0.5">{data.account.email}</p>
                 </div>
               </div>
@@ -576,10 +564,10 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
           </CardContent>
         </Card>
 
-        {/* Main Content Grid: 2 Balanced Columns */}
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Column (Primary Details & Maps) */}
-          <div className="space-y-6 lg:col-span-7">
+        {/* Main Content Grid: Balanced 50/50 Columns */}
+        <div className="grid gap-6 lg:grid-cols-2 items-start">
+          {/* Left Column (Primary Details, Locations, Saved Pros & Security) */}
+          <div className="space-y-6">
             {/* BOX 1: Personal Information */}
             <Card className="border border-border/80 shadow-xs">
               <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -629,17 +617,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="draftCompany" className="text-xs font-semibold">
-                        Company Name (Optional)
-                      </Label>
-                      <Input
-                        id="draftCompany"
-                        value={draftCompanyName}
-                        onChange={(e) => setDraftCompanyName(e.target.value)}
-                        placeholder="e.g. Acme Industries Ltd."
-                      />
-                    </div>
                     <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
                       <Button
                         type="button"
@@ -670,14 +647,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                         </p>
                         <p className="mt-1 text-sm font-semibold text-foreground">{lastName}</p>
                       </div>
-                    </div>
-                    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Company Name
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">
-                        {companyName || "Not specified"}
-                      </p>
                     </div>
                   </div>
                 )}
@@ -787,7 +756,7 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                         placeholder="Flat / House no., building name, street, area, PIN code"
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Type your precise door, flat, or building number to accompany the map
+                        Type your precise door, flat, or building number to match the map
                         coordinates.
                       </p>
                     </div>
@@ -1147,10 +1116,61 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                 {locationError && <p className="text-xs text-destructive">{locationError}</p>}
               </CardContent>
             </Card>
+
+            {/* BOX 6: Saved Professionals */}
+            <Card className="border border-rose-200/60 dark:border-rose-950/40 shadow-xs">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-950/40">
+                    <Heart className="h-4 w-4 fill-rose-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-semibold">Saved Professionals</CardTitle>
+                    <CardDescription className="text-xs">Bookmarked experts</CardDescription>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900/50 h-7 text-xs"
+                >
+                  <Link href="/discover?saved=true">
+                    <span>View All</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-1">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Quickly hire or send proposals to professionals you have previously bookmarked on
+                  Klick-Pro.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* BOX 7: Security & Password */}
+            <Card className="border border-border/80 shadow-xs">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold">Security</CardTitle>
+                <CardDescription>Password and authentication settings.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-3.5 py-3">
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Password</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">••••••••••••••</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="h-7 text-xs">
+                    <Link href="/forgot-password">Change password</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Column (Contact, Projects & Security) */}
-          <div className="space-y-6 lg:col-span-5">
+          {/* Right Column (Contact, Linked Accounts & Project Activity) */}
+          <div className="space-y-6">
             {/* BOX 4: Contact Information */}
             <Card className="border border-border/80 shadow-xs">
               <CardHeader className="pb-3">
@@ -1243,57 +1263,6 @@ export function ClientMyInfoPage({ data }: { data: ClientAccountSummaryResponse 
                   <Link href="/my-jobs">View All Projects</Link>
                 </Button>
               </CardFooter>
-            </Card>
-
-            {/* BOX 6: Saved Professionals */}
-            <Card className="border border-rose-200/60 dark:border-rose-950/40 shadow-xs">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-50 text-rose-500 dark:bg-rose-950/40">
-                    <Heart className="h-4 w-4 fill-rose-500" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base font-semibold">Saved Professionals</CardTitle>
-                    <CardDescription className="text-xs">Bookmarked experts</CardDescription>
-                  </div>
-                </div>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-900/50 h-7 text-xs"
-                >
-                  <Link href="/discover?saved=true">
-                    <span>View All</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Quickly hire or send proposals to professionals you have previously bookmarked on
-                  Klick-Pro.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* BOX 7: Security & Password */}
-            <Card className="border border-border/80 shadow-xs">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Security</CardTitle>
-                <CardDescription>Password and authentication settings.</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="flex items-center justify-between rounded-xl border border-border/70 bg-muted/20 px-3.5 py-3">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">Password</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">••••••••••••••</p>
-                  </div>
-                  <Button asChild variant="outline" size="sm" className="h-7 text-xs">
-                    <Link href="/forgot-password">Change password</Link>
-                  </Button>
-                </div>
-              </CardContent>
             </Card>
           </div>
         </div>

@@ -314,7 +314,7 @@ export default function Verify() {
                 setNewEmail(event.target.value);
                 setEmailError(null);
               }}
-              placeholder="you@company.com"
+              placeholder="you@example.com"
               className="w-full"
             />
             {emailError && <p className="text-sm text-destructive">{emailError}</p>}

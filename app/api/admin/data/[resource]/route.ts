@@ -115,7 +115,6 @@ export async function GET(
           professionalCity: true,
           address: true,
           serviceArea: true,
-          companyName: true,
         },
         orderBy: { createdAt: "desc" },
       });
@@ -278,7 +277,6 @@ export async function GET(
           closedProjects: stats.closed,
           totalProjects: stats.total,
           location,
-          companyName: u.companyName || null,
         };
       });
 
@@ -635,7 +633,6 @@ export async function GET(
                   email: true,
                   phone: true,
                   avatarUrl: true,
-                  companyName: true,
                 },
               },
               professional: {
@@ -883,7 +880,6 @@ export async function GET(
             phone: true,
             avatarUrl: true,
             role: true,
-            companyName: true,
             isVerified: true,
             phoneVerifiedAt: true,
           },
@@ -911,7 +907,6 @@ export async function GET(
             phone: u.phone,
             avatarUrl: u.avatarUrl,
             role: u.role,
-            companyName: u.companyName,
             isVerified: u.isVerified,
             phoneVerifiedAt: u.phoneVerifiedAt,
           },

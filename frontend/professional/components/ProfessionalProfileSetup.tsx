@@ -54,7 +54,7 @@ type Profile = {
   professionalCity?: string | null;
   address?: string | null;
   workMode: string;
-  companyDescription: string | null;
+  bio: string | null;
   professionalSkillsJson: string | null;
   phone: string | null;
 };
@@ -659,7 +659,7 @@ export function ProfessionalProfileSetup() {
               <Textarea
                 id="bio"
                 name="bio"
-                defaultValue={profile?.companyDescription ?? ""}
+                defaultValue={profile?.bio ?? ""}
                 rows={4}
                 placeholder="Tell clients what you do and how you can help."
                 className="resize-none"

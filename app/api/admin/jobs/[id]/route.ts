@@ -89,7 +89,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           lastName: true,
           email: true,
           phone: true,
-          companyName: true,
           address: true,
           isVerified: true,
           createdAt: true,

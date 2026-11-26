@@ -1,8 +1,15 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Professional Profile",
+  description:
+    "View and manage your professional credentials, service catalog, verified credentials, and client feedback on Klick-Pro.",
+};
 import {
   BadgeCheck,
   Clock,
@@ -260,9 +267,9 @@ export default async function ProfessionalProfilePage() {
                     Verified Pro
                   </span>
                 )}
-                {(professional.companyName || professional.industry) && (
+                {professional.industry && (
                   <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    {professional.companyName ?? professional.industry}
+                    {professional.industry}
                   </span>
                 )}
               </div>
@@ -410,25 +417,22 @@ export default async function ProfessionalProfilePage() {
             <h2 className="text-lg font-semibold">Contact</h2>
             <div className="mt-4 space-y-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                <span>{professional.email}</span>
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <a
+                  href={`mailto:${professional.email}`}
+                  className="text-foreground hover:text-primary transition-colors hover:underline"
+                >
+                  {professional.email}
+                </a>
               </div>
               {professional.phone && (
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>{professional.phone}</span>
-                </div>
-              )}
-              {professional.companyWebsite && (
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
+                  <Phone className="h-4 w-4 shrink-0 text-primary" />
                   <a
-                    href={professional.companyWebsite}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline"
+                    href={`tel:${professional.phone.replace(/\s+/g, "")}`}
+                    className="text-foreground hover:text-primary transition-colors hover:underline"
                   >
-                    {professional.companyWebsite}
+                    {professional.phone}
                   </a>
                 </div>
               )}
@@ -442,12 +446,8 @@ export default async function ProfessionalProfilePage() {
           </article>
 
           <article className="rounded-3xl border border-border/80 bg-card p-6 shadow-soft">
-            <h2 className="text-lg font-semibold">Company</h2>
+            <h2 className="text-lg font-semibold">Practice Details</h2>
             <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Company</p>
-                <p className="mt-2 font-medium">{professional.companyName ?? "Not provided"}</p>
-              </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Industry</p>
                 <p className="mt-2 font-medium">{professional.industry ?? "Not provided"}</p>

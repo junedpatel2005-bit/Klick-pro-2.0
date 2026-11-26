@@ -47,23 +47,16 @@ export function PhoneVerification({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ phone: fullPhone, role }),
     });
-    const result = (await response.json()) as { error?: string; devHint?: string; devCode?: string };
+    const result = (await response.json()) as { error?: string };
     setPending(false);
     if (!response.ok) {
       setIsError(true);
       return setMessage(result.error ?? "Unable to send the verification code.");
     }
     setSent(true);
-    if (result.devHint) {
-      setIsError(false);
-      setMessage(result.devHint);
-      if (result.devCode) {
-        setCode(result.devCode);
-      }
-    } else {
-      setIsError(false);
-      setMessage("Verification code sent to your phone.");
-    }
+    setCode("");
+    setIsError(false);
+    setMessage(null);
     inputRef.current?.focus();
   }
 

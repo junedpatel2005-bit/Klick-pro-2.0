@@ -55,7 +55,6 @@ type UserProfile = {
   email: string;
   phone?: string | null;
   avatarUrl?: string | null;
-  companyName?: string | null;
   role?: string;
   isVerified?: boolean;
   phoneVerifiedAt?: string | null;
@@ -894,7 +893,7 @@ export default function AdminFinancePage() {
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">
             {isCommissionOn
-              ? "Live view of money coming in, safe storage during work, payouts to pros, and platform commission."
+              ? "Live view of money coming in, safe storage during work, payouts to professionals, and platform commission."
               : "Live view of money coming in, safe storage during work, and 100% payouts to professionals."}
           </p>
         </div>
@@ -991,7 +990,7 @@ export default function AdminFinancePage() {
           <TabButton
             active={activeTab === "withdrawals"}
             onClick={() => setActiveTab("withdrawals")}
-            label="Pro Withdrawals"
+            label="Professional Withdrawals"
             badge={data?.withdrawals.length}
             title="Withdrawal requests from professionals to their Bank Account or UPI"
           />
@@ -1012,7 +1011,7 @@ export default function AdminFinancePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by client, pro, project, #ID..."
+              placeholder="Search by client, professional, project, #ID..."
               className="w-full rounded-xl border border-slate-200 bg-white py-1.5 pl-8.5 pr-3 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 shadow-2xs focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-200"
             />
             {searchQuery && (
@@ -1109,7 +1108,7 @@ export default function AdminFinancePage() {
       {/* KPI Cards Grid (Boxes following searchbar) */}
       <div className={`grid grid-cols-2 gap-3.5 sm:grid-cols-2 ${isCommissionOn ? "lg:grid-cols-5" : "lg:grid-cols-4"}`}>
         {/* Card 1: Total Business Done (Gross Volume) */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-slate-500">
@@ -1141,7 +1140,7 @@ export default function AdminFinancePage() {
 
         {/* Card 2: Platform Earnings (STRICTLY ONLY SHOWN WHEN COMMISSION IS ON) */}
         {isCommissionOn && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-semibold text-emerald-800">
@@ -1173,7 +1172,7 @@ export default function AdminFinancePage() {
         )}
 
         {/* Card 3: Paid to Professionals */}
-        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+        <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-semibold text-slate-500">
@@ -1208,7 +1207,7 @@ export default function AdminFinancePage() {
         {/* Card 4: Money on Hold (Escrow) */}
         <div
           onClick={() => setActiveTab("escrow")}
-          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+          className={`cursor-pointer rounded-xl border p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             activeTab === "escrow"
               ? "border-amber-400 bg-amber-50/60"
               : "border-slate-200/90 bg-white hover:border-slate-300"
@@ -1255,7 +1254,7 @@ export default function AdminFinancePage() {
         {/* Card 5: Platform Safe (Treasury Wallet) */}
         <div
           onClick={() => setActiveTab("ledger")}
-          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition ${
+          className={`col-span-2 sm:col-span-1 cursor-pointer rounded-xl border p-4 shadow-2xs transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             activeTab === "ledger"
               ? "border-slate-400 bg-slate-50"
               : "border-slate-200/90 bg-white hover:border-slate-300"
@@ -2005,9 +2004,6 @@ function WithdrawalDrawer({
                     </span>
                   )}
                 </div>
-                {user?.companyName && (
-                  <p className="text-xs text-slate-500 mt-0.5">{user.companyName}</p>
-                )}
               </div>
             </div>
 
@@ -2421,7 +2417,7 @@ function TransactionDrawer({
               </div>
               {isCommissionOn && proComm > 0 && (
                 <div className="flex justify-between text-rose-600 font-medium">
-                  <span>(-) Pro Commission Deducted:</span>
+                  <span>(-) Professional Commission Deducted:</span>
                   <span>-{formatMoney(proComm)}</span>
                 </div>
               )}
@@ -3382,12 +3378,12 @@ function FinanceHelpDrawer({
                       : "bg-slate-100 text-slate-700 border-slate-200"
                   }`}
                 >
-                  {commissionEnabled ? `Active (${commissionRate ? Math.round(commissionRate * 100) : 10}%)` : "Disabled (₹0 Fee / 100% to Pro)"}
+                  {commissionEnabled ? `Active (${commissionRate ? Math.round(commissionRate * 100) : 10}%)` : "Disabled (₹0 Fee / 100% to Professional)"}
                 </span>
               </div>
               <p className="mt-2 text-xs text-slate-600 leading-relaxed">
                 By default, our platform takes ₹0 commission fee (0% cut). That means 100% of what the client pays goes straight into the professional's
-                pocket. Only if you manually turn ON Commission in Admin Settings, a small percentage is kept by the platform as company earnings.
+                pocket. Only if you manually turn ON Commission in Admin Settings, a small percentage is kept as platform earnings.
               </p>
             </div>
 

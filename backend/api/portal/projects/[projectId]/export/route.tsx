@@ -99,7 +99,6 @@ export async function GET(
           lastName: true,
           email: true,
           phone: true,
-          companyName: true,
           address: true,
         },
       },
@@ -275,7 +274,6 @@ export async function GET(
       { label: "Name", value: clientName },
       { label: "Email", value: project.client.email },
       { label: "Phone", value: project.client.phone ?? "Not provided" },
-      { label: "Company", value: project.client.companyName ?? "Not provided" },
       { label: "Address", value: project.client.address ?? "Not provided" },
     ],
     professional: [

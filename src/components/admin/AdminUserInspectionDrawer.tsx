@@ -54,15 +54,11 @@ type InspectedUser = {
   address?: string | null;
   professionalCity?: string | null;
   professionalState?: string | null;
-  companyName?: string | null;
-  companyRole?: string | null;
-  companyVat?: string | null;
   industryType?: string | null;
   averageRating?: number;
   reviewCount?: number;
   completedProjects?: number;
   authProvider?: string | null;
-  clientProfiles?: { companyName?: string; companyVat?: string } | null;
   professionalCategory?: string | null;
   hourlyRate?: number | null;
   experienceYears?: number | null;
@@ -460,12 +456,6 @@ export function AdminUserInspectionDrawer({
                           <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
                           <span className="font-medium">
                             {capitalizeWords([user.professionalCity, user.professionalState].filter(Boolean).join(", ") || user.address || "Location not set")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <Building2 className="h-4 w-4 text-slate-400 shrink-0" />
-                          <span className="font-medium">
-                            {capitalizeWords(user.companyName || user.clientProfiles?.companyName || "Individual")}
                           </span>
                         </div>
                       </div>

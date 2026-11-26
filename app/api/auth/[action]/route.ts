@@ -23,6 +23,8 @@ import { enqueueBackgroundJob } from "@/lib/background-jobs";
 import { logServerError } from "@/lib/server-logger";
 import { notifyAdminsOfNewAccount } from "@/lib/marketplace-notifications";
 import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
+import { hasValidEmailDomain } from "@/lib/email-domain-check";
+import { isValidEmailFormat } from "@/lib/email-validation";
 import { getSafeRedirectUrl } from "@/lib/safe-redirect";
 import { capitalizeWords } from "@/lib/utils";
 
@@ -96,21 +98,19 @@ function getAuthRedirect(
   if (user.role === "ADMIN") return "/admin";
   if (!user.emailVerifiedAt) return "/verify";
 
-  const isReturningOrSkipped = Boolean(user.lastLoginAt) || skipSetupCookie;
-
   if (user.role === "PROFESSIONAL") {
     const hasProProfile =
       Boolean(user.professionalCategory) &&
       user.professionalLatitude !== null &&
       user.professionalLongitude !== null;
-    if (isReturningOrSkipped || hasProProfile) {
+    if (skipSetupCookie || hasProProfile) {
       return "/professional-home";
     }
     return "/professional/setup?profileSetup=1";
   }
 
-  // Client role
-  if (isReturningOrSkipped || hasClientProfile) {
+  // Client role: open setup until a client profile exists or setup is explicitly skipped
+  if (skipSetupCookie || hasClientProfile) {
     return "/dashboard";
   }
   return "/client/setup?profileSetup=1";
@@ -428,7 +428,7 @@ export async function GET(
       const safeRedirect =
         saved.nextPath?.startsWith("/") && !saved.nextPath.startsWith("//")
           ? saved.nextPath
-          : getAuthRedirect(user, hasClientProfile, false);
+          : getAuthRedirect(user, hasClientProfile, !createdAccount && request.cookies.get("klick_skip_setup")?.value === "1");
 
       const response = NextResponse.redirect(new URL(safeRedirect, appOrigin));
       response.cookies.set(
@@ -441,6 +441,9 @@ export async function GET(
         sessionOptions,
       );
       response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
+      if (createdAccount) {
+        response.cookies.set("klick_skip_setup", "", { path: "/", maxAge: 0 });
+      }
       return response;
     } catch (err) {
       logServerError("auth.google.oauth", err);
@@ -515,7 +518,9 @@ export async function POST(
   const rateLimitKey = loginEmail
     ? `${action}:${clientKey(request)}:${loginEmail}`
     : `${action}:${clientKey(request)}`;
-  if (!rateLimit(rateLimitKey)) return safe("Too many attempts. Please try again shortly.", 429);
+  const rateAllowed =
+    action === "check-availability" ? rateLimit(rateLimitKey, 60, 60_000) : rateLimit(rateLimitKey);
+  if (!rateAllowed) return safe("Too many attempts. Please try again shortly.", 429);
   if (action === "send-phone-otp") {
     const parsed = z
       .object({
@@ -556,8 +561,6 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
     });
   }
   if (action === "verify-phone") {
@@ -618,7 +621,10 @@ export async function POST(
   }
   if (action === "check-availability") {
     const parsed = z
-      .object({ email: z.string().email().optional(), phone: z.string().min(7).max(25).optional() })
+      .object({
+        email: z.string().trim().max(254).optional(),
+        phone: z.string().min(7).max(25).optional(),
+      })
       .refine((value) => !value.phone || isValidInternationalPhoneNumber(value.phone), {
         path: ["phone"],
         message: "Enter a valid phone number for the selected country.",
@@ -632,8 +638,17 @@ export async function POST(
     }
     const fields: Record<string, string> = {};
     if (parsed.data.email) {
-      const emailTaken = await db.user.findUnique({ where: { email: parsed.data.email } });
-      if (emailTaken) fields.email = "Email is already registered.";
+      if (!isValidEmailFormat(parsed.data.email)) {
+        fields.email = "Enter a valid email address.";
+      } else if (!(await hasValidEmailDomain(parsed.data.email))) {
+        fields.email = "This email domain does not exist. Enter a valid email address.";
+      } else {
+        const emailTaken = await db.user.findFirst({
+          where: { email: { equals: parsed.data.email.trim(), mode: "insensitive" } },
+          select: { id: true },
+        });
+        if (emailTaken) fields.email = "Email is already registered.";
+      }
     }
     if (parsed.data.phone) {
       const phoneTaken = await db.user.findFirst({ where: { phone: parsed.data.phone } });
@@ -654,6 +669,15 @@ export async function POST(
       );
     }
     const data = parsed.data;
+    if (!isValidEmailFormat(data.email) || !(await hasValidEmailDomain(data.email))) {
+      return NextResponse.json(
+        {
+          error: "Please enter a valid email address.",
+          fields: { email: "This email domain does not exist. Enter a valid email address." },
+        },
+        { status: 400 },
+      );
+    }
     if (data.phone) {
       const proofToken = request.cookies.get(phoneProofCookie)?.value;
       const hasProof = await hasValidPhoneVerificationProof(proofToken, data.phone, data.role);
@@ -721,10 +745,11 @@ export async function POST(
     );
     response.cookies.set(
       sessionCookie,
-      await createSession({ userId: user.id, role: user.role }),
+      await createSession({ userId: user.id, role: user.role }, { updateLastLogin: false }),
       sessionOptions,
     );
     response.cookies.set(phoneProofCookie, "", { ...phoneProofCookieOptions, maxAge: 0 });
+    response.cookies.set("klick_skip_setup", "", { path: "/", maxAge: 0 });
     return response;
   }
   if (action === "login") {
@@ -822,8 +847,6 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
     });
   }
   if (action === "login-phone") {
@@ -1136,9 +1159,7 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      message: "devHint" in result && result.devHint ? result.devHint : "Verification code sent to your phone.",
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
+      message: "Verification code sent to your phone.",
     });
   }
   if (action === "verify-forgot-password-phone") {
@@ -1231,7 +1252,7 @@ export async function POST(
       });
       response.cookies.set(
         sessionCookie,
-        await createSession({ userId: user.id, role: user.role }),
+        await createSession({ userId: user.id, role: user.role }, { updateLastLogin: false }),
         sessionOptions,
       );
       return response;

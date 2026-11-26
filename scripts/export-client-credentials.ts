@@ -18,7 +18,6 @@ async function main() {
       lastName: true,
       email: true,
       phone: true,
-      companyName: true,
       address: true,
       createdAt: true,
     },
@@ -32,8 +31,8 @@ async function main() {
   mdContent += `> **Standard Default Passwords**:\n`;
   mdContent += `> - Newly Faker-generated clients: \`ClientPass#2026\`\n`;
   mdContent += `> - Seed fixture client (\`seed.client@servio.example\`): \`ServioSeed#2026\`\n\n`;
-  mdContent += `| # | User ID | Name | Email / Gmail | Password | Phone | Company | City / Address |\n`;
-  mdContent += `| :---: | :---: | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+  mdContent += `| # | User ID | Name | Email / Gmail | Password | Phone | City / Address |\n`;
+  mdContent += `| :---: | :---: | :--- | :--- | :--- | :--- | :--- |\n`;
 
   const jsonList: Array<{
     id: number;
@@ -41,7 +40,6 @@ async function main() {
     email: string;
     password: string;
     phone: string | null;
-    company: string | null;
     address: string | null;
   }> = [];
 
@@ -49,10 +47,9 @@ async function main() {
     const password =
       client.email === "seed.client@servio.example" ? "ServioSeed#2026" : "ClientPass#2026";
     const name = `${client.firstName} ${client.lastName}`.trim();
-    const company = client.companyName ?? "Personal Account";
     const address = client.address ?? "India";
 
-    mdContent += `| ${index + 1} | \`#${client.id}\` | **${name}** | \`${client.email}\` | \`${password}\` | \`${client.phone ?? "N/A"}\` | ${company} | ${address} |\n`;
+    mdContent += `| ${index + 1} | \`#${client.id}\` | **${name}** | \`${client.email}\` | \`${password}\` | \`${client.phone ?? "N/A"}\` | ${address} |\n`;
 
     jsonList.push({
       id: client.id,
@@ -60,7 +57,6 @@ async function main() {
       email: client.email,
       password,
       phone: client.phone,
-      company: client.companyName,
       address: client.address,
     });
   });

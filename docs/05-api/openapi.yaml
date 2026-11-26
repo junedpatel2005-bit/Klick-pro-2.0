@@ -2781,9 +2781,6 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 80
-                companyName:
-                  type: string
-                  maxLength: 160
                 address:
                   type: string
                   minLength: 1
@@ -6321,10 +6318,6 @@ components:
               type:
                 - string
                 - "null"
-            companyName:
-              type:
-                - string
-                - "null"
             address:
               type:
                 - string
@@ -7041,7 +7034,7 @@ components:
           type:
             - string
             - "null"
-        companyDescription:
+        bio:
           type:
             - string
             - "null"
@@ -8982,10 +8975,6 @@ components:
                   - "null"
               role:
                 $ref: "#/components/schemas/UserRole"
-              companyName:
-                type:
-                  - string
-                  - "null"
       x-source: app/api/admin/data/[resource]/route.ts:130-389
     AdminDisputeDetail:
       type: object

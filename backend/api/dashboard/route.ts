@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             avatarUrl: true,
-            companyName: true,
             averageRating: true,
             phoneVerifiedAt: true,
           },

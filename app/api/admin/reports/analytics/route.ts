@@ -109,13 +109,8 @@ export async function GET(request: NextRequest) {
 
       const industryMap: Record<string, number> = {};
       const stateMap: Record<string, number> = {};
-      let companiesCount = 0;
 
       const rows = users.map((c) => {
-        const rawCompany = c.companyName?.trim() || c.clientProfiles?.companyName?.trim() || "";
-        const isCompany = Boolean(rawCompany && rawCompany.toLowerCase() !== "individual");
-        if (isCompany) companiesCount++;
-
         const industry =
           c.role === "PROFESSIONAL"
             ? c.professionalCategory?.trim() || c.professionalCategoryRecord?.name || c.industry?.trim() || "Professional Services"
@@ -131,11 +126,6 @@ export async function GET(request: NextRequest) {
         const stateLoc = extractStateOnly(rawLoc, c.professionalState || c.clientJobs[0]?.locationState);
         stateMap[stateLoc] = (stateMap[stateLoc] || 0) + 1;
 
-        const companyDisplay = isCompany
-          ? capitalizeWords(rawCompany)
-          : c.role === "PROFESSIONAL"
-            ? "Freelance Professional"
-            : "Individual Client";
         const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
 
         return {
@@ -145,12 +135,10 @@ export async function GET(request: NextRequest) {
           roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
           email: c.email,
           phone: c.phone || "—",
-          companyName: companyDisplay,
           industryType: capitalizeWords(industry),
           category: capitalizeWords(industry),
           location: capitalizeWords(stateLoc),
           state: capitalizeWords(stateLoc),
-          isCompany,
           isVerified: c.isVerified,
           jobsCount: c.clientJobs.length,
           createdAt: c.createdAt.toISOString(),
@@ -165,7 +153,6 @@ export async function GET(request: NextRequest) {
             (r) =>
               r.name.toLowerCase().includes(search) ||
               r.email.toLowerCase().includes(search) ||
-              r.companyName.toLowerCase().includes(search) ||
               r.industryType.toLowerCase().includes(search) ||
               r.location.toLowerCase().includes(search) ||
               r.role.toLowerCase().includes(search),
@@ -179,7 +166,7 @@ export async function GET(request: NextRequest) {
           totalUsers: users.length,
           clientsCount: users.filter((u) => u.role === "CLIENT").length,
           professionalsCount: users.filter((u) => u.role === "PROFESSIONAL").length,
-          newCompaniesRegistered: companiesCount,
+          verifiedUsersCount: users.filter((u) => u.isVerified).length,
           newUsersRegistered: users.length,
           topIndustry: capitalizeWords(topIndustry),
           topLocation: capitalizeWords(topState),
@@ -219,7 +206,6 @@ export async function GET(request: NextRequest) {
             professionalCategory: true,
             professionalCity: true,
             professionalState: true,
-            companyName: true,
             isActive: true,
             lastLoginAt: true,
             createdAt: true,
@@ -323,18 +309,12 @@ export async function GET(request: NextRequest) {
             : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
 
         const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
-        const company = c.companyName
-          ? capitalizeWords(c.companyName)
-          : c.role === "PROFESSIONAL"
-            ? "Freelance Professional"
-            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
           role: c.role,
           roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
-          company,
           email: c.email,
           phone: c.phone || "—",
           location: capitalizeWords(stateLoc),
@@ -381,7 +361,6 @@ export async function GET(request: NextRequest) {
             (r) =>
               r.name.toLowerCase().includes(search) ||
               r.email.toLowerCase().includes(search) ||
-              r.company.toLowerCase().includes(search) ||
               r.phone.toLowerCase().includes(search) ||
               r.location.toLowerCase().includes(search) ||
               r.category.toLowerCase().includes(search) ||
@@ -425,7 +404,6 @@ export async function GET(request: NextRequest) {
           professionalCategory: true,
           professionalCity: true,
           professionalState: true,
-          companyName: true,
           clientProfiles: true,
           clientJobs: {
             where: dateWhere,
@@ -549,18 +527,12 @@ export async function GET(request: NextRequest) {
 
         const primaryFeature = usedFeatures[0] || (c.role === "PROFESSIONAL" ? "Pro Proposal Engine" : "Catalog Browsing");
         const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
-        const company = c.companyName
-          ? capitalizeWords(c.companyName)
-          : c.role === "PROFESSIONAL"
-            ? "Freelance Professional"
-            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
           role: c.role,
           roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
-          company,
           email: c.email,
           phone: c.phone || "—",
           location: capitalizeWords(stateLoc),
@@ -588,7 +560,6 @@ export async function GET(request: NextRequest) {
         ? rows.filter(
             (r) =>
               r.name.toLowerCase().includes(search) ||
-              r.company.toLowerCase().includes(search) ||
               r.email.toLowerCase().includes(search) ||
               r.location.toLowerCase().includes(search) ||
               r.primaryFeature.toLowerCase().includes(search) ||
@@ -661,7 +632,6 @@ export async function GET(request: NextRequest) {
             phone: true,
             address: true,
             professionalState: true,
-            companyName: true,
           },
         }),
         db.user.findMany({
@@ -1099,7 +1069,6 @@ export async function GET(request: NextRequest) {
           professionalCategory: true,
           professionalCity: true,
           professionalState: true,
-          companyName: true,
           createdAt: true,
           lastLoginAt: true,
           isActive: true,
@@ -1155,18 +1124,12 @@ export async function GET(request: NextRequest) {
             ? c.professionalCategory?.trim() || c.industry?.trim() || "Professional Services"
             : c.industry?.trim() || c.clientProfiles?.industry?.trim() || "General Services";
         const fullName = capitalizeWords(`${c.firstName || ""} ${c.lastName || ""}`.trim()) || "User";
-        const company = c.companyName
-          ? capitalizeWords(c.companyName)
-          : c.role === "PROFESSIONAL"
-            ? "Freelance Professional"
-            : "Individual Client";
 
         return {
           id: c.id,
           name: fullName,
           role: c.role,
           roleDisplay: c.role === "PROFESSIONAL" ? "Professional" : "Client",
-          company,
           email: c.email,
           phone: c.phone || "—",
           location: capitalizeWords(stateLoc),
@@ -1274,7 +1237,6 @@ export async function GET(request: NextRequest) {
         ? detailedNewClients.filter(
             (c) =>
               c.name.toLowerCase().includes(search) ||
-              c.company.toLowerCase().includes(search) ||
               c.email.toLowerCase().includes(search) ||
               c.phone.toLowerCase().includes(search) ||
               c.location.toLowerCase().includes(search) ||

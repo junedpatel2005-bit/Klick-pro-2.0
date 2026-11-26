@@ -82,11 +82,8 @@ async function main() {
     role: "CLIENT";
     authProvider: string;
     emailVerifiedAt: Date;
-    companyName: string | null;
-    companyWebsite: string | null;
     industry: string | null;
     teamSize: string;
-    companyDescription: string | null;
     address: string;
     hiringNeedsJson: string;
     savedLocationsJson: string;
@@ -109,16 +106,11 @@ async function main() {
     const phone = `+9198${String(10000000 + (timestamp % 100000) * 100 + i * 31).slice(-8)}`;
 
     const cityObj = INDIAN_CITIES[i % INDIAN_CITIES.length]!;
-    const hasCompany = i % 3 !== 0;
-    const companyName = hasCompany ? faker.company.name() : null;
-    const companyWebsite = hasCompany
-      ? `https://www.${companyName?.toLowerCase().replace(/[^a-z0-9]/g, "") ?? "biz"}.in`
-      : null;
-    const industry = hasCompany ? INDUSTRIES[i % INDUSTRIES.length]! : null;
-    const teamSize = hasCompany
+    const hasOrg = i % 3 !== 0;
+    const industry = hasOrg ? INDUSTRIES[i % INDUSTRIES.length]! : null;
+    const teamSize = hasOrg
       ? faker.helpers.arrayElement(["1-10", "11-50", "51-200"])
       : "Just me";
-    const companyDescription = hasCompany ? faker.company.catchPhrase() : null;
     const streetAddress = `${faker.location.buildingNumber()}, ${faker.location.street()}, ${cityObj.city}, ${cityObj.state}`;
     const createdAt = faker.date.recent({ days: 90 });
 
@@ -133,11 +125,8 @@ async function main() {
       role: "CLIENT",
       authProvider: "LOCAL",
       emailVerifiedAt: createdAt,
-      companyName,
-      companyWebsite,
       industry,
       teamSize,
-      companyDescription,
       address: streetAddress,
       hiringNeedsJson: JSON.stringify(selectedNeeds),
       savedLocationsJson: JSON.stringify([
@@ -176,11 +165,8 @@ async function main() {
     fullName: `${user.firstName} ${user.lastName}`,
     email: user.email,
     phone: user.phone ?? `+919800000000`,
-    companyName: user.companyName,
-    companyWebsite: user.companyWebsite,
     industry: user.industry,
     teamSize: user.teamSize,
-    companyDescription: user.companyDescription,
     address: user.address ?? "India",
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -258,7 +244,7 @@ async function main() {
           userId: admin.id,
           type: "NEW_ACCOUNT",
           title: "New client registration",
-          description: `${user.firstName} ${user.lastName}${user.companyName ? ` from ${user.companyName}` : ""} registered as a client from ${raw.city}.`,
+          description: `${user.firstName} ${user.lastName} registered as a client from ${raw.city}.`,
           href: `/admin/users?id=${user.id}`,
           createdAt: user.createdAt,
         });

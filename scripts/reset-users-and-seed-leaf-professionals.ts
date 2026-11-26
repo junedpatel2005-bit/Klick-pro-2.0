@@ -157,7 +157,7 @@ async function main() {
           hourlyRate: faker.number.int({ min: 250, max: 1800 }),
           fixedRate: faker.number.int({ min: 1500, max: 50000 }),
           experienceYears: faker.number.int({ min: 1, max: 15 }),
-          companyDescription: `Verified specialist for ${category.name}.`,
+          bio: `Verified specialist for ${category.name}.`,
           isVerified: true,
           isActive: true,
           availabilityStatus: "available",

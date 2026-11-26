@@ -592,9 +592,9 @@ function ProProfileContent() {
                     Verified Professional
                   </span>
                 )}
-                {(professional.companyName || professional.industry) && (
+                {professional.industry && (
                   <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    {professional.companyName || professional.industry}
+                    {professional.industry}
                   </span>
                 )}
               </div>

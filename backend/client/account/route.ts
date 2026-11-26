@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       fullName: true,
-      companyName: true,
       address: true,
       profilePhotoUrl: true,
     },

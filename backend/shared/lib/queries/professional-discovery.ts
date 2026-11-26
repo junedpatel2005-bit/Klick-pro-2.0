@@ -247,7 +247,7 @@ async function buildSearchWhere(filter: ProfessionalDiscoveryFilter) {
       { lastName: { contains: term, mode: "insensitive" } },
       { professionalCategory: { contains: term, mode: "insensitive" } },
       { professionalCity: { contains: term, mode: "insensitive" } },
-      { companyDescription: { contains: term, mode: "insensitive" } },
+      { bio: { contains: term, mode: "insensitive" } },
       { professionalSkillsJson: { contains: term, mode: "insensitive" } },
     ];
   }
@@ -302,7 +302,7 @@ function toPublicProfessional(
     availabilityStatus: string;
     isVerified: boolean;
     professionalSkillsJson: string | null;
-    companyDescription: string | null;
+    bio: string | null;
     professionalLatitude: number | null;
     professionalLongitude: number | null;
   },
@@ -331,7 +331,7 @@ function toPublicProfessional(
     approximateDistanceKm: distanceKm,
     availabilityStatus: professional.availabilityStatus,
     skills: parseSkills(professional.professionalSkillsJson),
-    bio: professional.companyDescription,
+    bio: professional.bio,
     displayPoint: basePoint
       ? (createDisplayPoint(professional.id, basePoint.lat, basePoint.lng) ?? undefined)
       : undefined,
@@ -353,7 +353,7 @@ type UserProfessionalRecord = {
   availabilityStatus: string;
   isVerified: boolean;
   professionalSkillsJson: string | null;
-  companyDescription: string | null;
+  bio: string | null;
   professionalLatitude: number | null;
   professionalLongitude: number | null;
 };
@@ -470,7 +470,7 @@ export async function searchProfessionals(filter: ProfessionalDiscoveryFilter) {
       availabilityStatus: true,
       isVerified: true,
       professionalSkillsJson: true,
-      companyDescription: true,
+      bio: true,
       professionalLatitude: true,
       professionalLongitude: true,
     },

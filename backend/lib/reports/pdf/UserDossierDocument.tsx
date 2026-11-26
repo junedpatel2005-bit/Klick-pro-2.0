@@ -37,7 +37,6 @@ export type UserDossierData = {
   location?: string | null;
   state?: string | null;
   category?: string | null;
-  companyName?: string | null;
   walletBalance: number;
   totalTopUp: number;
   totalWithdrawals: number;
@@ -402,13 +401,7 @@ export function UserDossierDocument({ data }: { data: UserDossierData }) {
               <Text style={styles.value}>{data.createdAt}</Text>
             </View>
 
-            {data.companyName && (
-              <View style={styles.gridCellHalf}>
-                <Text style={styles.label}>Organization / Business</Text>
-                <Text style={styles.value}>{data.companyName}</Text>
-              </View>
-            )}
-            <View style={data.companyName ? styles.gridCellHalf : styles.gridCellThird}>
+            <View style={styles.gridCellThird}>
               <Text style={styles.label}>Platform Tenure</Text>
               <Text style={styles.value}>{data.daysActive} days active</Text>
             </View>

@@ -49,7 +49,7 @@ function toProfessional(professional: {
   availabilityStatus: string;
   isVerified: boolean;
   professionalSkillsJson: string | null;
-  companyDescription: string | null;
+  bio: string | null;
 }): MarketplaceProfessional {
   const locParts = [professional.professionalCity, professional.professionalState].filter(Boolean);
   return {
@@ -64,7 +64,7 @@ function toProfessional(professional: {
     availability: professional.availabilityStatus,
     verified: professional.isVerified,
     skills: parseSkills(professional.professionalSkillsJson),
-    bio: professional.companyDescription,
+    bio: professional.bio,
   };
 }
 
@@ -76,11 +76,9 @@ function toDetailedProfessional(
     email: string;
     phone: string | null;
     avatarUrl: string | null;
-    companyName: string | null;
-    companyWebsite: string | null;
     industry: string | null;
     teamSize: string | null;
-    companyDescription: string | null;
+    bio: string | null;
     address: string | null;
     professionalCategory: string | null;
     professionalCity: string | null;
@@ -139,7 +137,7 @@ function toDetailedProfessional(
     availabilityStatus: professional.availabilityStatus,
     isVerified: professional.isVerified,
     professionalSkillsJson: professional.professionalSkillsJson,
-    companyDescription: professional.companyDescription,
+    bio: professional.bio,
   });
 
   return {
@@ -149,8 +147,6 @@ function toDetailedProfessional(
     lastName: professional.lastName,
     email: professional.email,
     phone: professional.phone,
-    companyName: professional.companyName,
-    companyWebsite: professional.companyWebsite,
     industry: professional.industry,
     teamSize: professional.teamSize,
     address: professional.address,
@@ -284,7 +280,7 @@ export async function listProfessionals(): Promise<MarketplaceProfessional[]> {
       availabilityStatus: true,
       isVerified: true,
       professionalSkillsJson: true,
-      companyDescription: true,
+      bio: true,
     },
     orderBy: [{ isVerified: "desc" }, { averageRating: "desc" }],
     take: 50,
@@ -405,7 +401,7 @@ export async function getProfessional(id: number): Promise<MarketplaceProfession
       availabilityStatus: true,
       isVerified: true,
       professionalSkillsJson: true,
-      companyDescription: true,
+      bio: true,
     },
   });
   return professional ? toProfessional(professional) : null;
@@ -421,11 +417,9 @@ export async function getDetailedProfessional(id: number): Promise<DetailedProfe
       email: true,
       phone: true,
       avatarUrl: true,
-      companyName: true,
-      companyWebsite: true,
       industry: true,
       teamSize: true,
-      companyDescription: true,
+      bio: true,
       address: true,
       professionalCategory: true,
       professionalCity: true,
@@ -723,7 +717,7 @@ export async function getOpenJob(id: number): Promise<MarketplaceJob | null> {
 
 /**
  * Public client profile query.
- * Exposes only safe information (name, avatar, company details, member since, rating,
+ * Exposes only safe information (name, avatar, industry/team details, member since, rating,
  * professional feedback reviews, total jobs count, completed project count, and open jobs).
  * Contact information (email, phone, exact address) is strictly excluded.
  */
@@ -740,20 +734,14 @@ export async function getPublicClientProfile(id: number): Promise<PublicClientPr
       reviewCount: true,
       isVerified: true,
       createdAt: true,
-      companyName: true,
-      companyWebsite: true,
       industry: true,
       teamSize: true,
-      companyDescription: true,
       address: true,
       clientProfiles: {
         select: {
           fullName: true,
-          companyName: true,
-          companyWebsite: true,
           industry: true,
           teamSize: true,
-          companyDescription: true,
           address: true,
           profilePhotoUrl: true,
         },
@@ -886,12 +874,8 @@ export async function getPublicClientProfile(id: number): Promise<PublicClientPr
   const fullName =
     user.clientProfiles?.fullName?.trim() || `${user.firstName} ${user.lastName}`.trim();
   const avatar = user.avatarUrl || user.clientProfiles?.profilePhotoUrl || null;
-  const companyName = user.clientProfiles?.companyName || user.companyName || null;
-  const companyWebsite = user.clientProfiles?.companyWebsite || user.companyWebsite || null;
   const industry = user.clientProfiles?.industry || user.industry || null;
   const teamSize = user.clientProfiles?.teamSize || user.teamSize || null;
-  const companyDescription =
-    user.clientProfiles?.companyDescription || user.companyDescription || null;
 
   const rating =
     reviewsList.length > 0
@@ -909,11 +893,8 @@ export async function getPublicClientProfile(id: number): Promise<PublicClientPr
     reviewCount,
     verified: user.isVerified,
     memberSince: user.createdAt.toISOString(),
-    companyName,
-    companyWebsite,
     industry,
     teamSize,
-    companyDescription,
     location,
     totalJobsPosted,
     completedProjectsCount,

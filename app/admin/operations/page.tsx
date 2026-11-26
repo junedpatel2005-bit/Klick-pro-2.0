@@ -295,7 +295,6 @@ type JobDetails = Job & {
   user: Job["user"] & {
     id: number;
     phone: string | null;
-    companyName: string | null;
     address: string | null;
     isVerified: boolean;
     createdAt: string;
@@ -2323,7 +2322,6 @@ function JobDetailsPanel({
               <div className="mt-3 space-y-2 text-sm text-slate-600">
                 <p>{job.user.email}</p>
                 <p>{job.user.phone ?? "Phone Not Provided"}</p>
-                <p>{capitalize(job.user.companyName) || "No Company Listed"}</p>
                 <p>{capitalize(job.user.address) || "Address Not Provided"}</p>
                 <p className="pt-2 text-xs text-slate-500 border-t border-slate-200">
                   Account created {date(job.user.createdAt)} ·{" "}

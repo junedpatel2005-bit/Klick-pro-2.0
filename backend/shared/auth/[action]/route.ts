@@ -328,7 +328,9 @@ export async function POST(
   const rateLimitKey = loginEmail
     ? `${action}:${clientKey(request)}:${loginEmail}`
     : `${action}:${clientKey(request)}`;
-  if (!rateLimit(rateLimitKey)) return safe("Too many attempts. Please try again shortly.", 429);
+  const rateAllowed =
+    action === "check-availability" ? rateLimit(rateLimitKey, 60, 60_000) : rateLimit(rateLimitKey);
+  if (!rateAllowed) return safe("Too many attempts. Please try again shortly.", 429);
   if (action === "send-phone-otp") {
     const parsed = z
       .object({
@@ -369,8 +371,6 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
     });
   }
   if (action === "verify-phone") {
@@ -445,7 +445,10 @@ export async function POST(
     }
     const fields: Record<string, string> = {};
     if (parsed.data.email) {
-      const emailTaken = await db.user.findUnique({ where: { email: parsed.data.email } });
+      const emailTaken = await db.user.findFirst({
+        where: { email: { equals: parsed.data.email.trim(), mode: "insensitive" } },
+        select: { id: true },
+      });
       if (emailTaken) fields.email = "Email is already registered.";
     }
     if (parsed.data.phone) {
@@ -635,8 +638,6 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
     });
   }
   if (action === "login-phone") {
@@ -902,9 +903,7 @@ export async function POST(
     if (!result.ok) return safe(result.error, result.status);
     return NextResponse.json({
       success: true,
-      message: "devHint" in result && result.devHint ? result.devHint : "Verification code sent to your phone.",
-      ...("devHint" in result && result.devHint ? { devHint: result.devHint } : {}),
-      ...("devCode" in result && result.devCode ? { devCode: result.devCode } : {}),
+      message: "Verification code sent to your phone.",
     });
   }
   if (action === "verify-forgot-password-phone") {

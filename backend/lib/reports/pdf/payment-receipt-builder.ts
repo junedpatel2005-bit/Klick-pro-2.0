@@ -40,7 +40,6 @@ export async function fetchPaymentReceiptData(
           email: true,
           phone: true,
           address: true,
-          companyName: true,
         },
       },
       professional: {
@@ -83,7 +82,6 @@ export async function fetchPaymentReceiptData(
                 email: true,
                 phone: true,
                 address: true,
-                companyName: true,
               },
             },
             professional: {
@@ -121,7 +119,6 @@ export async function fetchPaymentReceiptData(
             email: true,
             phone: true,
             address: true,
-            companyName: true,
           },
         },
         professional: {
@@ -182,7 +179,7 @@ export async function fetchPaymentReceiptData(
         name: clientName,
         email: tracking.client.email,
         phone: tracking.client.phone,
-        address: tracking.client.address || tracking.client.companyName,
+        address: tracking.client.address,
       },
       paidTo: {
         name: proName,
@@ -283,7 +280,7 @@ export async function fetchPaymentReceiptData(
       name: clientName || "Client",
       email: payment.client?.email,
       phone: payment.client?.phone,
-      address: payment.client?.address || payment.client?.companyName,
+      address: payment.client?.address,
     },
     paidTo: {
       name: proName || "Professional",

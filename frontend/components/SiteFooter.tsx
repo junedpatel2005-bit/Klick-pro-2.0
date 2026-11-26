@@ -53,7 +53,7 @@ export function SiteFooter() {
             </div>
           </div>
           <FooterCol
-            title="Company"
+            title="About"
             links={[
               { l: "About", to: "/about" },
               { l: "Careers", to: "/careers" },

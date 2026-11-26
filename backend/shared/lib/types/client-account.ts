@@ -7,7 +7,6 @@ export type ClientSavedLocationSummary = {
 
 export type ClientAccountProfileSummary = {
   fullName: string | null;
-  companyName: string | null;
   address: string | null;
   profilePhotoUrl: string | null;
 };

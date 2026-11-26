@@ -6,7 +6,7 @@ import { Prisma } from "@generated/prisma/client";
 import { sendSms } from "@/lib/sms/engine";
 
 export type PhoneOtpResult =
-  | { ok: true; devHint?: string; devCode?: string }
+  | { ok: true }
   | { ok: false; error: string; status: number };
 export type AccountRole = "CLIENT" | "PROFESSIONAL";
 
@@ -143,15 +143,9 @@ export async function requestPhoneOtp(phone: string, role: AccountRole): Promise
       // Gracefully fall back to local development OTP so testing and sign-up flows are never blocked!
       if (isDevOrPreview || isTrialRestriction) {
         console.warn(
-          `[phone-otp] Twilio delivery was restricted for ${normalised} (${twilioErr?.message ?? "Error"}). Falling back to local OTP code: ${code}`,
+          `[phone-otp] Twilio delivery was restricted for ${normalised} (${twilioErr?.message ?? "Error"}). Falling back to local OTP code.`,
         );
-        return {
-          ok: true,
-          devCode: code,
-          devHint: isTrialRestriction
-            ? `Twilio Trial active: To receive live SMS, add ${normalised} as a verified caller in Twilio Console. For testing, use code: ${code}`
-            : `Test verification code: ${code}`,
-        };
+        return { ok: true };
       }
 
       return {
@@ -164,11 +158,7 @@ export async function requestPhoneOtp(phone: string, role: AccountRole): Promise
     }
   }
 
-  return {
-    ok: true,
-    devCode: code,
-    devHint: process.env.NODE_ENV !== "production" ? `Development mode: Use verification code ${code}` : undefined,
-  };
+  return { ok: true };
 }
 
 /** Verifies an OTP without exposing provider configuration to the client. */

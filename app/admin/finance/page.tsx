@@ -55,7 +55,6 @@ type UserProfile = {
   email: string;
   phone?: string | null;
   avatarUrl?: string | null;
-  companyName?: string | null;
   role?: string;
   isVerified?: boolean;
   phoneVerifiedAt?: string | null;
@@ -2005,9 +2004,6 @@ function WithdrawalDrawer({
                     </span>
                   )}
                 </div>
-                {user?.companyName && (
-                  <p className="text-xs text-slate-500 mt-0.5">{user.companyName}</p>
-                )}
               </div>
             </div>
 
@@ -3387,7 +3383,7 @@ function FinanceHelpDrawer({
               </div>
               <p className="mt-2 text-xs text-slate-600 leading-relaxed">
                 By default, our platform takes ₹0 commission fee (0% cut). That means 100% of what the client pays goes straight into the professional's
-                pocket. Only if you manually turn ON Commission in Admin Settings, a small percentage is kept by the platform as company earnings.
+                pocket. Only if you manually turn ON Commission in Admin Settings, a small percentage is kept as platform earnings.
               </p>
             </div>
 

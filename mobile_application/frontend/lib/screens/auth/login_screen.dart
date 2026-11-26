@@ -16,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController(text: "name@company.com");
+  final _emailController = TextEditingController(text: "name@example.com");
   final _passwordController = TextEditingController(text: "••••••••");
   bool _obscurePassword = true;
   bool _rememberDevice = true;
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Email input
               CustomTextField(
                 label: "Email or Phone Number",
-                hintText: "name@company.com",
+                hintText: "name@example.com",
                 controller: _emailController,
                 suffixIcon: const Icon(Icons.mail_outline, size: 18, color: AppColors.textMuted),
               ),

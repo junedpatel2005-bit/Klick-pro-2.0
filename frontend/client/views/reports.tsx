@@ -117,7 +117,6 @@ type ProjectApiRecord = {
   client?: {
     firstName?: string | null;
     lastName?: string | null;
-    companyName?: string | null;
     email?: string | null;
     phone?: string | null;
     address?: string | null;
@@ -181,7 +180,7 @@ export default function ClientReports() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 15;
+  const PAGE_SIZE = 12;
 
   const loadData = () => {
     setLoading(true);
@@ -406,7 +405,6 @@ export default function ClientReports() {
           client: client
             ? {
                 name: `${client.firstName || ""} ${client.lastName || ""}`.trim(),
-                companyName: client.companyName,
                 email: client.email,
                 phone: client.phone,
                 address: client.address,
@@ -584,7 +582,7 @@ export default function ClientReports() {
               disabled={isBusy}
               onClick={() => void downloadPdfWithFeedback(pdfUrl, pdfFilename, rowKey)}
               className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted transition cursor-pointer disabled:opacity-50"
-              title="Download official Project Dossier PDF"
+              title="Download PDF report"
             >
               {isPdfLoading ? (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />

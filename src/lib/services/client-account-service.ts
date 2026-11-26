@@ -23,7 +23,6 @@ export async function getClientAccountSummary(userId: number) {
     select: {
       id: true,
       fullName: true,
-      companyName: true,
       address: true,
       profilePhotoUrl: true,
     },

@@ -40,7 +40,6 @@ type Data = {
     address: string | null;
   };
   profile: {
-    companyName: string | null;
     address: string;
     profilePhotoUrl: string | null;
     savedLocations: Location[];
@@ -55,7 +54,6 @@ export function ClientProfilePage() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    companyName: "",
     address: "",
     profilePhotoUrl: "",
   });
@@ -91,7 +89,6 @@ export function ClientProfilePage() {
       setForm({
         firstName: result.account.firstName,
         lastName: result.account.lastName,
-        companyName: result.profile?.companyName ?? "",
         address: result.profile?.address ?? result.account.address ?? "",
         profilePhotoUrl: result.profile?.profilePhotoUrl ?? result.account.avatarUrl ?? "",
       });
@@ -372,11 +369,6 @@ export function ClientProfilePage() {
               value={form.lastName}
               onChange={(value) => setForm({ ...form, lastName: value })}
               required
-            />
-            <Field
-              label="Company name (optional)"
-              value={form.companyName}
-              onChange={(value) => setForm({ ...form, companyName: value })}
             />
           </div>
         </Section>

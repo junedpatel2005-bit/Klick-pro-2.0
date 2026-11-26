@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { countryCodes } from "@/lib/country-codes";
 import { isValidPhoneNumber, phoneValidationMessage } from "@/lib/phone-validation";
 import { FullPageLogoLoader } from "@/components/FullPageLogoLoader";
+import { LegalDocumentDialog } from "@/components/LegalDocumentDialog";
+import type { LegalDocumentKey } from "@/lib/legal-content";
 
 const DEMO_ACCOUNTS = {
   client: {
@@ -39,6 +41,7 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [phoneCode, setPhoneCode] = useState("");
   const [phoneCodeSent, setPhoneCodeSent] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<LegalDocumentKey | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -163,16 +166,14 @@ export default function Login() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ phone: `${countryCode}${phone.replace(/\D/g, "")}` }),
       });
-      const result = (await response.json()) as { error?: string; devHint?: string; devCode?: string };
+      const result = (await response.json()) as { error?: string };
       if (!response.ok) {
         setError(result.error ?? "Unable to send the verification code.");
         return;
       }
       setPhoneCodeSent(true);
-      if (result.devCode) {
-        setPhoneCode(result.devCode);
-      }
-      setError(result.devHint ?? "Verification code sent to your phone.");
+      setPhoneCode("");
+      setError("Verification code sent to your phone.");
     } catch {
       setError("Unable to send verification code. Please check your connection.");
     } finally {
@@ -252,21 +253,21 @@ export default function Login() {
             </p>
             <p className="text-xs text-muted-foreground">
               By logging in, you agree to our{" "}
-              <Link
-                href="/terms"
-                target="_blank"
+              <button
+                type="button"
+                onClick={() => setLegalDoc("terms")}
                 className="text-primary hover:underline font-medium underline underline-offset-2"
               >
                 Terms and Conditions
-              </Link>{" "}
+              </button>{" "}
               and{" "}
-              <Link
-                href="/privacy-policy"
-                target="_blank"
+              <button
+                type="button"
+                onClick={() => setLegalDoc("privacy")}
                 className="text-primary hover:underline font-medium underline underline-offset-2"
               >
                 Privacy Policy
-              </Link>
+              </button>
               .
             </p>
           </div>
@@ -565,6 +566,7 @@ export default function Login() {
           </form>
         )}
       </AuthLayout>
+      <LegalDocumentDialog document={legalDoc} onClose={() => setLegalDoc(null)} />
     </>
   );
 }

@@ -115,7 +115,6 @@ export async function GET(
           professionalCity: true,
           address: true,
           serviceArea: true,
-          companyName: true,
         },
         orderBy: { createdAt: "desc" },
       });
@@ -278,7 +277,6 @@ export async function GET(
           closedProjects: stats.closed,
           totalProjects: stats.total,
           location,
-          companyName: u.companyName || null,
         };
       });
 
@@ -635,7 +633,6 @@ export async function GET(
                   email: true,
                   phone: true,
                   avatarUrl: true,
-                  companyName: true,
                 },
               },
               professional: {
@@ -803,6 +800,7 @@ export async function GET(
 
         // If legacy ADMIN_MILESTONE_RECEIPT has total client charge and no separate commission entry:
         if (
+          commissionEnabled &&
           item.type === "ADMIN_MILESTONE_RECEIPT" &&
           item.paymentId &&
           relPayment &&
@@ -882,7 +880,6 @@ export async function GET(
             phone: true,
             avatarUrl: true,
             role: true,
-            companyName: true,
             isVerified: true,
             phoneVerifiedAt: true,
           },
@@ -910,7 +907,6 @@ export async function GET(
             phone: u.phone,
             avatarUrl: u.avatarUrl,
             role: u.role,
-            companyName: u.companyName,
             isVerified: u.isVerified,
             phoneVerifiedAt: u.phoneVerifiedAt,
           },
@@ -941,11 +937,16 @@ export async function GET(
           (m) => m.status !== "APPROVED",
         ).length;
 
-        const proCommission = p.commissionAmount ?? (p.adminNetAmount ?? 0);
-        const proPayout = p.professionalPayoutAmount ?? Math.max(0, p.baseAmount - proCommission);
+        const proCommission = commissionEnabled ? (p.commissionAmount ?? (p.adminNetAmount ?? 0)) : 0;
+        const proPayout = commissionEnabled
+          ? (p.professionalPayoutAmount ?? Math.max(0, p.baseAmount - proCommission))
+          : p.baseAmount;
 
         return {
           ...p,
+          commissionAmount: proCommission,
+          professionalPayoutAmount: proPayout,
+          adminNetAmount: proCommission,
           jobTitle: job?.title ?? (p.jobId ? `Job #${p.jobId}` : "Direct Milestone Project"),
           jobCategory: job?.category ?? null,
           milestoneTitle:
@@ -1012,7 +1013,7 @@ export async function GET(
               ...platformWallet,
               totalReceived: platformTotalReceived,
               totalPaidToProfessionals: platformTotalPaid,
-              retainedEarnings: platformTotalReceived - platformTotalPaid,
+              retainedEarnings: commissionEnabled ? platformTotalReceived - platformTotalPaid : 0,
             }
           : null,
         platformWalletTransactions,

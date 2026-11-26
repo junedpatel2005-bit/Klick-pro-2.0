@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { PublicProfessionalProfile } from "@/lib/types/marketplace";
 import { MAX_HIRE_REQUEST_BUDGET } from "@/lib/constants/hiring";
 import { capitalizeWords, capitalizeFirst } from "@/lib/utils";
+import { PaginationControl } from "@/components/ui/pagination-control";
 
 type ClientJob = {
   id: number;
@@ -51,7 +52,7 @@ const formatCurrency = (value: number | null) =>
   value == null ? "Not set" : `₹${value.toLocaleString("en-US")}`;
 
 const jobLabel = (job: ClientJob) =>
-  `${job.title ?? `Job #${job.id}`} · ${job.timingType === "HOURLY" ? `${formatCurrency(job.hourlyRate)}/hr` : `${formatCurrency(job.budgetMin)} – ${formatCurrency(job.budgetMax)}`}`;
+  `${job.title ?? "Untitled Job"} · ${job.timingType === "HOURLY" ? `${formatCurrency(job.hourlyRate)}/hr` : `${formatCurrency(job.budgetMin)} – ${formatCurrency(job.budgetMax)}`}`;
 
 function ProProfileContent() {
   const router = useRouter();
@@ -73,6 +74,14 @@ function ProProfileContent() {
     "idle",
   );
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
+
+  const PAGE_SIZE = 12;
+  const [reviewPage, setReviewPage] = useState(1);
+  const paginatedReviews = useMemo(() => {
+    if (!professional?.reviewsList) return [];
+    const start = (reviewPage - 1) * PAGE_SIZE;
+    return professional.reviewsList.slice(start, start + PAGE_SIZE);
+  }, [professional?.reviewsList, reviewPage]);
 
   useEffect(() => {
     if (!proId) return;
@@ -289,7 +298,7 @@ function ProProfileContent() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span>Verified Pro Partner</span>
+            <span>Verified Professional Partner</span>
           </div>
         </div>
 
@@ -400,7 +409,7 @@ function ProProfileContent() {
                           <div className="rounded-2xl border border-border bg-muted p-4">
                             <p className="text-sm font-medium text-foreground">Selected job</p>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {selectedJob.title ?? `Job #${selectedJob.id}`}
+                              {selectedJob.title ?? "Untitled Job"}
                             </p>
                             <p className="mt-2 text-sm">
                               {selectedJob.timingType === "HOURLY"
@@ -478,7 +487,7 @@ function ProProfileContent() {
                             <p className="font-semibold">Confirm hire request</p>
                             <p>
                               <span className="text-muted-foreground">Job:</span>{" "}
-                              {selectedJob.title ?? `Job #${selectedJob.id}`}
+                              {selectedJob.title ?? "Untitled Job"}
                             </p>
                             <p>
                               <span className="text-muted-foreground">Professional:</span>{" "}
@@ -580,12 +589,12 @@ function ProProfileContent() {
                 {professional.verified && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
                     <BadgeCheck className="h-3.5 w-3.5 text-primary" />
-                    Verified Pro
+                    Verified Professional
                   </span>
                 )}
-                {(professional.companyName || professional.industry) && (
+                {professional.industry && (
                   <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border border-border">
-                    {professional.companyName || professional.industry}
+                    {professional.industry}
                   </span>
                 )}
               </div>
@@ -739,8 +748,9 @@ function ProProfileContent() {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 space-y-4">
-                {professional.reviewsList.map((review) => (
+              <>
+                <div className="mt-6 space-y-4">
+                  {paginatedReviews.map((review) => (
                   <div
                     key={review.id}
                     className="rounded-xl border border-border/80 bg-muted/20 p-4 transition-colors hover:border-border"
@@ -801,7 +811,18 @@ function ProProfileContent() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {professional.reviewsList.length > 0 && (
+                <PaginationControl
+                  currentPage={reviewPage}
+                  totalItems={professional.reviewsList.length}
+                  pageSize={PAGE_SIZE}
+                  onPageChange={setReviewPage}
+                  className="mt-6 border-t border-border/60 pt-4"
+                />
+              )}
+            </>
+          )}
           </section>
         </div>
       </article>

@@ -12,9 +12,7 @@ type SavedLocation = { id: number; label: string; address: string; isPrimary: bo
 type ClientProfile = {
   fullName: string;
   phone: string;
-  companyName: string | null;
   address: string;
-  companyWebsite: string | null;
   industry: string | null;
   profilePhotoUrl: string | null;
   savedLocations: SavedLocation[];
@@ -125,24 +123,11 @@ function ClientFields({ profile }: { profile: ClientProfile | null }) {
       />
       <PhoneVerification role="CLIENT" initialPhone={profile?.phone} />
       <Field
-        name="companyName"
-        label="Company name (optional)"
-        placeholder="Acme Inc."
-        defaultValue={profile?.companyName}
-      />
-      <Field
         name="address"
         label="Address"
         required
         placeholder="123 Main Street"
         defaultValue={profile?.address}
-      />
-      <Field
-        name="companyWebsite"
-        label="Website (optional)"
-        type="url"
-        placeholder="https://example.com"
-        defaultValue={profile?.companyWebsite}
       />
       <Field
         name="industry"
