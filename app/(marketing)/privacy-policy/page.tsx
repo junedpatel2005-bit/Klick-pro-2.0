@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
-import { LEGAL_DOCUMENTS } from "@/lib/legal-content";
+import { getLegalDocument } from "@/lib/legal-service";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -8,14 +10,14 @@ export const metadata: Metadata = {
     "Learn how Klick-Pro collects, handles, and safeguards your personal, payment, and marketplace data.",
 };
 
-export default function PrivacyPolicyPage() {
-  const doc = LEGAL_DOCUMENTS.privacy;
+export default async function PrivacyPolicyPage() {
+  const doc = await getLegalDocument("privacy");
   return (
     <LegalPage
       eyebrow={doc.eyebrow}
       title={doc.title}
       description={doc.description}
-      sections={doc.sections}
+      sections={doc.rules}
     />
   );
 }

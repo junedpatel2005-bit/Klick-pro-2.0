@@ -6,7 +6,10 @@ import {
   releaseMilestoneToProfessional,
 } from "@/lib/wallet-ledger";
 import { getPlatformCommissionRate } from "@/lib/platform-settings";
-import { notifyMilestonePayoutApproved } from "@/lib/marketplace-notifications";
+import {
+  notifyClientMilestoneReceipt,
+  notifyMilestonePayoutApproved,
+} from "@/lib/marketplace-notifications";
 import { emitRealtimeProjectUpdate } from "@/lib/realtime";
 
 /**
@@ -88,10 +91,17 @@ export async function processMilestoneValidityReleases(trackingId?: number) {
 
           if (claim.count !== 1) return null;
 
+          let payoutAmount = milestone.amount;
+          let commissionAmount = 0;
+          let clientChargeAmount = milestone.amount;
+
           const payment = milestone.payment;
           if (payment && payment.provider === "wallet" && payment.status !== "COMPLETED") {
             const commissionRate = await getPlatformCommissionRate();
             const money = calculateMilestoneMoney(milestone.amount, commissionRate);
+            payoutAmount = money.professionalPayoutAmount;
+            commissionAmount = money.adminNetAmount;
+            clientChargeAmount = money.clientChargeAmount;
 
             // Step 1: If not already held in escrow, debit from client wallet (no negative overdraft)
             if (payment.status !== "FUNDED") {
@@ -126,6 +136,10 @@ export async function processMilestoneValidityReleases(trackingId?: number) {
                 adminNetAmount: money.adminNetAmount,
               },
             });
+          } else if (payment) {
+            payoutAmount = payment.professionalPayoutAmount ?? milestone.amount;
+            commissionAmount = payment.adminNetAmount ?? payment.commissionAmount ?? 0;
+            clientChargeAmount = payment.amount ?? milestone.amount;
           }
 
           await tx.projectMilestone.update({
@@ -133,6 +147,19 @@ export async function processMilestoneValidityReleases(trackingId?: number) {
             data: {
               autoReleaseStatus: "RELEASED",
               status: "APPROVED",
+            },
+          });
+
+          await tx.projectTransaction.updateMany({
+            where: {
+              trackingId: milestone.trackingId,
+              milestoneId: milestone.id,
+              type: "WALLET_MILESTONE_PENDING_APPROVAL",
+              status: "PENDING",
+            },
+            data: {
+              status: "COMPLETED",
+              description: `Milestone auto-released (${milestone.validityDays} days): ${milestone.title}`,
             },
           });
 
@@ -161,22 +188,37 @@ export async function processMilestoneValidityReleases(trackingId?: number) {
             },
           });
 
-          return true;
+          return {
+            paymentId: payment?.id,
+            payoutAmount,
+            commissionAmount,
+            clientChargeAmount,
+          };
         });
 
         if (released) {
           processedCount++;
 
-          // Send notification to professional
+          // Send notification to professional and final receipt to client
           try {
             await notifyMilestonePayoutApproved({
               professionalId: milestone.professionalId,
               clientId: milestone.clientId,
               projectId: milestone.trackingId,
               milestoneTitle: milestone.title,
-              payoutAmount: milestone.payment?.professionalPayoutAmount ?? milestone.amount,
-              platformEarnings: milestone.payment?.commissionAmount ?? 0,
+              payoutAmount: released.payoutAmount,
+              platformEarnings: released.commissionAmount,
               jobTitle: milestone.tracking.job.title ?? undefined,
+              paymentId: released.paymentId,
+            });
+            await notifyClientMilestoneReceipt({
+              clientId: milestone.clientId,
+              projectId: milestone.trackingId,
+              paymentId: released.paymentId,
+              milestoneTitle: milestone.title,
+              projectTitle: milestone.tracking.job.title ?? undefined,
+              amount: released.clientChargeAmount,
+              paymentStatus: "Escrow Released to Professional",
             });
           } catch (notifErr) {
             console.error("Failed to send milestone release notification:", notifErr);

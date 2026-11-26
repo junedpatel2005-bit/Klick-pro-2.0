@@ -2,8 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { invalidateCurrentUser } from "@/lib/current-user";
-import { ExternalLink, LogOut, Menu, Bell } from "lucide-react";
-import { useDatabaseStatus } from "@/hooks/use-database-status";
+import { LogOut, Menu, Bell } from "lucide-react";
 import { useAdminSidebar } from "@/components/AdminSidebarContext";
 import { useAdminNotificationCount } from "@/lib/use-admin-notification-count";
 
@@ -17,6 +16,7 @@ const pageTitles: Record<string, string> = {
   "/admin/reports": "Reports & Analytics",
   "/admin/support": "Support & Knowledge Base",
   "/admin/cms": "Webpage Editor",
+  "/admin/legal": "Terms & Privacy Policy",
   "/admin/notifications": "Notifications & Alerts",
   "/admin/messages": "Admin Communications",
   "/admin/templates": "Email Template Library",
@@ -39,7 +39,6 @@ function resolvePageTitle(pathname: string): string {
 export function AdminHeader() {
   const pathname = usePathname();
   const router = useRouter();
-  const dbStatus = useDatabaseStatus();
   const { collapsed, toggleSidebar, toggleMobileOpen } = useAdminSidebar();
   const { unreadCount } = useAdminNotificationCount();
   const currentPageTitle = resolvePageTitle(pathname);
@@ -80,38 +79,6 @@ export function AdminHeader() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-2.5">
-        {/* Marketplace Quick Link */}
-        <a
-          href="/"
-          target="_blank"
-          rel="noreferrer"
-          className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
-        >
-          <span>Marketplace</span>
-          <ExternalLink className="h-3 w-3 text-slate-400" />
-        </a>
-
-        {/* System Server Status Indicator */}
-        <div
-          title={`Platform System Server: ${dbStatus === "connected" ? "Operational & Live" : dbStatus === "disconnected" ? "Offline" : "Checking"}`}
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border bg-slate-50 text-slate-700 border-slate-200"
-        >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              dbStatus === "connected"
-                ? "bg-emerald-500"
-                : dbStatus === "disconnected"
-                  ? "bg-rose-500"
-                  : "bg-slate-400"
-            }`}
-          />
-          {dbStatus === "connected"
-            ? "Live"
-            : dbStatus === "disconnected"
-              ? "Offline"
-              : "Checking…"}
-        </div>
-
         {/* Notification Bell */}
         <button
           type="button"

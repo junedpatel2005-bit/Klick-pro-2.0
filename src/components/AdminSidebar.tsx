@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDatabaseStatus } from "@/hooks/use-database-status";
 import {
   BarChart3,
   Bell,
@@ -83,6 +82,7 @@ const linkGroups = [
       { href: "/admin/sms-templates", label: "SMS templates", icon: Smartphone },
       { href: "/admin/support", label: "Support & FAQs", icon: FileText },
       { href: "/admin/cms", label: "Webpage editor", icon: FileText },
+      { href: "/admin/legal", label: "Terms & Privacy", icon: ShieldCheck },
       { href: "/admin/settings", label: "Platform settings", icon: Sliders },
       { href: "/admin/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare, badge: "messages" },
@@ -106,7 +106,6 @@ const linkGroups = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const dbStatus = useDatabaseStatus();
   const { collapsed, mobileOpen, setMobileOpen } = useAdminSidebar();
   const [counts, setCounts] = useState<Record<string, number>>({});
 
@@ -380,65 +379,6 @@ export function AdminSidebar() {
           ))}
         </nav>
       </div>
-
-      {/* System Status Footer */}
-      {!collapsed ? (
-        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-slate-700">Environment</p>
-            <span className="rounded bg-white border border-slate-200 px-1 py-0.2 text-[9px] font-medium text-slate-500">
-              v2.4.0
-            </span>
-          </div>
-          <div className="mt-1.5 flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                dbStatus === "connected"
-                  ? "bg-emerald-500"
-                  : dbStatus === "disconnected"
-                    ? "bg-rose-500"
-                    : "bg-slate-400"
-              }`}
-            />
-            <span
-              className={`text-xs font-medium ${
-                dbStatus === "connected"
-                  ? "text-slate-700"
-                  : dbStatus === "disconnected"
-                    ? "text-rose-700"
-                    : "text-slate-500"
-              }`}
-            >
-              {dbStatus === "connected"
-                ? "Operational"
-                : dbStatus === "disconnected"
-                  ? "Offline"
-                  : "Checking…"}
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div
-          title={
-            dbStatus === "connected"
-              ? "All services operational"
-              : dbStatus === "disconnected"
-                ? "Database disconnected"
-                : "Checking health…"
-          }
-          className="my-3 flex justify-center"
-        >
-          <span
-            className={`h-2.5 w-2.5 rounded-full ${
-              dbStatus === "connected"
-                ? "bg-emerald-500"
-                : dbStatus === "disconnected"
-                  ? "bg-rose-500"
-                  : "bg-slate-400"
-            }`}
-          />
-        </div>
-      )}
     </aside>
 
     {/* Mobile Slide-over Drawer */}
@@ -525,27 +465,6 @@ export function AdminSidebar() {
                 </div>
               ))}
             </nav>
-          </div>
-
-          {/* Bottom links */}
-          <div className="pt-4 border-t border-slate-100 space-y-2 mt-4">
-            <a
-              href="/"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 transition"
-            >
-              <span>Visit Marketplace</span>
-              <span className="text-slate-400 text-xs">↗</span>
-            </a>
-            <div className="flex items-center gap-2 px-3 py-1 text-xs text-slate-500">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  dbStatus === "connected" ? "bg-emerald-500" : "bg-rose-500"
-                }`}
-              />
-              <span>System: {dbStatus === "connected" ? "Operational" : "Offline"}</span>
-            </div>
           </div>
         </aside>
       </div>

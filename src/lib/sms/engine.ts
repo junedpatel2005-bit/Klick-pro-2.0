@@ -168,8 +168,12 @@ export function resolveSmsTemplate(
 ): string | undefined {
   if (!type) return undefined;
   const isProf = audience === "PROFESSIONAL";
+  const isAdmin = audience === "ADMIN";
 
   if (type.startsWith("PROJECT_ACTIVITY_")) {
+    if (type.includes("REVISION")) {
+      return isProf ? "prof_revision_requested" : "client_milestone_submitted";
+    }
     if (type.includes("MILESTONE") || type.includes("DELIVERABLE") || type.includes("WORK")) {
       return "client_milestone_submitted";
     }
@@ -184,12 +188,23 @@ export function resolveSmsTemplate(
 
   switch (type) {
     case "WELCOME_CLIENT":
+    case "WELCOME_PROFESSIONAL":
     case "CLIENT_WELCOME":
-    case "NEW_ACCOUNT":
       return "auth_welcome";
+    case "NEW_ACCOUNT":
+      return isAdmin ? undefined : "auth_welcome";
+    case "JOB_POSTED":
+      return "client_job_posted";
     case "JOB_MATCH":
+    case "NEW_JOB":
     case "NEW_JOB_POSTED":
+    case "NEW_HIRE_REQUEST":
       return "prof_job_match";
+    case "VERIFICATION_APPROVED":
+      return "prof_verification_approved";
+    case "VERIFICATION_REJECTED":
+      return "prof_verification_rejected";
+    case "NEW_PROPOSAL":
     case "PROPOSAL_RECEIVED":
     case "PROPOSAL_UPDATED":
     case "REQUEST_COUNTERED":
@@ -201,19 +216,37 @@ export function resolveSmsTemplate(
       return "client_milestone_submitted";
     case "MILESTONE_FUNDED":
     case "WALLET_MILESTONE_FUNDED":
+      if (isAdmin) return undefined;
       return isProf ? "prof_milestone_funded" : "client_escrow_funded";
+    case "CLIENT_MILESTONE_RECEIPT":
+      return "client_escrow_funded";
     case "PAYOUT_RELEASED":
     case "MILESTONE_PAYOUT_APPROVED":
       return "prof_payout_released";
+    case "WALLET_TOPUP_RECEIPT":
+      return "wallet_topup_receipt";
+    case "WITHDRAWAL_REQUESTED":
+      return "withdrawal_requested_receipt";
+    case "WITHDRAWAL_COMPLETED":
+    case "PAYOUT_COMPLETED":
+      return "withdrawal_completed_receipt";
+    case "WITHDRAWAL_FAILED":
+    case "PAYOUT_FAILED":
+    case "PAYOUT_REVERSED":
+      return "withdrawal_failed_notice";
+    case "REFUND_PROCESSED":
+      return "client_refund_processed";
     case "REVISION_REQUESTED":
     case "MILESTONE_REVISION_REQUESTED":
       return "prof_revision_requested";
     case "DISPUTE_RAISED":
     case "DISPUTE_OPENED":
+    case "DISPUTE_CONTESTED":
       return "dispute_urgent_alert";
-    case "DISPUTE_UPDATED":
     case "DISPUTE_RESOLVED":
     case "DISPUTE_DECIDED":
+      return "dispute_resolved";
+    case "DISPUTE_UPDATED":
       return "dispute_resolved";
     default:
       return undefined;

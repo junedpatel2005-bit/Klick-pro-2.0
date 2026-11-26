@@ -7,7 +7,11 @@ import {
   isRazorpayRouteConfigured,
   verifyRazorpayLinkedAccount,
 } from "@/lib/razorpay";
-import { emitRealtimeNotification, emitAdminOverviewUpdate } from "@/lib/realtime";
+import { emitAdminOverviewUpdate } from "@/lib/realtime";
+import {
+  formatWithdrawalDestinationLabel,
+  notifyWithdrawalReceipt,
+} from "@/lib/marketplace-notifications";
 
 const bodySchema = z.object({
   withdrawalId: z.number().int().positive(),
@@ -127,7 +131,7 @@ export async function POST(request: NextRequest) {
     transferId = created;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Razorpay transfer failed.";
-    const failedTx = await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx) => {
       await tx.wallet.update({
         where: { userId: withdrawal.professionalId },
         data: { balance: { increment: withdrawal.amount } },
@@ -136,42 +140,23 @@ export async function POST(request: NextRequest) {
         where: { id: withdrawal.id },
         data: { status: "FAILED", failureReason: message },
       });
-
-      const earningsHref = "/earnings";
-
-      const notif = await tx.userNotification.create({
-        data: {
-          userId: withdrawal.professionalId,
-          type: "PAYOUT_FAILED",
-          title: "Payout Transfer Failed",
-          description: `Your payout of ₹${withdrawal.amount.toLocaleString(
-            "en-IN",
-          )} could not be transferred: ${message}. Reserved funds have been restored to your wallet balance.`,
-          href: earningsHref,
-        },
-      });
-      return { notif, earningsHref };
     });
-    emitRealtimeNotification([withdrawal.professionalId], {
-      id: failedTx.notif.id,
-      type: failedTx.notif.type,
-      title: failedTx.notif.title,
-      description: failedTx.notif.description ?? "",
-      href: failedTx.earningsHref,
-    });
+    void notifyWithdrawalReceipt({
+      userId: withdrawal.professionalId,
+      withdrawalId: withdrawal.id,
+      status: "FAILED",
+      amount: withdrawal.amount,
+      destination: formatWithdrawalDestinationLabel(
+        withdrawal.destinationType,
+        withdrawal.destinationLabel,
+      ),
+      failureReason: message,
+    }).catch(() => undefined);
     emitAdminOverviewUpdate();
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
   // Phase 3: record the transfer and double-entry ledger row
-  let successNotifToEmit: {
-    id: number;
-    type: string;
-    title: string;
-    description: string;
-    href: string;
-  } | null = null;
-
   const updated = await db.$transaction(async (tx) => {
     const wallet = await tx.wallet.findUnique({
       where: { userId: withdrawal.professionalId },
@@ -197,28 +182,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const earningsHref = "/earnings";
-
-    const notif = await tx.userNotification.create({
-      data: {
-        userId: withdrawal.professionalId,
-        type: "PAYOUT_COMPLETED",
-        title: "Payout Completed",
-        description: `Your payout of ₹${withdrawal.amount.toLocaleString(
-          "en-IN",
-        )} has been transferred to your Razorpay linked account.`,
-        href: earningsHref,
-      },
-    });
-
-    successNotifToEmit = {
-      id: notif.id,
-      type: notif.type,
-      title: notif.title,
-      description: notif.description ?? "",
-      href: earningsHref,
-    };
-
     return tx.projectWithdrawal.update({
       where: { id: withdrawal.id },
       data: {
@@ -230,9 +193,17 @@ export async function POST(request: NextRequest) {
     });
   });
 
-  if (successNotifToEmit) {
-    emitRealtimeNotification([withdrawal.professionalId], successNotifToEmit);
-  }
+  void notifyWithdrawalReceipt({
+    userId: withdrawal.professionalId,
+    withdrawalId: withdrawal.id,
+    status: "COMPLETED",
+    amount: withdrawal.amount,
+    destination: formatWithdrawalDestinationLabel(
+      withdrawal.destinationType,
+      withdrawal.destinationLabel,
+    ),
+    utr: transferId,
+  }).catch(() => undefined);
   emitAdminOverviewUpdate();
 
   return NextResponse.json({ withdrawal: updated });

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
-import { LEGAL_DOCUMENTS } from "@/lib/legal-content";
+import { getLegalDocument } from "@/lib/legal-service";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -8,14 +10,14 @@ export const metadata: Metadata = {
     "Review the terms and conditions governing service projects, milestone payments, and marketplace conduct on Klick-Pro.",
 };
 
-export default function TermsPage() {
-  const doc = LEGAL_DOCUMENTS.terms;
+export default async function TermsPage() {
+  const doc = await getLegalDocument("terms");
   return (
     <LegalPage
       eyebrow={doc.eyebrow}
       title={doc.title}
       description={doc.description}
-      sections={doc.sections}
+      sections={doc.rules}
     />
   );
 }

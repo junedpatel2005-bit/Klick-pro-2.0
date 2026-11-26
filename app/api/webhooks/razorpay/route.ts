@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { isRazorpayWebhookConfigured, verifyRazorpayWebhookSignature } from "@/lib/razorpay";
+import {
+  formatWithdrawalDestinationLabel,
+  notifyWalletTopupReceipt,
+  notifyWithdrawalReceipt,
+} from "@/lib/marketplace-notifications";
 
 export const runtime = "nodejs";
 
@@ -90,6 +95,7 @@ export async function POST(request: Request) {
       });
     }
 
+    const postCommitTasks: Array<() => Promise<void>> = [];
     await db.$transaction(async (tx) => {
       const claim = await tx.razorpayWebhookEvent.updateMany({
         where: { eventId: payload.id, processingStatus: { in: retryableStatuses } },
@@ -160,10 +166,20 @@ export async function POST(request: Request) {
               },
             });
             if (claimed.count === 1) {
-              await tx.wallet.update({
+              const updatedWallet = await tx.wallet.update({
                 where: { id: walletTx.walletId },
                 data: { balance: { increment: walletTx.amount } },
+                select: { userId: true },
               });
+              postCommitTasks.push(() =>
+                notifyWalletTopupReceipt({
+                  userId: updatedWallet.userId,
+                  amount: walletTx.amount,
+                  transactionId: walletTx.id,
+                  paymentId: entity.id,
+                  orderId: entity.order_id,
+                }),
+              );
             }
           }
           if (payload.event === "payment.failed") {
@@ -195,11 +211,12 @@ export async function POST(request: Request) {
 
         if (withdrawal) {
           if (payload.event === "payout.processed") {
+            const finalUtr = payoutEntity.utr ?? withdrawal.utr;
             await tx.projectWithdrawal.update({
               where: { id: withdrawal.id },
               data: {
                 status: "COMPLETED",
-                utr: payoutEntity.utr ?? withdrawal.utr,
+                utr: finalUtr,
                 payoutMode: payoutEntity.mode ?? withdrawal.payoutMode,
                 processedAt: new Date(),
                 failureReason: null,
@@ -209,6 +226,19 @@ export async function POST(request: Request) {
               where: { idempotencyKey: `payout-${withdrawal.id}`, status: { in: ["PENDING", "PROCESSING"] } },
               data: { status: "COMPLETED", providerReference: payoutEntity.id },
             });
+            postCommitTasks.push(() =>
+              notifyWithdrawalReceipt({
+                userId: withdrawal.professionalId,
+                withdrawalId: withdrawal.id,
+                status: "COMPLETED",
+                amount: withdrawal.amount,
+                destination: formatWithdrawalDestinationLabel(
+                  withdrawal.destinationType,
+                  withdrawal.destinationLabel,
+                ),
+                utr: finalUtr,
+              }),
+            );
           } else if (payload.event === "payout.failed") {
             const failReason =
               payoutEntity.failure_reason ??
@@ -232,17 +262,19 @@ export async function POST(request: Request) {
               where: { idempotencyKey: `payout-${withdrawal.id}` },
               data: { status: "FAILED" },
             });
-            const earningsHref = "/earnings";
-
-            await tx.userNotification.create({
-              data: {
+            postCommitTasks.push(() =>
+              notifyWithdrawalReceipt({
                 userId: withdrawal.professionalId,
-                type: "PAYOUT_FAILED",
-                title: "Withdrawal Failed - Balance Restored",
-                description: `Your withdrawal of ₹${withdrawal.amount.toLocaleString("en-IN")} failed (${failReason}). Your wallet balance has been restored.`,
-                href: earningsHref,
-              },
-            });
+                withdrawalId: withdrawal.id,
+                status: "FAILED",
+                amount: withdrawal.amount,
+                destination: formatWithdrawalDestinationLabel(
+                  withdrawal.destinationType,
+                  withdrawal.destinationLabel,
+                ),
+                failureReason: failReason,
+              }),
+            );
           } else if (payload.event === "payout.reversed") {
             const failReason =
               payoutEntity.failure_reason ??
@@ -283,18 +315,19 @@ export async function POST(request: Request) {
                 failureReason: failReason,
               },
             });
-
-            const earningsHref = "/earnings";
-
-            await tx.userNotification.create({
-              data: {
+            postCommitTasks.push(() =>
+              notifyWithdrawalReceipt({
                 userId: withdrawal.professionalId,
-                type: "PAYOUT_REVERSED",
-                title: "Withdrawal Reversed - Balance Refunded",
-                description: `Your payout of ₹${withdrawal.amount.toLocaleString("en-IN")} was reversed by the banking network (${failReason}). The amount has been credited back to your wallet.`,
-                href: earningsHref,
-              },
-            });
+                withdrawalId: withdrawal.id,
+                status: "FAILED",
+                amount: withdrawal.amount,
+                destination: formatWithdrawalDestinationLabel(
+                  withdrawal.destinationType,
+                  withdrawal.destinationLabel,
+                ),
+                failureReason: failReason,
+              }),
+            );
           }
         }
       }
@@ -309,6 +342,9 @@ export async function POST(request: Request) {
         },
       });
     });
+    if (postCommitTasks.length > 0) {
+      await Promise.allSettled(postCommitTasks.map((run) => run()));
+    }
   } catch (error) {
     await db.razorpayWebhookEvent.updateMany({
       where: { eventId: payload.id, processingStatus: { in: ["RECEIVED", "FAILED"] } },

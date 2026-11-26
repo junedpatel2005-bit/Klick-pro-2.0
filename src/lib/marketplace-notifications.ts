@@ -13,6 +13,7 @@ import {
 import { sendNotificationEmail } from "@/lib/email";
 import { sendSms, resolveSmsTemplate } from "@/lib/sms/engine";
 import { enqueueBackgroundJob } from "@/lib/background-jobs";
+import { maskDestinationString } from "@/lib/account-formatting";
 import { formatReadableLabel } from "@/lib/utils";
 
 type BroadcastNotification = {
@@ -22,7 +23,22 @@ type BroadcastNotification = {
   href: string;
   emailDetails?: Array<{ label: string; value: string }>;
   templateVariables?: Record<string, string | number | undefined | null>;
+  transactional?: boolean;
 };
+
+function stripCurrencyPrefix(value: string | number | undefined | null): string | number | undefined | null {
+  if (typeof value !== "string") return value;
+  const cleaned = value.trim().replace(/^₹\s*/, "");
+  return cleaned || value;
+}
+
+function formatIstTimestamp(date = new Date()): string {
+  return `${new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  }).format(date)} IST`;
+}
 
 async function sendEmails(
   recipients: Array<{
@@ -37,7 +53,11 @@ async function sendEmails(
 ) {
   const results = await Promise.allSettled(
     recipients
-      .filter((recipient) => recipient.emailNotificationsEnabled && recipient.email.trim())
+      .filter(
+        (recipient) =>
+          (notification.transactional || recipient.emailNotificationsEnabled) &&
+          recipient.email.trim(),
+      )
       .map((recipient) => {
         const recipientName =
           [recipient.firstName, recipient.lastName].filter(Boolean).join(" ").trim() ||
@@ -104,29 +124,40 @@ async function sendSmsNotifications(
       const templateKey = resolveSmsTemplate(notification.type, audience);
       if (!templateKey) return Promise.resolve({ ok: true, provider: "noop" as const });
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://klickpro.in";
+      const appUrl =
+        process.env.APP_URL?.trim() ||
+        process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+        "https://klickpro.in";
       const shortUrl = notification.href.startsWith("http")
         ? notification.href
-        : `${appUrl}${notification.href}`;
+        : `${appUrl.replace(/\/$/, "")}${notification.href}`;
 
+      const vars = notification.templateVariables ?? {};
       return sendSms({
         to: recipient.phone!.trim(),
         templateKey,
         variables: {
-          ...notification.templateVariables,
+          ...vars,
+          amount: stripCurrencyPrefix(vars.amount),
+          refund_amount: stripCurrencyPrefix(vars.refund_amount),
+          payout_amount: stripCurrencyPrefix(vars.payout_amount),
+          bid_amount: stripCurrencyPrefix(vars.bid_amount),
+          milestone_amount: stripCurrencyPrefix(vars.milestone_amount),
+          updated_balance: stripCurrencyPrefix(vars.updated_balance),
+          budget: stripCurrencyPrefix(vars.budget),
           user_name: recipientName || "there",
           client_name:
             recipient.role === "CLIENT"
               ? recipientName || "Client"
-              : (notification.templateVariables?.client_name ?? "Client"),
+              : (vars.client_name ?? "Client"),
           professional_name:
             recipient.role === "PROFESSIONAL"
               ? recipientName || "Professional"
-              : (notification.templateVariables?.professional_name ?? "Professional"),
+              : (vars.professional_name ?? "Professional"),
           prof_name:
             recipient.role === "PROFESSIONAL"
               ? recipientName || "Professional"
-              : (notification.templateVariables?.prof_name ?? "Professional"),
+              : (vars.prof_name ?? "Professional"),
           short_url: shortUrl,
           site_url: appUrl,
         },
@@ -584,14 +615,25 @@ export async function notifyDisputeRaised(input: {
   reporterName: string;
   clientId: number;
   professionalId: number;
+  disputeMessage?: string;
 }) {
   const jobLabel = input.jobTitle?.trim() || "your project";
   const reporterLabel = input.reporterRole === "CLIENT" ? "the client" : "the professional";
+  const disputeVars = {
+    dispute_id: input.disputeId,
+    project_id: input.trackingId,
+    project_title: jobLabel,
+    job_title: jobLabel,
+    issue_type: input.issueType,
+    raised_by: input.reporterName,
+    dispute_message: input.disputeMessage?.trim() || `${input.issueType} dispute filed.`,
+  };
   await notifyRole("ADMIN", {
     type: "DISPUTE_RAISED",
     title: "New dispute raised",
     description: `${input.reporterName} (${reporterLabel}) raised a ${input.issueType} dispute on ${jobLabel}.`,
     href: `/admin/operations?dispute=${input.disputeId}&project=${input.trackingId}`,
+    templateVariables: disputeVars,
   });
   await notifyUsers(
     [input.clientId, input.professionalId].filter(
@@ -602,11 +644,17 @@ export async function notifyDisputeRaised(input: {
       title: "A dispute was raised on your project",
       description: `${input.reporterName} raised a ${input.issueType} dispute on ${jobLabel}. Our team will review it and follow up soon.`,
       href: `/project/${input.trackingId}/tracking`,
+      templateVariables: disputeVars,
+      emailDetails: [
+        { label: "Issue Type", value: input.issueType },
+        { label: "Raised By", value: input.reporterName },
+      ],
     },
   );
 }
 
 export async function notifyDisputeResolved(input: {
+  disputeId?: number;
   trackingId: number;
   jobTitle: string | null;
   status: "OPEN" | "RESOLVED";
@@ -614,14 +662,24 @@ export async function notifyDisputeResolved(input: {
   professionalId: number;
 }) {
   const jobLabel = input.jobTitle?.trim() || "your project";
+  const isResolved = input.status === "RESOLVED";
   await notifyUsers([input.clientId, input.professionalId], {
-    type: "DISPUTE_UPDATED",
-    title: input.status === "RESOLVED" ? "Dispute resolved" : "Dispute reopened",
-    description:
-      input.status === "RESOLVED"
-        ? `Klick-Pro support marked the dispute on ${jobLabel} as resolved.`
-        : `Klick-Pro support reopened the dispute on ${jobLabel} for further review.`,
+    type: isResolved ? "DISPUTE_RESOLVED" : "DISPUTE_CONTESTED",
+    title: isResolved ? "Dispute resolved" : "Dispute reopened",
+    description: isResolved
+      ? `Klick-Pro support marked the dispute on ${jobLabel} as resolved.`
+      : `Klick-Pro support reopened the dispute on ${jobLabel} for further review.`,
     href: `/project/${input.trackingId}/tracking`,
+    templateVariables: {
+      dispute_id: input.disputeId ?? input.trackingId,
+      project_id: input.trackingId,
+      project_title: jobLabel,
+      job_title: jobLabel,
+      decision_summary: isResolved ? "Dispute Closed / Resolved" : "Dispute Reopened for Review",
+      resolution_notes: isResolved
+        ? "Resolved by Klick-Pro moderation."
+        : "Reopened for further review.",
+    },
   });
 }
 
@@ -634,13 +692,21 @@ export async function notifyDisputeAccepted(input: {
 }) {
   const jobLabel = input.jobTitle?.trim() || "your project";
   await notifyUsers([input.complainantId], {
-    type: "DISPUTE_UPDATED",
+    type: "DISPUTE_RESOLVED",
     title: "Dispute accepted by other party",
     description: `${input.respondentName} accepted your dispute claim on ${jobLabel}. The dispute has been mutually settled.`,
     href: `/project/${input.trackingId}/tracking`,
+    templateVariables: {
+      dispute_id: input.disputeId,
+      project_id: input.trackingId,
+      project_title: jobLabel,
+      job_title: jobLabel,
+      decision_summary: "Mutually Settled",
+      resolution_notes: `${input.respondentName} accepted the dispute claim.`,
+    },
   });
   await notifyRole("ADMIN", {
-    type: "DISPUTE_UPDATED",
+    type: "DISPUTE_RESOLVED",
     title: `Dispute #${input.disputeId} mutually accepted`,
     description: `${input.respondentName} accepted the dispute claim on ${jobLabel}. Mutually settled.`,
     href: `/admin/operations?dispute=${input.disputeId}&project=${input.trackingId}`,
@@ -656,13 +722,21 @@ export async function notifyDisputeContested(input: {
 }) {
   const jobLabel = input.jobTitle?.trim() || "your project";
   await notifyUsers([input.complainantId], {
-    type: "DISPUTE_UPDATED",
+    type: "DISPUTE_CONTESTED",
     title: "Dispute contested - Escalated to Admin Review",
     description: `${input.respondentName} submitted counter-evidence for the dispute on ${jobLabel}. An admin is now reviewing the case.`,
     href: `/project/${input.trackingId}/tracking`,
+    templateVariables: {
+      dispute_id: input.disputeId,
+      project_id: input.trackingId,
+      project_title: jobLabel,
+      job_title: jobLabel,
+      issue_type: "Contested Dispute (Admin Review)",
+      raised_by: input.respondentName,
+    },
   });
   await notifyRole("ADMIN", {
-    type: "DISPUTE_UPDATED",
+    type: "DISPUTE_CONTESTED",
     title: `Action Required: Dispute #${input.disputeId} contested`,
     description: `${input.respondentName} rejected the dispute on ${jobLabel} and submitted counter-evidence. Requires Admin Review.`,
     href: `/admin/operations?dispute=${input.disputeId}&project=${input.trackingId}`,
@@ -686,14 +760,54 @@ export async function notifyDisputeDecided(input: {
       ? "Client Wins (Refund processed)"
       : input.decision === "PROFESSIONAL_WINS"
         ? "Professional Wins (Payment released)"
-        : `Partial Settlement (Split: ₹${(input.refundAmount ?? 0).toLocaleString()} refund / ₹${(input.payoutAmount ?? 0).toLocaleString()} payout)`;
+        : `Partial Settlement (Split: ₹${(input.refundAmount ?? 0).toLocaleString("en-IN")} refund / ₹${(input.payoutAmount ?? 0).toLocaleString("en-IN")} payout)`;
 
   await notifyUsers([input.clientId, input.professionalId], {
-    type: "DISPUTE_UPDATED",
+    type: "DISPUTE_DECIDED",
     title: `Dispute #${input.disputeId} Decided: ${decisionLabel}`,
     description: `Admin has reviewed and resolved the dispute on ${jobLabel}. ${input.reason ? `Notes: "${input.reason}".` : ""}`,
     href: `/project/${input.trackingId}/tracking`,
+    transactional: true,
+    templateVariables: {
+      dispute_id: input.disputeId,
+      project_id: input.trackingId,
+      project_title: jobLabel,
+      job_title: jobLabel,
+      decision_summary: decisionLabel,
+      resolution_notes: input.reason?.trim() || "Settlement executed per platform review.",
+    },
+    emailDetails: [
+      { label: "Case ID", value: `#${input.disputeId}` },
+      { label: "Decision", value: decisionLabel },
+      ...(input.reason?.trim() ? [{ label: "Resolution Notes", value: input.reason.trim() }] : []),
+    ],
   });
+
+  if ((input.refundAmount ?? 0) > 0) {
+    const refundFormatted = `₹${(input.refundAmount ?? 0).toLocaleString("en-IN")}`;
+    await notifyUsers([input.clientId], {
+      type: "REFUND_PROCESSED",
+      title: `Refund Receipt: ${refundFormatted} credited to your wallet`,
+      description: `A dispute refund of ${refundFormatted} for ${jobLabel} has been credited to your Klick-Pro wallet.`,
+      href: "/earnings",
+      transactional: true,
+      templateVariables: {
+        project_title: jobLabel,
+        job_title: jobLabel,
+        refund_amount: refundFormatted,
+        amount: refundFormatted,
+        transaction_ref: `DSP-REF-${input.disputeId}`,
+        payment_source: "Klick-Pro Wallet",
+      },
+      emailDetails: [
+        { label: "Receipt No", value: `DSP-REF-${input.disputeId}` },
+        { label: "Project", value: jobLabel },
+        { label: "Refund Amount", value: refundFormatted },
+        { label: "Payment Source", value: "Klick-Pro Wallet" },
+        { label: "Date & Time", value: formatIstTimestamp() },
+      ],
+    });
+  }
 }
 
 export function notifyDisputeMessage(input: {
@@ -763,34 +877,268 @@ export async function notifyMilestonePayoutApproved(input: {
   clientId: number;
   professionalId: number;
   jobTitle?: string | null;
+  paymentId?: number;
 }) {
   const href = `/project/${input.projectId}/tracking`;
   const payout = `₹${input.payoutAmount.toLocaleString("en-IN")}`;
   const jobTitle = input.jobTitle?.trim() || `Project #${input.projectId}`;
-  // The client already sees the funded payment in project activity. Notify the professional
-  // when the separate admin payout approval credits their wallet.
+  const proWallet = await db.wallet
+    .findUnique({ where: { userId: input.professionalId }, select: { balance: true } })
+    .catch(() => null);
+  const updatedBalance = `₹${(proWallet?.balance ?? 0).toLocaleString("en-IN")}`;
+  const receiptNo = input.paymentId
+    ? `INV-${new Date().getFullYear()}-${String(input.paymentId).padStart(6, "0")}`
+    : `PAY-${input.projectId}-${Date.now().toString().slice(-6)}`;
+
+  // Notify professional with payout receipt (Rule 6: omit fee lines when zero commission)
   await notifyUsers([input.professionalId], {
     type: "MILESTONE_PAYOUT_APPROVED",
     title: `${jobTitle} · Milestone payout released`,
-    description: `Admin approved the payout for ${input.milestoneTitle}. ${payout} has been added to your wallet.`,
+    description: `Payout for ${input.milestoneTitle} has been released. ${payout} has been added to your wallet.`,
     href,
+    transactional: true,
     templateVariables: {
+      receipt_no: receiptNo,
       milestone_title: input.milestoneTitle,
       payout_amount: payout,
       amount: payout,
       project_title: jobTitle,
+      updated_balance: updatedBalance,
       platform_fee:
         input.platformEarnings > 0
           ? `₹${input.platformEarnings.toLocaleString("en-IN")}`
-          : "₹0 (Zero fee)",
+          : "",
     },
     emailDetails: [
+      { label: "Receipt No", value: receiptNo },
       { label: "Project", value: jobTitle },
       { label: "Milestone", value: input.milestoneTitle },
-      { label: "Payout credited", value: payout },
+      { label: "Payout Credited", value: payout },
+      { label: "Updated Balance", value: updatedBalance },
       ...(input.platformEarnings > 0
         ? [{ label: "Platform commission", value: `₹${input.platformEarnings.toLocaleString("en-IN")}` }]
         : []),
+    ],
+  });
+}
+
+export async function notifyWalletTopupReceipt(input: {
+  userId: number;
+  amount: number;
+  transactionId?: number;
+  paymentId?: string;
+  orderId?: string;
+}) {
+  const formattedAmount = `₹${input.amount.toLocaleString("en-IN")}`;
+  const wallet = await db.wallet
+    .findUnique({ where: { userId: input.userId }, select: { balance: true } })
+    .catch(() => null);
+  const updatedBalance = `₹${(wallet?.balance ?? input.amount).toLocaleString("en-IN")}`;
+  const receiptNo = input.transactionId
+    ? `RCP-WT-${input.transactionId}`
+    : `RCP-WT-${Date.now().toString().slice(-6)}`;
+  const transactionRef = input.paymentId || input.orderId || receiptNo;
+  const transactionDate = formatIstTimestamp();
+
+  await notifyUsers([input.userId], {
+    type: "WALLET_TOPUP_RECEIPT",
+    title: `Payment Receipt ${receiptNo} · ${formattedAmount} added to wallet`,
+    description: `Your wallet top-up of ${formattedAmount} succeeded. Updated wallet balance: ${updatedBalance}.`,
+    href: "/earnings",
+    transactional: true,
+    templateVariables: {
+      receipt_no: receiptNo,
+      amount: formattedAmount,
+      transaction_ref: transactionRef,
+      payment_method: "Razorpay Checkout",
+      updated_balance: updatedBalance,
+      transaction_date: transactionDate,
+    },
+    emailDetails: [
+      { label: "Receipt No", value: receiptNo },
+      { label: "Amount Credited", value: formattedAmount },
+      { label: "Transaction Reference", value: transactionRef },
+      { label: "Payment Method", value: "Razorpay Checkout" },
+      { label: "Updated Balance", value: updatedBalance },
+      { label: "Date & Time", value: transactionDate },
+    ],
+  });
+}
+
+/**
+ * Formats stored JSON or legacy withdrawal destination strings into a safe human label
+ * without exposing raw bank account numbers or encrypted blobs.
+ */
+export function formatWithdrawalDestinationLabel(
+  destinationType?: string | null,
+  destinationLabel?: string | null,
+): string {
+  if (!destinationLabel) return destinationType === "UPI" ? "UPI Account" : "Bank Account";
+  try {
+    const parsed = JSON.parse(destinationLabel) as {
+      bankName?: string;
+      last4?: string;
+      upiId?: string;
+    };
+    if (parsed && typeof parsed === "object") {
+      if (parsed.upiId) return `UPI (${parsed.upiId})`;
+      if (parsed.bankName || parsed.last4) {
+        return `${parsed.bankName || "Bank"} ${parsed.last4 ? `••••${parsed.last4}` : ""}`.trim();
+      }
+    }
+  } catch {
+    // Legacy string fallback
+  }
+  return maskDestinationString(destinationLabel);
+}
+
+export async function notifyWithdrawalReceipt(input: {
+  userId: number;
+  withdrawalId: number;
+  status: "REQUESTED" | "COMPLETED" | "FAILED";
+  amount: number;
+  destination: string;
+  utr?: string | null;
+  failureReason?: string | null;
+}) {
+  const formattedAmount = `₹${input.amount.toLocaleString("en-IN")}`;
+  const receiptNo = `WD-${input.withdrawalId}`;
+  const transactionDate = formatIstTimestamp();
+  const wallet = await db.wallet
+    .findUnique({ where: { userId: input.userId }, select: { balance: true, pendingBalance: true } })
+    .catch(() => null);
+  const availableBalance = wallet ? Math.max(0, wallet.balance - wallet.pendingBalance) : 0;
+  const updatedBalance = `₹${availableBalance.toLocaleString("en-IN")}`;
+
+  if (input.status === "REQUESTED") {
+    await notifyUsers([input.userId], {
+      type: "WITHDRAWAL_REQUESTED",
+      title: `Withdrawal Request ${receiptNo} · ${formattedAmount}`,
+      description: `Your withdrawal request of ${formattedAmount} to ${input.destination} was submitted for approval.`,
+      href: "/earnings",
+      transactional: true,
+      templateVariables: {
+        receipt_no: receiptNo,
+        amount: formattedAmount,
+        destination: input.destination,
+        updated_balance: updatedBalance,
+        transaction_date: transactionDate,
+      },
+      emailDetails: [
+        { label: "Receipt No", value: receiptNo },
+        { label: "Withdrawal Amount", value: formattedAmount },
+        { label: "Destination", value: input.destination },
+        { label: "Status", value: "Pending Admin Approval" },
+        { label: "Available Balance", value: updatedBalance },
+        { label: "Date & Time", value: transactionDate },
+      ],
+    });
+    return;
+  }
+
+  if (input.status === "COMPLETED") {
+    const utr = input.utr?.trim() || receiptNo;
+    await notifyUsers([input.userId], {
+      type: "WITHDRAWAL_COMPLETED",
+      title: `Withdrawal Receipt ${receiptNo} · ${formattedAmount} transferred`,
+      description: `Your withdrawal of ${formattedAmount} has been transferred to ${input.destination}. UTR: ${utr}.`,
+      href: "/earnings",
+      transactional: true,
+      templateVariables: {
+        receipt_no: receiptNo,
+        amount: formattedAmount,
+        destination: input.destination,
+        utr,
+        updated_balance: updatedBalance,
+        transaction_date: transactionDate,
+      },
+      emailDetails: [
+        { label: "Receipt No", value: receiptNo },
+        { label: "Transferred Amount", value: formattedAmount },
+        { label: "UTR Reference", value: utr },
+        { label: "Destination", value: input.destination },
+        { label: "Updated Balance", value: updatedBalance },
+        { label: "Date & Time", value: transactionDate },
+      ],
+    });
+    return;
+  }
+
+  const failureReason = input.failureReason?.trim() || "Rejected or reversed during transfer.";
+  await notifyUsers([input.userId], {
+    type: "WITHDRAWAL_FAILED",
+    title: `Withdrawal Update ${receiptNo} · ${formattedAmount} restored`,
+    description: `Your withdrawal of ${formattedAmount} failed (${failureReason}). Funds have been restored to your wallet.`,
+    href: "/earnings",
+    transactional: true,
+    templateVariables: {
+      receipt_no: receiptNo,
+      amount: formattedAmount,
+      destination: input.destination,
+      failure_reason: failureReason,
+      updated_balance: updatedBalance,
+      transaction_date: transactionDate,
+    },
+    emailDetails: [
+      { label: "Reference No", value: receiptNo },
+      { label: "Amount Restored", value: formattedAmount },
+      { label: "Reason", value: failureReason },
+      { label: "Updated Balance", value: updatedBalance },
+      { label: "Date & Time", value: transactionDate },
+    ],
+  });
+}
+
+export async function notifyClientMilestoneReceipt(input: {
+  clientId: number;
+  projectId: number;
+  paymentId?: number;
+  milestoneTitle: string;
+  projectTitle?: string | null;
+  amount: number;
+  paymentStatus: string;
+  remainingBalance?: number;
+}) {
+  const formattedAmount = `₹${input.amount.toLocaleString("en-IN")}`;
+  const projectTitle = input.projectTitle?.trim() || `Project #${input.projectId}`;
+  const receiptNo = input.paymentId
+    ? `INV-${new Date().getFullYear()}-${String(input.paymentId).padStart(6, "0")}`
+    : `MS-${input.projectId}`;
+  let balanceVal = input.remainingBalance;
+  if (balanceVal === undefined) {
+    const w = await db.wallet
+      .findUnique({ where: { userId: input.clientId }, select: { balance: true } })
+      .catch(() => null);
+    balanceVal = w?.balance ?? 0;
+  }
+  const updatedBalance = `₹${balanceVal.toLocaleString("en-IN")}`;
+  const transactionDate = formatIstTimestamp();
+
+  await notifyUsers([input.clientId], {
+    type: "CLIENT_MILESTONE_RECEIPT",
+    title: `Payment Receipt ${receiptNo} · ${formattedAmount}`,
+    description: `Your payment of ${formattedAmount} for milestone "${input.milestoneTitle}" on ${projectTitle} is recorded (${input.paymentStatus}).`,
+    href: `/project/${input.projectId}/tracking`,
+    transactional: true,
+    templateVariables: {
+      receipt_no: receiptNo,
+      project_id: input.projectId,
+      project_title: projectTitle,
+      milestone_title: input.milestoneTitle,
+      milestone_amount: formattedAmount,
+      amount: formattedAmount,
+      payment_status: input.paymentStatus,
+      updated_balance: updatedBalance,
+      transaction_date: transactionDate,
+    },
+    emailDetails: [
+      { label: "Receipt No", value: receiptNo },
+      { label: "Project", value: projectTitle },
+      { label: "Milestone", value: input.milestoneTitle },
+      { label: "Amount", value: formattedAmount },
+      { label: "Status", value: input.paymentStatus },
+      { label: "Updated Balance", value: updatedBalance },
+      { label: "Date & Time", value: transactionDate },
     ],
   });
 }
@@ -812,9 +1160,33 @@ export async function notifyJobPosted(job: {
   const clientName = clientUser
     ? `${clientUser.firstName} ${clientUser.lastName}`.trim()
     : "Client";
+  const budgetStr =
+    job.budgetMin != null && job.budgetMax != null
+      ? `₹${job.budgetMin.toLocaleString("en-IN")} - ₹${job.budgetMax.toLocaleString("en-IN")}`
+      : job.budgetMax != null
+        ? `₹${job.budgetMax.toLocaleString("en-IN")}`
+        : "Flexible";
 
-  // Client already sees the UI toast message upon posting.
-  // Matching professionals in that category are notified below
+  // 1. Send confirmation email to the client using client_job_posted template
+  await notifyUsers([job.userId], {
+    type: "JOB_POSTED",
+    title: `Job posted · ${jobTitle}`,
+    description: `Your job "${jobTitle}" is now live in ${categoryLabel}. Matching professionals are being notified.`,
+    href: `/job/${job.id}`,
+    templateVariables: {
+      client_name: clientName,
+      job_title: jobTitle,
+      category_name: categoryLabel,
+      budget: budgetStr,
+      job_id: job.id,
+    },
+    emailDetails: [
+      { label: "Job Title", value: jobTitle },
+      { label: "Job Category", value: categoryLabel },
+      { label: "Job Budget", value: budgetStr },
+      { label: "Job ID", value: String(job.id) },
+    ],
+  });
 
   // 3. Notify Matching Professionals in that category
   let matchingPros: { id: number }[] = [];
@@ -858,6 +1230,7 @@ export async function notifyJobPosted(job: {
 
 export async function notifyProposalSubmitted(input: {
   jobId: number;
+  proposalId?: number;
   jobTitle?: string | null;
   clientId: number;
   professionalId: number;
@@ -871,25 +1244,39 @@ export async function notifyProposalSubmitted(input: {
     select: { firstName: true, lastName: true },
   });
   const proName = proUser ? `${proUser.firstName} ${proUser.lastName}`.trim() : "A professional";
+  const amountStr = `₹${input.bidAmount.toLocaleString("en-IN")}`;
+  const proposalHref = input.proposalId
+    ? `/job/${input.jobId}?proposal=${input.proposalId}`
+    : `/job/${input.jobId}`;
 
   // 1. Notify Client
   await notifyUsers([input.clientId], {
     type: "NEW_PROPOSAL",
     title: `${jobTitle} · New Proposal`,
-    description: `${proName} sent a proposal of ₹${input.bidAmount.toLocaleString("en-IN")} for ${jobTitle}.`,
-    href: `/job/${input.jobId}`,
+    description: `${proName} sent a proposal of ${amountStr} for ${jobTitle}.`,
+    href: proposalHref,
+    templateVariables: {
+      professional_name: proName,
+      prof_name: proName,
+      job_title: jobTitle,
+      bid_amount: amountStr,
+      amount: amountStr,
+      delivery_time: input.duration,
+      job_id: input.jobId,
+      ...(input.proposalId ? { proposal_id: input.proposalId } : {}),
+    },
     emailDetails: [
       { label: "Professional", value: proName },
       { label: "Project", value: jobTitle },
-      { label: "Proposed amount", value: `₹${input.bidAmount.toLocaleString("en-IN")}` },
+      { label: "Proposed amount", value: amountStr },
       { label: "Delivery time", value: input.duration },
     ],
   });
-
 }
 
 export async function notifyProposalUpdated(input: {
   jobId: number;
+  proposalId?: number;
   jobTitle?: string | null;
   clientId: number;
   professionalId: number;
@@ -902,13 +1289,33 @@ export async function notifyProposalUpdated(input: {
     select: { firstName: true, lastName: true },
   });
   const proName = proUser ? `${proUser.firstName} ${proUser.lastName}`.trim() : "A professional";
+  const amountStr = `₹${input.bidAmount.toLocaleString("en-IN")}`;
+  const proposalHref = input.proposalId
+    ? `/job/${input.jobId}?proposal=${input.proposalId}`
+    : `/job/${input.jobId}`;
 
   // Notify Client
   await notifyUsers([input.clientId], {
     type: "PROPOSAL_UPDATED",
     title: `${jobTitle} · Proposal Updated`,
-    description: `${proName} updated their proposal for ${jobTitle} to ₹${input.bidAmount.toLocaleString("en-IN")}.`,
-    href: `/job/${input.jobId}`,
+    description: `${proName} updated their proposal for ${jobTitle} to ${amountStr}.`,
+    href: proposalHref,
+    templateVariables: {
+      professional_name: proName,
+      prof_name: proName,
+      job_title: jobTitle,
+      bid_amount: amountStr,
+      amount: amountStr,
+      delivery_time: input.duration,
+      job_id: input.jobId,
+      ...(input.proposalId ? { proposal_id: input.proposalId } : {}),
+    },
+    emailDetails: [
+      { label: "Professional", value: proName },
+      { label: "Project", value: jobTitle },
+      { label: "Proposed amount", value: amountStr },
+      { label: "Delivery time", value: input.duration },
+    ],
   });
 }
 
@@ -942,6 +1349,16 @@ export async function notifyContractAwarded(input: {
     title: `${jobTitle} · Congratulations! You got the project`,
     description: `Congratulations! ${clientName} accepted your proposal for ${jobTitle} (${amountStr}). The project is now active.`,
     href: `/project/${input.projectId}/tracking`,
+    templateVariables: {
+      prof_name: proName,
+      professional_name: proName,
+      client_name: clientName,
+      job_title: jobTitle,
+      project_title: jobTitle,
+      accepted_amount: amountStr,
+      amount: amountStr,
+      project_id: input.projectId,
+    },
     emailDetails: [
       { label: "Project", value: jobTitle },
       { label: "Agreed amount", value: amountStr },
@@ -974,14 +1391,26 @@ export async function notifyHireRequestSent(input: {
   const proName = proUser ? `${proUser.firstName} ${proUser.lastName}`.trim() : "A professional";
 
   // 1. Notify Professional
+  const offerStr = `₹${input.bidAmount.toLocaleString("en-IN")}`;
   await notifyUsers([input.professionalId], {
     type: "NEW_HIRE_REQUEST",
     title: `${jobTitle} · New hire request`,
-    description: `${clientName} sent you a hire request for ${jobTitle}.`,
+    description: `${clientName} sent you a hire request for ${jobTitle} (${offerStr}).`,
     href: `/job/${input.jobId}?requestId=${input.requestId}`,
+    templateVariables: {
+      prof_name: proName,
+      professional_name: proName,
+      client_name: clientName,
+      job_title: jobTitle,
+      project_title: jobTitle,
+      job_id: input.jobId,
+      budget: offerStr,
+      amount: offerStr,
+      job_location: "Direct Hire Offer",
+    },
     emailDetails: [
       { label: "Job", value: jobTitle },
-      { label: "Offered amount", value: `₹${input.bidAmount.toLocaleString("en-IN")}` },
+      { label: "Offered amount", value: offerStr },
       { label: "Timeline", value: input.duration },
     ],
   });
@@ -992,17 +1421,26 @@ export async function notifyVerificationStatus(input: {
   userId: number;
   provider: string;
   isApproved: boolean;
+  rejectionReason?: string;
 }) {
   const title = input.isApproved ? "Identity Verification Approved" : "Identity Verification Rejected";
+  const reason =
+    input.rejectionReason?.trim() ||
+    "Submitted verification documents did not match requirements. Please upload a clear valid document.";
   const description = input.isApproved
     ? `Your ${input.provider} verification has been approved. Your profile now shows the verified badge.`
-    : `Your ${input.provider} verification was reviewed and not approved.`;
+    : `Your ${input.provider} verification was reviewed and not approved: ${reason}`;
 
   await notifyUsers([input.userId], {
-    type: "VERIFICATION_UPDATE",
+    type: input.isApproved ? "VERIFICATION_APPROVED" : "VERIFICATION_REJECTED",
     title,
     description,
     href: "/verification",
+    transactional: true,
+    templateVariables: {
+      rejection_reason: reason,
+    },
+    ...(input.isApproved ? {} : { emailDetails: [{ label: "Reason / Notes", value: reason }] }),
   });
 
   await notifyRole("ADMIN", {

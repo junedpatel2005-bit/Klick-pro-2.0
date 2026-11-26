@@ -130,7 +130,15 @@ export async function sendAuthEmail(
       if (template && template.isActive) {
         const resolvedSubject = interpolateVariables(template.subject, mergedVariables);
         const resolvedHeading = interpolateVariables(template.heading, mergedVariables);
-        const resolvedBody = interpolateVariables(template.bodyText, mergedVariables);
+        let resolvedBody = interpolateVariables(template.bodyText, mergedVariables);
+        // Rule 6: omit any commission/platform-fee lines from receipts if an override kept {{platform_fee}} with zero fee
+        const rawFee = String(mergedVariables.platform_fee ?? "").trim();
+        if (!rawFee || rawFee === "₹0" || rawFee.toLowerCase().includes("zero fee")) {
+          resolvedBody = resolvedBody
+            .replace(/^.*(?:Platform Fee|Platform Commission):.*(?:\r?\n)?/gim, "")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+        }
 
         let resolvedActionUrl = actionUrl;
         if (template.actionUrl) {
@@ -200,23 +208,43 @@ export function isEmailConfigured() {
 
 const NOTIFICATION_TYPE_MAP: Record<string, string> = {
   CLIENT_WELCOME: "client_welcome",
-  NEW_ACCOUNT: "client_welcome",
   JOB_POSTED: "client_job_posted",
+  NEW_PROPOSAL: "client_proposal_received",
   PROPOSAL_RECEIVED: "client_proposal_received",
+  PROPOSAL_UPDATED: "client_proposal_received",
+  REQUEST_COUNTERED: "client_proposal_received",
   MILESTONE_SUBMITTED: "client_milestone_submitted",
   DISPUTE_RAISED: "client_dispute_opened",
   DISPUTE_OPENED: "client_dispute_opened",
+  DISPUTE_CONTESTED: "client_dispute_opened",
   DISPUTE_RESOLVED: "client_dispute_resolved",
+  DISPUTE_DECIDED: "client_dispute_resolved",
   REFUND_PROCESSED: "client_refund_processed",
+  WALLET_TOPUP_RECEIPT: "wallet_topup_receipt",
+  WITHDRAWAL_REQUESTED: "withdrawal_requested_receipt",
+  WITHDRAWAL_COMPLETED: "withdrawal_completed_receipt",
+  PAYOUT_COMPLETED: "withdrawal_completed_receipt",
+  WITHDRAWAL_FAILED: "withdrawal_failed_notice",
+  PAYOUT_FAILED: "withdrawal_failed_notice",
+  PAYOUT_REVERSED: "withdrawal_failed_notice",
+  CLIENT_MILESTONE_RECEIPT: "client_milestone_receipt",
   PROF_WELCOME: "prof_welcome",
   WELCOME_PROFESSIONAL: "prof_welcome",
   WELCOME_CLIENT: "client_welcome",
   VERIFICATION_APPROVED: "prof_verification_approved",
   VERIFICATION_REJECTED: "prof_verification_rejected",
   JOB_MATCH: "prof_job_match",
+  NEW_JOB: "prof_job_match",
+  NEW_JOB_POSTED: "prof_job_match",
+  NEW_HIRE_REQUEST: "prof_job_match",
+  REVISION_REQUESTED: "prof_revision_requested",
+  MILESTONE_REVISION_REQUESTED: "prof_revision_requested",
   PROPOSAL_ACCEPTED: "prof_proposal_accepted",
+  REQUEST_ACCEPTED: "prof_proposal_accepted",
   MILESTONE_FUNDED: "prof_milestone_funded",
+  WALLET_MILESTONE_FUNDED: "prof_milestone_funded",
   PAYOUT_RELEASED: "prof_payout_released",
+  MILESTONE_PAYOUT_APPROVED: "prof_payout_released",
   PROF_DISPUTE_OPENED: "prof_dispute_opened",
   PASSWORD_RESET: "auth_password_reset",
   EMAIL_VERIFICATION: "auth_email_verification",
@@ -228,8 +256,12 @@ export function resolveNotificationTemplate(
 ): string | undefined {
   if (!type) return undefined;
   const isProf = audience === "PROFESSIONAL";
+  const isAdmin = audience === "ADMIN";
 
   if (type.startsWith("PROJECT_ACTIVITY_")) {
+    if (type.includes("REVISION_REQUESTED")) {
+      return isProf ? "prof_revision_requested" : "client_milestone_submitted";
+    }
     if (type.includes("MILESTONE") || type.includes("DELIVERABLE") || type.includes("WORK")) {
       return "client_milestone_submitted";
     }
@@ -237,7 +269,7 @@ export function resolveNotificationTemplate(
       return isProf ? "prof_dispute_opened" : "client_dispute_opened";
     }
     if (type.includes("PAYOUT") || type.includes("PAYMENT")) {
-      return "prof_payout_released";
+      return isProf ? "prof_payout_released" : "client_milestone_receipt";
     }
     return isProf ? "prof_proposal_accepted" : "client_milestone_submitted";
   }
@@ -250,18 +282,27 @@ export function resolveNotificationTemplate(
     case "PROF_WELCOME":
       return "prof_welcome";
     case "NEW_ACCOUNT":
+      // Admin new-registration notices render the structured admin summary layout instead of user welcome copy.
+      if (isAdmin) return undefined;
       return isProf ? "prof_welcome" : "client_welcome";
     case "JOB_POSTED":
       return "client_job_posted";
     case "JOB_MATCH":
+    case "NEW_JOB":
+    case "NEW_JOB_POSTED":
+    case "NEW_HIRE_REQUEST":
       return "prof_job_match";
+    case "REVISION_REQUESTED":
+    case "MILESTONE_REVISION_REQUESTED":
+      return "prof_revision_requested";
+    case "NEW_PROPOSAL":
     case "PROPOSAL_RECEIVED":
     case "PROPOSAL_UPDATED":
     case "REQUEST_COUNTERED":
       return "client_proposal_received";
     case "PROPOSAL_ACCEPTED":
     case "REQUEST_ACCEPTED":
-      return isProf ? "prof_proposal_accepted" : "client_welcome";
+      return isProf ? "prof_proposal_accepted" : "client_milestone_receipt";
     case "REQUEST_DECLINED":
       return "client_job_posted";
     case "MILESTONE_SUBMITTED":
@@ -272,15 +313,31 @@ export function resolveNotificationTemplate(
       return isProf ? "prof_proposal_accepted" : "client_milestone_submitted";
     case "MILESTONE_FUNDED":
     case "WALLET_MILESTONE_FUNDED":
-      return "prof_milestone_funded";
+      if (isAdmin) return undefined;
+      return isProf ? "prof_milestone_funded" : "client_milestone_receipt";
+    case "CLIENT_MILESTONE_RECEIPT":
+      return "client_milestone_receipt";
     case "PAYOUT_RELEASED":
     case "MILESTONE_PAYOUT_APPROVED":
       return "prof_payout_released";
+    case "WALLET_TOPUP_RECEIPT":
+      return "wallet_topup_receipt";
+    case "WITHDRAWAL_REQUESTED":
+      return "withdrawal_requested_receipt";
+    case "WITHDRAWAL_COMPLETED":
+    case "PAYOUT_COMPLETED":
+      return "withdrawal_completed_receipt";
+    case "WITHDRAWAL_FAILED":
+    case "PAYOUT_FAILED":
+    case "PAYOUT_REVERSED":
+      return "withdrawal_failed_notice";
     case "DISPUTE_RAISED":
     case "DISPUTE_OPENED":
+    case "DISPUTE_CONTESTED":
       return isProf ? "prof_dispute_opened" : "client_dispute_opened";
     case "DISPUTE_UPDATED":
     case "DISPUTE_RESOLVED":
+    case "DISPUTE_DECIDED":
       return "client_dispute_resolved";
     case "DISPUTE_MESSAGE":
       return isProf ? "prof_dispute_opened" : "client_dispute_opened";
@@ -346,12 +403,19 @@ export async function sendNotificationEmail(input: {
               detailVariables["project_title"] = d.value;
               detailVariables["job_title"] = d.value;
             }
-            if (key === "project_amount" || key === "proposed_amount" || key === "bid_amount") {
+            if (key === "project_amount" || key === "proposed_amount" || key === "bid_amount" || key === "offered_amount") {
               detailVariables["bid_amount"] = d.value;
               detailVariables["amount"] = d.value;
               detailVariables["agreed_amount"] = d.value;
               detailVariables["budget"] = d.value;
               detailVariables["accepted_amount"] = d.value;
+            }
+            if (key === "professional") {
+              detailVariables["professional_name"] = d.value;
+              detailVariables["prof_name"] = d.value;
+            }
+            if (key === "client") {
+              detailVariables["client_name"] = d.value;
             }
             if (key === "milestone") {
               detailVariables["milestone_title"] = d.value;
@@ -367,6 +431,12 @@ export async function sendNotificationEmail(input: {
             if (key === "payout_credited") {
               detailVariables["payout_amount"] = d.value;
               detailVariables["amount"] = d.value;
+            }
+            if (key === "receipt_no") {
+              detailVariables["receipt_no"] = d.value;
+            }
+            if (key === "utr" || key === "utr_reference") {
+              detailVariables["utr"] = d.value;
             }
             if (key === "platform_commission") {
               detailVariables["platform_fee"] = d.value;
@@ -407,7 +477,15 @@ export async function sendNotificationEmail(input: {
 
         const resolvedSubject = interpolateVariables(template.subject, mergedVariables);
         const resolvedHeading = interpolateVariables(template.heading, mergedVariables);
-        const resolvedBody = interpolateVariables(template.bodyText, mergedVariables);
+        let resolvedBody = interpolateVariables(template.bodyText, mergedVariables);
+        // Rule 6: omit any commission/platform-fee lines from receipts if an override kept {{platform_fee}} with zero fee
+        const rawFee = String(mergedVariables.platform_fee ?? "").trim();
+        if (!rawFee || rawFee === "₹0" || rawFee.toLowerCase().includes("zero fee")) {
+          resolvedBody = resolvedBody
+            .replace(/^.*(?:Platform Fee|Platform Commission):.*(?:\r?\n)?/gim, "")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+        }
         const resolvedActionUrl = template.actionUrl
           ? interpolateVariables(template.actionUrl, mergedVariables)
           : actionUrl;

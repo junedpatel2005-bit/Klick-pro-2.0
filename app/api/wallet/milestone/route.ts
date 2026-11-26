@@ -9,7 +9,7 @@ import {
 } from "@/lib/wallet-ledger";
 import { getPlatformCommissionRate, isAutopayEnabled } from "@/lib/platform-settings";
 import {
-  notifyDisputeResolved,
+  notifyClientMilestoneReceipt,
   notifyMilestoneFunded,
   notifyMilestonePayoutApproved,
 } from "@/lib/marketplace-notifications";
@@ -411,6 +411,7 @@ export async function POST(request: NextRequest) {
           select: { balance: true },
         });
         return {
+          paymentId: payment.id,
           remainingBalance: clientWallet?.balance ?? 0,
           openDisputes,
           autopay,
@@ -438,6 +439,8 @@ export async function POST(request: NextRequest) {
         platformEarnings: money.adminNetAmount,
         clientId: project.clientId,
         professionalId: project.professionalId,
+        jobTitle: project.job?.title,
+        paymentId: result.paymentId,
       }).catch(() => undefined);
     } else {
       void notifyMilestoneFunded({
@@ -449,6 +452,21 @@ export async function POST(request: NextRequest) {
         professionalId: project.professionalId,
       }).catch(() => undefined);
     }
+
+    void notifyClientMilestoneReceipt({
+      clientId: project.clientId,
+      projectId: project.id,
+      paymentId: result.paymentId,
+      milestoneTitle: milestone.title,
+      projectTitle: project.job?.title,
+      amount: money.clientChargeAmount,
+      paymentStatus: result.hasValidityHold
+        ? `Held in Escrow (${result.validityDays}-day inspection)`
+        : result.autopay
+          ? "Paid & Released"
+          : "Pending Admin Approval",
+      remainingBalance: result.remainingBalance,
+    }).catch(() => undefined);
 
     emitRealtimeProjectUpdate([project.clientId, project.professionalId], {
       projectId: project.id,

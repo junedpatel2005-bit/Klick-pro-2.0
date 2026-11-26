@@ -1821,6 +1821,7 @@ export async function POST(request: NextRequest) {
                 : "The professional",
             clientId: project.clientId,
             professionalId: project.professionalId,
+            disputeMessage: input.message,
           }),
         { disputeId: dispute.id, trackingId: project.id },
       );

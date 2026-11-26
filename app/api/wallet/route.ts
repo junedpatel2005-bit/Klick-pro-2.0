@@ -14,9 +14,8 @@ import { Prisma } from "@generated/prisma/client";
 import { encryptAccountNumber, decryptAccountNumber, maskAccountNumber } from "@/lib/encryption";
 import { maskDestinationString } from "@/lib/account-formatting";
 import { capitalizeWords } from "@/lib/utils";
+import { notifyWalletTopupReceipt, notifyWithdrawalReceipt } from "@/lib/marketplace-notifications";
 import {
-  emitRealtimeNotification,
-  emitAdminNotification,
   emitAdminOverviewUpdate,
 } from "@/lib/realtime";
 
@@ -56,7 +55,7 @@ export async function GET(request: NextRequest) {
             p.currency === "INR",
         );
         if (captured) {
-          await db.$transaction((tx) =>
+          const creditedTx = await db.$transaction((tx) =>
             creditWalletFromVerifiedProvider(tx, {
               userId: session.userId,
               amount: pendingTopUp.amount,
@@ -64,6 +63,13 @@ export async function GET(request: NextRequest) {
               providerPaymentId: captured.id,
             }),
           );
+          void notifyWalletTopupReceipt({
+            userId: session.userId,
+            amount: pendingTopUp.amount,
+            transactionId: creditedTx.id,
+            paymentId: captured.id,
+            orderId: pendingTopUp.providerReference!,
+          }).catch(() => undefined);
         }
       }
     } catch (reconcileErr) {
@@ -456,13 +462,6 @@ export async function POST(request: NextRequest) {
   const autoWithdrawal = await isAutoWithdrawalEnabled();
 
   // Phase 1: Atomically verify available balance and process withdrawal (COMPLETED if Auto-Pay ON, PENDING if OFF)
-  let userNotificationPayload: {
-    id: number;
-    type: string;
-    title: string;
-    description: string;
-    href: string;
-  } | null = null;
   let withdrawal;
   try {
     withdrawal = await db.$transaction(async (tx) => {
@@ -510,26 +509,6 @@ export async function POST(request: NextRequest) {
             }),
           },
         });
-
-        // Record in-app notification for user
-        const notif = await tx.userNotification.create({
-          data: {
-            userId: session.userId,
-            type: "PAYOUT_COMPLETED",
-            title: "Withdrawal Transferred Instantly",
-            description: `Your withdrawal of ₹${parsed.data.amount.toLocaleString(
-              "en-IN",
-            )} has been processed and transferred automatically via Instant ${destinationType === "UPI" ? "UPI" : "IMPS"}. UTR: ${autoUtr}.`,
-            href: session.role === "CLIENT" ? "/client/earnings" : "/professional/earnings",
-          },
-        });
-        userNotificationPayload = {
-          id: notif.id,
-          type: notif.type,
-          title: notif.title,
-          description: notif.description ?? "",
-          href: notif.href ?? "",
-        };
       } else {
         // Auto-Pay is OFF: reserve funds and set status to PENDING for admin review
         const reserved = await tx.$executeRaw(
@@ -619,37 +598,32 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
-    if (userNotificationPayload) {
-      emitRealtimeNotification([session.userId], userNotificationPayload);
-    }
+    const destinationSummary =
+      destinationType === "UPI"
+        ? `UPI (${upiId})`
+        : `${bankName ? capitalizeWords(bankName) : "Bank"} ••••${cleanAccForDest.slice(-4)}`;
+
+    void notifyWithdrawalReceipt({
+      userId: session.userId,
+      withdrawalId: withdrawal.id,
+      status: autoWithdrawal ? "COMPLETED" : "REQUESTED",
+      amount: parsed.data.amount,
+      destination: destinationSummary,
+      utr: withdrawal.utr,
+    }).catch(() => undefined);
 
     if (!autoWithdrawal) {
       // Notify all active admins that a withdrawal request is pending their approval
-      const admins = await db.user.findMany({
-        where: { role: "ADMIN", isActive: true },
-        select: { id: true },
-      });
-      if (admins.length > 0) {
-        const userRow = await db.user.findUnique({
-          where: { id: session.userId },
-          select: { firstName: true, lastName: true },
-        });
-        const senderName =
-          `${userRow?.firstName ?? ""} ${userRow?.lastName ?? ""}`.trim() ||
-          `User #${session.userId}`;
-        const adminNotif = {
-          type: "WITHDRAWAL_REQUESTED",
-          title: "New Withdrawal Request",
-          description: `${senderName} requested a withdrawal of ₹${parsed.data.amount.toLocaleString(
-            "en-IN",
-          )} (${destinationType === "UPI" ? `UPI: ${upiId}` : `Bank: ${bankName || "Bank"}`}).`,
-          href: "/admin/finance",
-        };
-        await db.userNotification.createMany({
-          data: admins.map((a) => ({ userId: a.id, ...adminNotif })),
-        });
-        emitAdminNotification(adminNotif);
-      }
+      const { notifyRole } = await import("@/lib/marketplace-notifications");
+      const senderName = userName || `User #${session.userId}`;
+      void notifyRole("ADMIN", {
+        type: "WITHDRAWAL_REQUESTED",
+        title: "New Withdrawal Request",
+        description: `${senderName} requested a withdrawal of ₹${parsed.data.amount.toLocaleString(
+          "en-IN",
+        )} (${destinationSummary}).`,
+        href: "/admin/finance",
+      }).catch(() => undefined);
     }
     emitAdminOverviewUpdate();
   } catch (error) {

@@ -47,7 +47,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       'Hello {{client_name}},\n\nYour job "{{job_title}}" has been successfully posted. Qualified and verified professionals in {{category_name}} are being notified.\n\nYou\'ll receive email and in-app alerts as soon as proposals and quotes start coming in.',
     defaultActionText: "View Job & Proposals",
-    defaultActionUrl: "/client/jobs/{{job_id}}",
+    defaultActionUrl: "/job/{{job_id}}",
     variables: [
       {
         key: "client_name",
@@ -100,7 +100,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       'Hello {{client_name}},\n\n{{professional_name}} just submitted a proposal for "{{job_title}}".\n\nProposed Amount: {{bid_amount}}\nEstimated Timeline: {{delivery_time}}\n\nReview their proposal details, portfolio, and ratings to decide if they are the right fit for your job.',
     defaultActionText: "Review Proposal",
-    defaultActionUrl: "/client/jobs/{{job_id}}?proposal={{proposal_id}}",
+    defaultActionUrl: "/job/{{job_id}}?proposal={{proposal_id}}",
     variables: [
       {
         key: "client_name",
@@ -311,7 +311,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       'Hello {{client_name}},\n\nA refund of {{refund_amount}} has been credited for "{{project_title}}".\n\nTransaction Reference: {{transaction_ref}}\nPayment Method: {{payment_source}}\n\nPlease allow 3-5 business days for bank processing if returned to your original payment method.',
     defaultActionText: "View Transaction History",
-    defaultActionUrl: "/client/billing",
+    defaultActionUrl: "/earnings",
     variables: [
       {
         key: "client_name",
@@ -341,7 +341,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
         key: "payment_source",
         label: "Payment Source",
         description: "Bank or wallet",
-        sample: "Original Payment Card",
+        sample: "Klick-Pro Wallet",
       },
     ],
     sampleData: {
@@ -349,7 +349,167 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
       project_title: "E-Commerce Web Portal",
       refund_amount: "₹15,000",
       transaction_ref: "TXN_982341908",
-      payment_source: "Original Payment Card",
+      payment_source: "Klick-Pro Wallet",
+    },
+  },
+
+  wallet_topup_receipt: {
+    key: "wallet_topup_receipt",
+    name: "Wallet Top-Up Receipt",
+    description: "Official payment receipt sent whenever a user adds money to their wallet.",
+    audience: "CLIENT",
+    category: "Financial & Payments",
+    defaultSubject: "Payment Receipt {{receipt_no}}: {{amount}} added to your Klick-Pro wallet",
+    defaultHeading: "Wallet Top-Up Receipt",
+    defaultBodyText:
+      "Hello {{user_name}},\n\nThank you! Your wallet top-up of {{amount}} has been confirmed and credited to your Klick-Pro wallet.\n\nReceipt No: {{receipt_no}}\nTransaction Reference: {{transaction_ref}}\nPayment Method: {{payment_method}}\nUpdated Wallet Balance: {{updated_balance}}\nDate & Time: {{transaction_date}}\n\nYou can use your wallet balance right away to fund milestones and hire verified professionals.",
+    defaultActionText: "View Wallet & Receipt",
+    defaultActionUrl: "/earnings",
+    variables: [
+      { key: "user_name", label: "Account Holder", description: "User full name", sample: "Juned Patel" },
+      { key: "receipt_no", label: "Receipt No", description: "Receipt reference number", sample: "RCP-WT-1042" },
+      { key: "amount", label: "Amount Credited", description: "Top-up amount in INR", sample: "₹5,000" },
+      { key: "transaction_ref", label: "Payment Reference", description: "Gateway payment/order ID", sample: "pay_Rzp901238" },
+      { key: "payment_method", label: "Payment Method", description: "Payment channel", sample: "Razorpay Checkout" },
+      { key: "updated_balance", label: "Updated Balance", description: "Wallet balance after credit", sample: "₹12,500" },
+      { key: "transaction_date", label: "Date & Time", description: "Timestamp of receipt", sample: "26 Nov 2026, 11:30 AM IST" },
+    ],
+    sampleData: {
+      user_name: "Juned Patel",
+      receipt_no: "RCP-WT-1042",
+      amount: "₹5,000",
+      transaction_ref: "pay_Rzp901238",
+      payment_method: "Razorpay Checkout",
+      updated_balance: "₹12,500",
+      transaction_date: "26 Nov 2026, 11:30 AM IST",
+    },
+  },
+
+  client_milestone_receipt: {
+    key: "client_milestone_receipt",
+    name: "Milestone Payment & Escrow Receipt",
+    description: "Official payment receipt sent to client when paying or funding a milestone.",
+    audience: "CLIENT",
+    category: "Financial & Payments",
+    defaultSubject: "Payment Receipt {{receipt_no}}: {{amount}} for {{milestone_title}}",
+    defaultHeading: "Milestone Payment Receipt",
+    defaultBodyText:
+      'Hello {{client_name}},\n\nYour payment for milestone "{{milestone_title}}" on "{{project_title}}" has been recorded.\n\nReceipt No: {{receipt_no}}\nAmount: {{amount}}\nStatus: {{payment_status}}\nUpdated Wallet Balance: {{updated_balance}}\nDate & Time: {{transaction_date}}\n\nYou can review the project progress or download your PDF invoice anytime from your workspace.',
+    defaultActionText: "View Receipt & Project",
+    defaultActionUrl: "/project/{{project_id}}/tracking",
+    variables: [
+      { key: "client_name", label: "Client Name", description: "Name of the client", sample: "Juned Patel" },
+      { key: "receipt_no", label: "Receipt / Invoice No", description: "Invoice or receipt reference", sample: "INV-2026-000108" },
+      { key: "project_title", label: "Project Title", description: "Title of project", sample: "E-Commerce Web Portal" },
+      { key: "milestone_title", label: "Milestone Title", description: "Milestone name", sample: "Phase 1 Delivery" },
+      { key: "amount", label: "Amount", description: "Milestone payment amount", sample: "₹15,000" },
+      { key: "payment_status", label: "Status", description: "Payment/escrow status", sample: "Paid & Settled" },
+      { key: "updated_balance", label: "Updated Balance", description: "Remaining wallet balance", sample: "₹10,000" },
+      { key: "transaction_date", label: "Date & Time", description: "Timestamp", sample: "26 Nov 2026, 11:30 AM IST" },
+      { key: "project_id", label: "Project ID", description: "Tracking ID", sample: "419" },
+    ],
+    sampleData: {
+      client_name: "Juned Patel",
+      receipt_no: "INV-2026-000108",
+      project_title: "E-Commerce Web Portal",
+      milestone_title: "Phase 1 Delivery",
+      amount: "₹15,000",
+      payment_status: "Paid & Settled",
+      updated_balance: "₹10,000",
+      transaction_date: "26 Nov 2026, 11:30 AM IST",
+      project_id: "419",
+    },
+  },
+
+  withdrawal_requested_receipt: {
+    key: "withdrawal_requested_receipt",
+    name: "Withdrawal Request Receipt",
+    description: "Confirmation receipt sent when a user submits a withdrawal request for admin review.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSubject: "Withdrawal Request {{receipt_no}}: {{amount}} submitted",
+    defaultHeading: "Withdrawal Request Submitted",
+    defaultBodyText:
+      "Hello {{user_name}},\n\nWe received your wallet withdrawal request of {{amount}}.\n\nReceipt No: {{receipt_no}}\nDestination: {{destination}}\nStatus: Pending Admin Approval\nAvailable Wallet Balance: {{updated_balance}}\nDate & Time: {{transaction_date}}\n\nYou will receive an email receipt with the UTR reference as soon as the transfer is completed.",
+    defaultActionText: "View Withdrawal Status",
+    defaultActionUrl: "/earnings",
+    variables: [
+      { key: "user_name", label: "Account Holder", description: "User name", sample: "Vikram Mehta" },
+      { key: "receipt_no", label: "Request Reference", description: "Withdrawal request number", sample: "WD-204" },
+      { key: "amount", label: "Withdrawal Amount", description: "Requested amount", sample: "₹8,500" },
+      { key: "destination", label: "Payout Destination", description: "Bank or UPI destination", sample: "HDFC Bank ••••4821" },
+      { key: "updated_balance", label: "Available Balance", description: "Remaining available balance", sample: "₹4,000" },
+      { key: "transaction_date", label: "Date & Time", description: "Timestamp", sample: "26 Nov 2026, 11:30 AM IST" },
+    ],
+    sampleData: {
+      user_name: "Vikram Mehta",
+      receipt_no: "WD-204",
+      amount: "₹8,500",
+      destination: "HDFC Bank ••••4821",
+      updated_balance: "₹4,000",
+      transaction_date: "26 Nov 2026, 11:30 AM IST",
+    },
+  },
+
+  withdrawal_completed_receipt: {
+    key: "withdrawal_completed_receipt",
+    name: "Withdrawal Paid Receipt (UTR)",
+    description: "Official payout receipt sent when a withdrawal transfer is completed via Auto-Pay or Admin approval.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSubject: "Withdrawal Receipt {{receipt_no}}: {{amount}} transferred",
+    defaultHeading: "Withdrawal Transferred Successfully",
+    defaultBodyText:
+      "Hello {{user_name}},\n\nYour wallet withdrawal of {{amount}} has been processed and transferred to your payout destination.\n\nReceipt No: {{receipt_no}}\nUTR / Transfer Reference: {{utr}}\nDestination: {{destination}}\nUpdated Wallet Balance: {{updated_balance}}\nDate & Time: {{transaction_date}}\n\nKeep this receipt for your financial records.",
+    defaultActionText: "View Wallet Ledger",
+    defaultActionUrl: "/earnings",
+    variables: [
+      { key: "user_name", label: "Account Holder", description: "User name", sample: "Vikram Mehta" },
+      { key: "receipt_no", label: "Receipt No", description: "Withdrawal receipt ID", sample: "WD-204" },
+      { key: "amount", label: "Transferred Amount", description: "Transferred payout amount", sample: "₹8,500" },
+      { key: "utr", label: "UTR / Reference", description: "Bank UTR or transfer ID", sample: "KP173261902348" },
+      { key: "destination", label: "Payout Destination", description: "Bank account or UPI ID", sample: "UPI: vikram@okaxis" },
+      { key: "updated_balance", label: "Updated Balance", description: "Remaining wallet balance", sample: "₹4,000" },
+      { key: "transaction_date", label: "Date & Time", description: "Timestamp", sample: "26 Nov 2026, 11:30 AM IST" },
+    ],
+    sampleData: {
+      user_name: "Vikram Mehta",
+      receipt_no: "WD-204",
+      amount: "₹8,500",
+      utr: "KP173261902348",
+      destination: "UPI: vikram@okaxis",
+      updated_balance: "₹4,000",
+      transaction_date: "26 Nov 2026, 11:30 AM IST",
+    },
+  },
+
+  withdrawal_failed_notice: {
+    key: "withdrawal_failed_notice",
+    name: "Withdrawal Failed / Balance Restored",
+    description: "Sent when a withdrawal request is rejected or fails on banking rails and funds return to the wallet.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSubject: "Withdrawal Update {{receipt_no}}: {{amount}} restored to wallet",
+    defaultHeading: "Withdrawal Failed & Funds Restored",
+    defaultBodyText:
+      "Hello {{user_name}},\n\nYour withdrawal of {{amount}} could not be completed and the funds have been restored to your Klick-Pro wallet.\n\nReference: {{receipt_no}}\nReason: {{failure_reason}}\nUpdated Wallet Balance: {{updated_balance}}\nDate & Time: {{transaction_date}}\n\nYou can verify your payout details and submit a new withdrawal request anytime.",
+    defaultActionText: "Review Wallet Balance",
+    defaultActionUrl: "/earnings",
+    variables: [
+      { key: "user_name", label: "Account Holder", description: "User name", sample: "Vikram Mehta" },
+      { key: "receipt_no", label: "Reference No", description: "Withdrawal ID", sample: "WD-204" },
+      { key: "amount", label: "Amount Restored", description: "Amount restored to wallet", sample: "₹8,500" },
+      { key: "failure_reason", label: "Reason", description: "Rejection or bank failure reason", sample: "Rejected by admin for IFSC mismatch." },
+      { key: "updated_balance", label: "Updated Balance", description: "Restored wallet balance", sample: "₹12,500" },
+      { key: "transaction_date", label: "Date & Time", description: "Timestamp", sample: "26 Nov 2026, 11:30 AM IST" },
+    ],
+    sampleData: {
+      user_name: "Vikram Mehta",
+      receipt_no: "WD-204",
+      amount: "₹8,500",
+      failure_reason: "Rejected by admin for IFSC mismatch.",
+      updated_balance: "₹12,500",
+      transaction_date: "26 Nov 2026, 11:30 AM IST",
     },
   },
 
@@ -367,7 +527,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       "Hello {{prof_name}},\n\nWelcome to the Klick-Pro professional network! To start submitting quotes and proposals on client jobs, please complete your profile details and submit your verification documents.\n\nOur verification badge gives you higher visibility and builds instant trust with prospective clients.",
     defaultActionText: "Complete Your Profile",
-    defaultActionUrl: "/professional/profile",
+    defaultActionUrl: "/professional-profile",
     variables: [
       {
         key: "prof_name",
@@ -399,7 +559,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       "Hello {{prof_name}},\n\nGreat news! Our compliance team has reviewed and approved your verification credentials.\n\nYour profile now displays the official Klick-Pro Verified badge. You have full access to bid on exclusive jobs and submit client proposals without restrictions.",
     defaultActionText: "Explore Available Jobs",
-    defaultActionUrl: "/professional/jobs",
+    defaultActionUrl: "/professional/my-jobs",
     variables: [
       {
         key: "prof_name",
@@ -424,7 +584,7 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     defaultBodyText:
       'Hello {{prof_name}},\n\nOur team reviewed your recent verification submission, but was unable to approve it due to the following reason:\n\n"{{rejection_reason}}"\n\nPlease review the feedback, take a clear photo or scan of your document, and re-upload it via your verification dashboard.',
     defaultActionText: "Resubmit Documents",
-    defaultActionUrl: "/professional/verification",
+    defaultActionUrl: "/verification",
     variables: [
       {
         key: "prof_name",
@@ -604,18 +764,24 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
     description: "Sent to professional when milestone payment is credited to their wallet balance.",
     audience: "PROFESSIONAL",
     category: "Financial & Payments",
-    defaultSubject: "Payout Released: {{payout_amount}} has been added to your wallet",
-    defaultHeading: "Your milestone payout is in your wallet",
+    defaultSubject: "Payout Receipt {{receipt_no}}: {{payout_amount}} credited to your wallet",
+    defaultHeading: "Milestone Payout Receipt",
     defaultBodyText:
-      'Hello {{prof_name}},\n\nPayment for milestone "{{milestone_title}}" on project "{{project_title}}" has been approved and released.\n\nNet Payout Credited: {{payout_amount}}\nPlatform Fee: {{platform_fee}}\n\nYou can request a withdrawal to your verified bank account at any time from your earnings dashboard.',
+      'Hello {{prof_name}},\n\nPayment for milestone "{{milestone_title}}" on project "{{project_title}}" has been approved and credited to your wallet.\n\nReceipt No: {{receipt_no}}\nPayout Credited: {{payout_amount}}\nUpdated Wallet Balance: {{updated_balance}}\n\nYou can request a withdrawal to your verified bank account or UPI at any time from your wallet.',
     defaultActionText: "View Earnings & Withdraw",
-    defaultActionUrl: "/professional/earnings",
+    defaultActionUrl: "/earnings",
     variables: [
       {
         key: "prof_name",
         label: "Professional Name",
         description: "Name of pro",
         sample: "Vikram Mehta",
+      },
+      {
+        key: "receipt_no",
+        label: "Receipt No",
+        description: "Payment receipt reference",
+        sample: "INV-2026-000108",
       },
       {
         key: "milestone_title",
@@ -632,22 +798,53 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> = 
       {
         key: "payout_amount",
         label: "Payout Amount",
-        description: "Net payout",
-        sample: "₹13,500",
+        description: "Credited payout amount",
+        sample: "₹15,000",
       },
       {
-        key: "platform_fee",
-        label: "Platform Fee",
-        description: "Service commission",
-        sample: "₹1,500 (10%)",
+        key: "updated_balance",
+        label: "Updated Balance",
+        description: "Wallet balance after credit",
+        sample: "₹28,500",
       },
     ],
     sampleData: {
       prof_name: "Vikram Mehta",
+      receipt_no: "INV-2026-000108",
       milestone_title: "Milestone 1: Database & Auth Setup",
       project_title: "E-Commerce Web Portal",
-      payout_amount: "₹13,500",
-      platform_fee: "₹1,500 (10%)",
+      payout_amount: "₹15,000",
+      updated_balance: "₹28,500",
+    },
+  },
+
+  prof_revision_requested: {
+    key: "prof_revision_requested",
+    name: "Milestone Revision Requested",
+    description: "Sent to professional when a client requests revisions on submitted milestone work.",
+    audience: "PROFESSIONAL",
+    category: "Projects & Milestones",
+    defaultSubject: 'Revision Requested: Milestone "{{milestone_title}}" on {{project_title}}',
+    defaultHeading: "Client requested revisions on your milestone",
+    defaultBodyText:
+      'Hello {{prof_name}},\n\n{{client_name}} reviewed your submission for milestone "{{milestone_title}}" on "{{project_title}}" and requested revisions.\n\nClient Notes: {{description}}\n\nPlease review the feedback in your project workspace and submit the updated deliverables.',
+    defaultActionText: "Review Feedback & Resubmit",
+    defaultActionUrl: "/project/{{project_id}}/tracking",
+    variables: [
+      { key: "prof_name", label: "Professional Name", description: "Name of pro", sample: "Vikram Mehta" },
+      { key: "client_name", label: "Client Name", description: "Client name", sample: "Juned Patel" },
+      { key: "project_title", label: "Project Title", description: "Project title", sample: "E-Commerce Web Portal" },
+      { key: "milestone_title", label: "Milestone Title", description: "Milestone title", sample: "Phase 1 Delivery" },
+      { key: "description", label: "Revision Notes", description: "Client requested changes", sample: "Please update header spacing on mobile." },
+      { key: "project_id", label: "Project ID", description: "Project ID", sample: "419" },
+    ],
+    sampleData: {
+      prof_name: "Vikram Mehta",
+      client_name: "Juned Patel",
+      project_title: "E-Commerce Web Portal",
+      milestone_title: "Phase 1 Delivery",
+      description: "Please update header spacing on mobile.",
+      project_id: "419",
     },
   },
 

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import { isRazorpayConfigured, verifyRazorpayPaymentSignature } from "@/lib/razorpay";
 import { creditWalletFromVerifiedProvider } from "@/lib/wallet-ledger";
+import { notifyWalletTopupReceipt } from "@/lib/marketplace-notifications";
 
 const schema = z.object({
   razorpayOrderId: z.string().min(1),
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   if (transaction.status === "COMPLETED")
     return NextResponse.json({ ok: true, alreadyProcessed: true, amount: transaction.amount });
   try {
-    await db.$transaction((tx) =>
+    const creditedTx = await db.$transaction((tx) =>
       creditWalletFromVerifiedProvider(tx, {
         userId: session.userId,
         amount: transaction.amount,
@@ -58,6 +59,13 @@ export async function POST(request: NextRequest) {
         providerPaymentId: parsed.data.razorpayPaymentId,
       }),
     );
+    void notifyWalletTopupReceipt({
+      userId: session.userId,
+      amount: transaction.amount,
+      transactionId: creditedTx.id,
+      paymentId: parsed.data.razorpayPaymentId,
+      orderId: parsed.data.razorpayOrderId,
+    }).catch(() => undefined);
   } catch (err) {
     // Check if the top-up was claimed by a concurrent request (e.g. webhook or duplicate verify)
     const recheck = await db.walletTransaction.findUnique({

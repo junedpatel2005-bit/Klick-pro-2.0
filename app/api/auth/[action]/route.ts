@@ -21,7 +21,7 @@ import { clearRateLimit, rateLimit } from "@/lib/rate-limit";
 import { sendAuthEmail } from "@/lib/email";
 import { enqueueBackgroundJob } from "@/lib/background-jobs";
 import { logServerError } from "@/lib/server-logger";
-import { notifyAdminsOfNewAccount } from "@/lib/marketplace-notifications";
+import { notifyAdminsOfNewAccount, notifyUsers } from "@/lib/marketplace-notifications";
 import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
 import { hasValidEmailDomain } from "@/lib/email-domain-check";
 import { isValidEmailFormat } from "@/lib/email-validation";
@@ -81,6 +81,40 @@ function publicAppOrigin(request: NextRequest) {
   }
 
   return "http://localhost:3000";
+}
+
+async function sendWelcomeToUserIfNeeded(user: {
+  id: number;
+  role: string;
+  firstName?: string | null;
+}) {
+  if (user.role === "ADMIN") return;
+  const welcomeType = user.role === "PROFESSIONAL" ? "WELCOME_PROFESSIONAL" : "WELCOME_CLIENT";
+  const alreadySent = await db.userNotification
+    .findFirst({
+      where: { userId: user.id, type: { in: ["WELCOME_CLIENT", "WELCOME_PROFESSIONAL"] } },
+      select: { id: true },
+    })
+    .catch(() => null);
+  if (alreadySent) return;
+
+  const welcomeName = user.firstName?.trim() || "there";
+  await notifyUsers([user.id], {
+    type: welcomeType,
+    title: "Welcome to Klick-Pro!",
+    description:
+      user.role === "PROFESSIONAL"
+        ? "Welcome to the Klick-Pro professional network. Complete your profile and verification to start connecting with clients."
+        : "Your Klick-Pro client account is ready. Post jobs and hire trusted professionals with escrow protection.",
+    href: user.role === "PROFESSIONAL" ? "/professional-profile" : "/post-job",
+    transactional: true,
+    templateVariables: {
+      user_name: welcomeName,
+      client_name: welcomeName,
+      prof_name: welcomeName,
+      professional_name: welcomeName,
+    },
+  }).catch(() => {});
 }
 
 function getAuthRedirect(
@@ -197,6 +231,7 @@ export async function GET(
           role?: "CLIENT" | "PROFESSIONAL";
           nextPath?: string | null;
           callbackUrl?: string;
+          termsAccepted?: boolean;
         };
       } catch {
         return {};
@@ -219,6 +254,8 @@ export async function GET(
       const role =
         request.nextUrl.searchParams.get("role") === "PROFESSIONAL" ? "PROFESSIONAL" : "CLIENT";
       const nextPath = request.nextUrl.searchParams.get("next");
+      const termsParam = request.nextUrl.searchParams.get("termsAccepted");
+      const termsAccepted = termsParam === "1" || termsParam === "true";
       const state = randomBytes(24).toString("hex");
       const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
       url.searchParams.set("client_id", clientId);
@@ -230,7 +267,7 @@ export async function GET(
       const response = NextResponse.redirect(url);
       response.cookies.set(
         "servio_google_oauth",
-        JSON.stringify({ state, intent, role, nextPath, callbackUrl }),
+        JSON.stringify({ state, intent, role, nextPath, callbackUrl, termsAccepted }),
         {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -349,6 +386,13 @@ export async function GET(
           response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
           return response;
         }
+        if (!saved.termsAccepted) {
+          const response = NextResponse.redirect(
+            new URL("/signup?oauthError=terms-required", appOrigin),
+          );
+          response.cookies.set("servio_google_oauth", "", { httpOnly: true, path: "/", maxAge: 0 });
+          return response;
+        }
         user = await db.user.create({
           data: {
             googleId: profile.sub,
@@ -396,23 +440,7 @@ export async function GET(
 
       if (createdAccount && user.role !== "ADMIN") {
         await notifyAdminsOfNewAccount(user);
-        await db.userNotification
-          .create({
-            data: {
-              userId: user.id,
-              type: user.role === "PROFESSIONAL" ? "WELCOME_PROFESSIONAL" : "WELCOME_CLIENT",
-              title:
-                user.role === "PROFESSIONAL"
-                  ? "Welcome to your professional dashboard"
-                  : "Welcome to Klick-Pro",
-              description:
-                user.role === "PROFESSIONAL"
-                  ? "Your profile is ready. Update your setup and start getting matched with clients."
-                  : "Your account is ready. Start exploring professionals or post your first project.",
-              href: user.role === "PROFESSIONAL" ? "/professional-home" : "/dashboard",
-            },
-          })
-          .catch(() => {});
+        await sendWelcomeToUserIfNeeded(user);
       }
 
       const hasClientProfile =
@@ -724,6 +752,7 @@ export async function POST(
       "notifications.new_account",
       async () => {
         await notifyAdminsOfNewAccount(user);
+        await sendWelcomeToUserIfNeeded(user);
       },
       { userId: user.id },
     );
@@ -1222,10 +1251,19 @@ export async function POST(
         return safe("This verification link is invalid or has expired.", 400);
       }
 
+      const existingUser = await db.user.findUnique({
+        where: { id: tokenRecord.userId },
+        select: { emailVerifiedAt: true },
+      });
+
       const user = await db.user.update({
         where: { id: tokenRecord.userId },
         data: { emailVerifiedAt: new Date() },
       });
+
+      if (!existingUser?.emailVerifiedAt && user.role !== "ADMIN") {
+        await sendWelcomeToUserIfNeeded(user);
+      }
 
       const skipSetupCookie = request.cookies.get("klick_skip_setup")?.value === "1";
       const hasClientProfile =

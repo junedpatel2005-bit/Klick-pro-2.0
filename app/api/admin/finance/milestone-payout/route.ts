@@ -8,7 +8,10 @@ import {
 } from "@/lib/wallet-ledger";
 import { getPlatformCommissionRate } from "@/lib/platform-settings";
 import { sessionCookie, verifySession } from "@/lib/auth";
-import { notifyMilestonePayoutApproved } from "@/lib/marketplace-notifications";
+import {
+  notifyClientMilestoneReceipt,
+  notifyMilestonePayoutApproved,
+} from "@/lib/marketplace-notifications";
 import { emitRealtimeProjectUpdate } from "@/lib/realtime";
 
 const schema = z.object({ paymentId: z.number().int().positive() });
@@ -193,7 +196,18 @@ export async function POST(request: NextRequest) {
       platformEarnings: result.adminNetAmount,
       clientId: payment.clientId,
       professionalId: payment.professionalId,
+      paymentId: payment.id,
     });
+    if (payment.status === "AWAITING_ADMIN_APPROVAL") {
+      void notifyClientMilestoneReceipt({
+        clientId: payment.clientId,
+        projectId: payment.projectTrackingId,
+        paymentId: payment.id,
+        milestoneTitle: milestone.title,
+        amount: result.clientChargeAmount,
+        paymentStatus: "Paid & Released",
+      }).catch(() => undefined);
+    }
     if (payment.projectTrackingId) {
       emitRealtimeProjectUpdate([payment.clientId, payment.professionalId], {
         projectId: payment.projectTrackingId,

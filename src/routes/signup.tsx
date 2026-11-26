@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { FullPageLogoLoader } from "@/components/FullPageLogoLoader";
-import { LegalDocumentDialog } from "@/components/LegalDocumentDialog";
+import { LegalConsentDialog, LegalDocumentDialog } from "@/components/LegalDocumentDialog";
 import { invalidateCurrentUser } from "@/lib/current-user";
 import { isValidEmailFormat } from "@/lib/email-validation";
 import type { LegalDocumentKey } from "@/lib/legal-content";
@@ -35,6 +35,7 @@ function SignupContent() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDocumentKey | null>(null);
+  const [pendingConsentMode, setPendingConsentMode] = useState<"email" | "google" | null>(null);
   const [emailCheckStatus, setEmailCheckStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
   const oauthError = searchParams.get("oauthError");
   const emailCheckSeqRef = useRef(0);
@@ -180,11 +181,20 @@ function SignupContent() {
     else if (password !== draft.confirmPassword) {
       nextErrors.confirmPassword = "Passwords do not match.";
     }
-    if (!draft.terms) nextErrors.terms = "Please accept the Terms and Privacy Policy.";
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       return;
     }
+    setPendingConsentMode("email");
+  }
+
+  async function completeEmailRegistration() {
+    if (pending) return;
+    const firstName = draft.firstName.trim();
+    const lastName = draft.lastName.trim();
+    const email = draft.email.trim();
+    const password = draft.password;
+
     setPending(true);
     try {
       const response = await fetch("/api/v1/auth/register", {
@@ -196,7 +206,7 @@ function SignupContent() {
           email,
           password,
           role: role === "pro" ? "PROFESSIONAL" : "CLIENT",
-          terms: draft.terms,
+          terms: true,
         }),
       });
       const result = (await response.json()) as {
@@ -221,6 +231,40 @@ function SignupContent() {
     } finally {
       setPending(false);
     }
+  }
+
+  function handleAcceptConsent() {
+    const mode = pendingConsentMode;
+    setPendingConsentMode(null);
+    setDraft((current) => ({ ...current, terms: true }));
+    setError(null);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.terms;
+      return next;
+    });
+
+    if (mode === "google") {
+      setGoogleLoading(true);
+      const googleUrl = new URL("/api/auth/google", window.location.origin);
+      googleUrl.searchParams.set("intent", "register");
+      googleUrl.searchParams.set("role", role === "pro" ? "PROFESSIONAL" : "CLIENT");
+      googleUrl.searchParams.set("termsAccepted", "1");
+      window.location.href = googleUrl.toString();
+      return;
+    }
+
+    if (mode === "email") {
+      void completeEmailRegistration();
+    }
+  }
+
+  function handleRejectConsent(reason: string) {
+    setPendingConsentMode(null);
+    setGoogleLoading(false);
+    setDraft((current) => ({ ...current, terms: false }));
+    setError(null);
+    setFieldErrors((current) => ({ ...current, terms: reason }));
   }
 
   return (
@@ -272,11 +316,8 @@ function SignupContent() {
           disabled={pending || googleLoading}
           className="mb-5 h-11 w-full transition-transform hover:-translate-y-0.5"
           onClick={() => {
-            setGoogleLoading(true);
-            const googleUrl = new URL("/api/auth/google", window.location.origin);
-            googleUrl.searchParams.set("intent", "register");
-            googleUrl.searchParams.set("role", role === "pro" ? "PROFESSIONAL" : "CLIENT");
-            window.location.href = googleUrl.toString();
+            setError(null);
+            setPendingConsentMode("google");
           }}
         >
           {googleLoading ? (
@@ -306,8 +347,15 @@ function SignupContent() {
             This account has been deactivated. Please contact support.
           </p>
         ) : null}
+        {oauthError === "terms-required" ? (
+          <p className="mb-4 text-sm font-bold text-destructive">
+            Please accept our Terms and Conditions and Privacy Policy to register with Google.
+          </p>
+        ) : null}
         {oauthError &&
-        !["google-not-configured", "access_denied", "account-inactive"].includes(oauthError) ? (
+        !["google-not-configured", "access_denied", "account-inactive", "terms-required"].includes(
+          oauthError,
+        ) ? (
           <p className="mb-4 text-sm text-destructive">
             Google sign-up could not be completed. Please try again.
           </p>
@@ -408,10 +456,19 @@ function SignupContent() {
             <input
               name="terms"
               type="checkbox"
-              required
               disabled={pending}
               checked={draft.terms}
-              onChange={(event) => setDraft({ ...draft, terms: event.target.checked })}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setDraft({ ...draft, terms: checked });
+                if (checked) {
+                  setFieldErrors((current) => {
+                    const next = { ...current };
+                    delete next.terms;
+                    return next;
+                  });
+                }
+              }}
               className="mt-0.5 h-4 w-4 accent-primary cursor-pointer"
             />
             <span>
@@ -462,6 +519,12 @@ function SignupContent() {
         </form>
       </AuthLayout>
       <LegalDocumentDialog document={legalDoc} onClose={() => setLegalDoc(null)} />
+      <LegalConsentDialog
+        open={pendingConsentMode !== null}
+        acceptLabel={pendingConsentMode === "google" ? "Accept & Continue with Google" : "Accept & Register"}
+        onAccept={handleAcceptConsent}
+        onReject={handleRejectConsent}
+      />
     </>
   );
 }

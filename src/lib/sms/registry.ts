@@ -447,4 +447,192 @@ export const SMS_TEMPLATE_REGISTRY: Record<string, SmsTemplateDefinition> = {
       site_url: "https://klickpro.in",
     },
   },
+
+  wallet_topup_receipt: {
+    key: "wallet_topup_receipt",
+    name: "Wallet Top-Up Receipt",
+    description: "Sent when money is added and credited to a user's Klick-Pro wallet.",
+    audience: "CLIENT",
+    category: "Financial & Payments",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234513",
+    defaultBodyText:
+      "Hi {{user_name}}, ₹{{amount}} added to your Klick-Pro wallet. Receipt: {{receipt_no}}. Updated balance: ₹{{updated_balance}}. - KLICK PRO",
+    variables: [
+      { key: "user_name", label: "User Name", description: "Account holder name", sample: "Juned" },
+      { key: "amount", label: "Amount", description: "Top-up amount", sample: "5,000" },
+      { key: "receipt_no", label: "Receipt No", description: "Receipt ID", sample: "RCP-WT-1042" },
+      { key: "updated_balance", label: "Wallet Balance", description: "New wallet balance", sample: "12,500" },
+    ],
+    sampleData: {
+      user_name: "Juned",
+      amount: "5,000",
+      receipt_no: "RCP-WT-1042",
+      updated_balance: "12,500",
+    },
+  },
+
+  withdrawal_requested_receipt: {
+    key: "withdrawal_requested_receipt",
+    name: "Withdrawal Request Receipt",
+    description: "Sent when a user submits a withdrawal request awaiting admin approval.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234514",
+    defaultBodyText:
+      "Hi {{user_name}}, your withdrawal request {{receipt_no}} of ₹{{amount}} to {{destination}} is submitted and pending approval. - KLICK PRO",
+    variables: [
+      { key: "user_name", label: "User Name", description: "Account holder name", sample: "Vikram" },
+      { key: "receipt_no", label: "Receipt No", description: "Withdrawal ref", sample: "WD-204" },
+      { key: "amount", label: "Amount", description: "Withdrawal amount", sample: "8,500" },
+      { key: "destination", label: "Destination", description: "Bank or UPI target", sample: "UPI vikram@okaxis" },
+    ],
+    sampleData: {
+      user_name: "Vikram",
+      receipt_no: "WD-204",
+      amount: "8,500",
+      destination: "UPI vikram@okaxis",
+    },
+  },
+
+  withdrawal_completed_receipt: {
+    key: "withdrawal_completed_receipt",
+    name: "Withdrawal Paid Receipt (UTR)",
+    description: "Sent when withdrawal money is transferred to user's bank or UPI.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234515",
+    defaultBodyText:
+      "Hi {{user_name}}, ₹{{amount}} has been transferred to {{destination}}. UTR: {{utr}}. Receipt: {{receipt_no}}. - KLICK PRO",
+    variables: [
+      { key: "user_name", label: "User Name", description: "Account holder name", sample: "Vikram" },
+      { key: "amount", label: "Amount", description: "Transferred amount", sample: "8,500" },
+      { key: "destination", label: "Destination", description: "Bank or UPI target", sample: "HDFC ••••4821" },
+      { key: "utr", label: "UTR Reference", description: "Transfer reference", sample: "KP173261902348" },
+      { key: "receipt_no", label: "Receipt No", description: "Receipt ID", sample: "WD-204" },
+    ],
+    sampleData: {
+      user_name: "Vikram",
+      amount: "8,500",
+      destination: "HDFC ••••4821",
+      utr: "KP173261902348",
+      receipt_no: "WD-204",
+    },
+  },
+
+  withdrawal_failed_notice: {
+    key: "withdrawal_failed_notice",
+    name: "Withdrawal Failed & Restored",
+    description: "Sent when withdrawal fails/rejected and funds return to wallet balance.",
+    audience: "SYSTEM",
+    category: "Financial & Payments",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234516",
+    defaultBodyText:
+      "Notice {{user_name}}: withdrawal {{receipt_no}} of ₹{{amount}} was not completed ({{failure_reason}}). Balance restored to wallet. - KLICK PRO",
+    variables: [
+      { key: "user_name", label: "User Name", description: "Account holder name", sample: "Vikram" },
+      { key: "receipt_no", label: "Receipt No", description: "Withdrawal ref", sample: "WD-204" },
+      { key: "amount", label: "Amount", description: "Restored amount", sample: "8,500" },
+      { key: "failure_reason", label: "Reason", description: "Failure reason", sample: "Rejected by admin" },
+    ],
+    sampleData: {
+      user_name: "Vikram",
+      receipt_no: "WD-204",
+      amount: "8,500",
+      failure_reason: "Rejected by admin",
+    },
+  },
+
+  client_refund_processed: {
+    key: "client_refund_processed",
+    name: "Refund Credited Confirmation",
+    description: "Sent to client when an escrow refund is credited back to wallet.",
+    audience: "CLIENT",
+    category: "Financial & Payments",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234517",
+    defaultBodyText:
+      'Hi {{client_name}}, refund of ₹{{refund_amount}} for "{{project_title}}" has been credited. Ref: {{transaction_ref}}. - KLICK PRO',
+    variables: [
+      { key: "client_name", label: "Client Name", description: "Client first name", sample: "Juned" },
+      { key: "refund_amount", label: "Refund Amount", description: "Credited refund", sample: "15,000" },
+      { key: "project_title", label: "Project Title", description: "Project title", sample: "Kitchen Fitting" },
+      { key: "transaction_ref", label: "Reference", description: "Transaction reference", sample: "TXN_982341908" },
+    ],
+    sampleData: {
+      client_name: "Juned",
+      refund_amount: "15,000",
+      project_title: "Kitchen Fitting",
+      transaction_ref: "TXN_982341908",
+    },
+  },
+
+  client_job_posted: {
+    key: "client_job_posted",
+    name: "Job Posted Confirmation",
+    description: "Sent to client when their job posting goes live.",
+    audience: "CLIENT",
+    category: "Jobs & Proposals",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234518",
+    defaultBodyText:
+      'Hi {{client_name}}, your job "{{job_title}}" is now live in {{category_name}}. View quotes: {{short_url}} - KLICK PRO',
+    variables: [
+      { key: "client_name", label: "Client Name", description: "Client name", sample: "Juned" },
+      { key: "job_title", label: "Job Title", description: "Job title", sample: "Kitchen Fitting" },
+      { key: "category_name", label: "Category", description: "Service category", sample: "Carpentry" },
+      { key: "short_url", label: "Action Link", description: "Job page URL", sample: "https://klickpro.in/job/42" },
+    ],
+    sampleData: {
+      client_name: "Juned",
+      job_title: "Kitchen Fitting",
+      category_name: "Carpentry",
+      short_url: "https://klickpro.in/job/42",
+    },
+  },
+
+  prof_verification_approved: {
+    key: "prof_verification_approved",
+    name: "Verification Approved",
+    description: "Sent to professional when their ID and documents are approved.",
+    audience: "PROFESSIONAL",
+    category: "Account & Auth",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234519",
+    defaultBodyText:
+      "Congratulations {{prof_name}}! Your Klick-Pro account is now verified. Start submitting proposals: {{short_url}} - KLICK PRO",
+    variables: [
+      { key: "prof_name", label: "Professional Name", description: "Pro name", sample: "Vikram" },
+      { key: "short_url", label: "Jobs Link", description: "Jobs page link", sample: "https://klickpro.in/professional/my-jobs" },
+    ],
+    sampleData: {
+      prof_name: "Vikram",
+      short_url: "https://klickpro.in/professional/my-jobs",
+    },
+  },
+
+  prof_verification_rejected: {
+    key: "prof_verification_rejected",
+    name: "Verification Update Required",
+    description: "Sent to professional when verification needs resubmission.",
+    audience: "PROFESSIONAL",
+    category: "Account & Auth",
+    defaultSenderId: "KLKPRO",
+    defaultDltTemplateId: "10071689234520",
+    defaultBodyText:
+      "Hi {{prof_name}}, action is required on your Klick-Pro verification ({{rejection_reason}}). Update documents: {{short_url}} - KLICK PRO",
+    variables: [
+      { key: "prof_name", label: "Professional Name", description: "Pro name", sample: "Vikram" },
+      { key: "rejection_reason", label: "Reason", description: "Rejection note", sample: "Document photo unclear" },
+      { key: "short_url", label: "Verification Link", description: "Verification link", sample: "https://klickpro.in/verification" },
+    ],
+    sampleData: {
+      prof_name: "Vikram",
+      rejection_reason: "Document photo unclear",
+      short_url: "https://klickpro.in/verification",
+    },
+  },
 };

@@ -22,15 +22,25 @@ export function LegalPage({
           </div>
         </section>
         <article className="mx-auto max-w-4xl space-y-8 px-4 py-16 sm:px-6">
-          {sections.map((section) => (
-            <section
-              key={section.title}
-              className="rounded-2xl border border-border bg-card p-7 shadow-soft"
-            >
-              <h2 className="font-display text-xl font-semibold">{section.title}</h2>
-              <p className="mt-3 leading-7 text-muted-foreground break-words">{section.body}</p>
+          {sections.length === 0 ? (
+            <section className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                No rules have been added yet by platform administrators.
+              </p>
             </section>
-          ))}
+          ) : (
+            sections.map((section) => (
+              <section
+                key={section.title}
+                className="rounded-2xl border border-border bg-card p-7 shadow-soft"
+              >
+                <h2 className="font-display text-xl font-semibold">{section.title}</h2>
+                <p className="mt-3 whitespace-pre-line leading-7 text-muted-foreground break-words">
+                  {section.body}
+                </p>
+              </section>
+            ))
+          )}
         </article>
       </main>
     </div>

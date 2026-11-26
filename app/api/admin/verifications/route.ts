@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
-import { emitRealtimeNotification, emitAdminVerificationsUpdate } from "@/lib/realtime";
+import { emitAdminVerificationsUpdate } from "@/lib/realtime";
+import { notifyVerificationStatus } from "@/lib/marketplace-notifications";
 import { verificationService } from "@/services/verification.service";
 
 async function admin(request: NextRequest) {
@@ -118,15 +119,10 @@ export async function PATCH(request: NextRequest) {
       data: { isVerified: parsed.data.status === "APPROVED" },
     }),
   ]);
-  emitRealtimeNotification([parsed.data.userId], {
-    title:
-      parsed.data.status === "APPROVED" ? "Verification Approved" : "Verification Status Updated",
-    description:
-      parsed.data.status === "APPROVED"
-        ? "Congratulations, your professional account is now verified!"
-        : "Your verification request has been reviewed.",
-    href: "/professional/profile",
-    type: "VERIFICATION_UPDATE",
+  await notifyVerificationStatus({
+    userId: parsed.data.userId,
+    provider: "Identity & Documents",
+    isApproved: parsed.data.status === "APPROVED",
   });
   emitAdminVerificationsUpdate({ userId: parsed.data.userId, status: parsed.data.status });
   return NextResponse.json({ ok: true });

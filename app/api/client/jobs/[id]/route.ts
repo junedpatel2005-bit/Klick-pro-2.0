@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sessionCookie, verifySession } from "@/lib/auth";
 import { attachLastActorRole } from "@/lib/project-request-actions";
+import { notifyJobPosted } from "@/lib/marketplace-notifications";
+import { emitRealtimeJobPosted } from "@/lib/realtime";
 import { z } from "zod";
 
 const milestoneInput = z.object({
@@ -388,6 +390,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       },
     });
+    if (current.status !== "OPEN" && job.status === "OPEN") {
+      emitRealtimeJobPosted({
+        jobId: job.id,
+        category: job.category ?? undefined,
+        title: job.title ?? undefined,
+      });
+      void notifyJobPosted(job).catch((notifyErr) => {
+        console.error("Failed to dispatch job posted notification:", notifyErr);
+      });
+    }
     return NextResponse.json({ job });
   } catch (error) {
     console.error("Failed to update job:", error);

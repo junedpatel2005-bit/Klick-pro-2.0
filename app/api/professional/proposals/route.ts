@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
         if (isReapply) {
           await notifyProposalSubmitted({
             jobId: job.id,
+            proposalId: updated.id,
             jobTitle: job.title,
             clientId: job.userId,
             professionalId: session.userId,
@@ -160,6 +161,7 @@ export async function POST(request: NextRequest) {
         } else {
           await notifyProposalUpdated({
             jobId: job.id,
+            proposalId: updated.id,
             jobTitle: job.title,
             clientId: job.userId,
             professionalId: session.userId,
@@ -192,6 +194,7 @@ export async function POST(request: NextRequest) {
     try {
       await notifyProposalSubmitted({
         jobId: job.id,
+        proposalId: proposal.id,
         jobTitle: job.title,
         clientId: job.userId,
         professionalId: session.userId,
